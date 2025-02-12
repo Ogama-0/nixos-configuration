@@ -1,23 +1,30 @@
 {
 
-  description = "ok on test";
+  description = "main nixos configuration";
 
   inputs = {
-    nixpkgs = {
-      url = "github:NixOs/nixpkgs/nixos-24.11";
-    };
-    
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    home-manager.url = "github:nix-community/home-manager/release-24.11";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, ... }:
+  outputs = { self, nixpkgs, home-manager, ... }@inputs:
   let 
     lib = nixpkgs.lib;
-   in {
+    system = "x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${system};
+  in {
     nixosConfigurations = {
-      OgamaNixOs = lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./configuration.nix ];
-      };
+      personal = lib.nixosSystem  {
+        inherit system;
+        modules = [ ./configuration.nix  ];
+      };           
     };
-   };
+    homeConfigurations = {
+      personal = home-manager.lib.homeManagerConfiguration {
+        inherit system;
+        modules = [ ./home.nix  ];
+      };   
+    };
+  };
 }
