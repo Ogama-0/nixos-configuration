@@ -22,7 +22,7 @@
     };
     homeConfigurations = {
       personal = home-manager.lib.homeManagerConfiguration {
-        inherit system;
+        inherit pkgs;
         modules = [ ./home.nix  ];
       };   
     };

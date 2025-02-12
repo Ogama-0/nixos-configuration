@@ -71,6 +71,16 @@
     # EDITOR = "emacs";
   };
 
-  # Let Home Manager install and manage itself.
+  programs.bash = {
+    
+    enable = true;
+    
+    shellAliases = {
+      ll = "ls -l";
+      ".." = "cd ..";
+      cdnix = "cd /home/ogama/documents/github/nixos-configuration";
+    };
+  };
+
   programs.home-manager.enable = true;
 }
