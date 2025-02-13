@@ -27,8 +27,8 @@
 
     jetbrains-toolbox
     jetbrains.rider
-
-    hello
+    vesktop
+    git
     octaveFull
   ];
 

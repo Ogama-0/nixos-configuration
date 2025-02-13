@@ -8,7 +8,7 @@ let
   right = "l";
 in {
 
-  home.packages = with pkgs; [ grim slurp ];
+  home.packages = with pkgs; [ grim slurp wlroots ];
 
   wayland.windowManager.sway = {
     enable = true;

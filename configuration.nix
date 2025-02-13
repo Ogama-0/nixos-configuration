@@ -18,32 +18,22 @@
 
   networking.networkmanager.enable = true;
 
-  # Configure keymap in X11
-  services.xserver.xkb.layout = "us";
-
   users.users.ogama = {
     isNormalUser = true;
-    description = "bonjour a tous";
-    extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
-    shell = pkgs.bash;
-    home = "/home/ogama";
+    extraGroups =
+      [ "wheel" "networkmanager" "sway" ]; # Enable ‘sudo’ for the user.
   };
 
   nixpkgs.config.allowUnfree = true;
 
-  environment.systemPackages = with pkgs; [
-
-    nano
-    wlroots
-
-    vesktop
-    git
-    acpi
-  ];
+  environment.systemPackages = with pkgs; [ nano acpi ];
 
   services.upower.enable = true;
 
+  security.pam.services.swaylock = { };
   security.polkit.enable = true;
+  hardware.graphics.enable = true;
+
   programs.firefox.enable = true;
 
   nix.settings.allowed-users = [ "@wheel" "ogama" ];
