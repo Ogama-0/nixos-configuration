@@ -9,22 +9,22 @@
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs:
-  let 
-    lib = nixpkgs.lib;
-    system = "x86_64-linux";
-    pkgs = nixpkgs.legacyPackages.${system};
-  in {
-    nixosConfigurations = {
-      personal = lib.nixosSystem  {
-        inherit system;
-        modules = [ ./configuration.nix  ];
-      };           
+    let
+      lib = nixpkgs.lib;
+      system = "x86_64-linux";
+      pkgs = nixpkgs.legacyPackages.${system};
+    in {
+      nixosConfigurations = {
+        personal = lib.nixosSystem {
+          inherit system;
+          modules = [ ./configuration.nix ];
+        };
+      };
+      homeConfigurations = {
+        personal = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [ ./home-manager/home.nix ];
+        };
+      };
     };
-    homeConfigurations = {
-      personal = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        modules = [ ./home.nix  ];
-      };   
-    };
-  };
 }
