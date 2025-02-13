@@ -26,16 +26,16 @@
 
   nixpkgs.config.allowUnfree = true;
 
-  environment.systemPackages = with pkgs; [ nano acpi ];
+  environment.systemPackages = with pkgs; [ nano alsa-utils ];
 
   services.upower.enable = true;
 
   security.pam.services.swaylock = { };
   security.polkit.enable = true;
   hardware.graphics.enable = true;
-
-  programs.firefox.enable = true;
-
+  environment.loginShellInit = ''
+    [[ "$(tty)" == /dev/tty1 ]] && sway
+  '';
   nix.settings.allowed-users = [ "@wheel" "ogama" ];
 
   system.stateVersion = "24.11"; # Did you read the comment?

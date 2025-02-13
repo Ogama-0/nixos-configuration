@@ -25,9 +25,15 @@
 
   home.packages = with pkgs; [
 
-    jetbrains-toolbox
-    jetbrains.rider
+    # Main pkgs
+    firefox
     vesktop
+    spotify
+    gimp
+    # game
+    modrinth-app
+    # Dev
+    jetbrains.rider
     git
     octaveFull
   ];

@@ -7,7 +7,7 @@ let
   left = "h";
   right = "l";
 in {
-
+  imports = [ ./barbar.nix ];
   home.packages = with pkgs; [ grim slurp wlroots ];
 
   wayland.windowManager.sway = {
