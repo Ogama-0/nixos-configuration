@@ -18,6 +18,8 @@
       };
 
       blocks = [
+        { block = "music"; }
+        { block = "sound"; }
         {
           block = "net";
           format = " $icon  $ssid ($signal_strength) ";

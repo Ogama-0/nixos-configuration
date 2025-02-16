@@ -5,12 +5,16 @@
     enable = true;
     lfs.enable = true;
 
-    userName = "Oscar Cornut";
+    userName = "ogama";
     userEmail = "oscar.cornut@gmail.com";
 
     aliases = {
       ui = "!lazygit";
 
+      tagarchi =
+        "!f(){ git add -A ; git commit -m 'autocommit'; git tag -ma archi-$(openssl rand -hex 4); git push --follow-tags; }; f";
+      ll = "log --graph --oneline";
+      lla = "log --graph --oneline --all";
       pu = "push";
       put = "push --follow-tags";
       s = "status";

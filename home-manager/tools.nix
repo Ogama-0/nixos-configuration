@@ -1,7 +1,8 @@
-{ pkgs, ... }:
+{ pkgs, wakatime-ls, ... }:
 
 {
   home.packages = with pkgs; [
+    brightnessctl
     wl-clipboard
     killall
     networkmanagerapplet
@@ -15,7 +16,9 @@
     imv
     xdg-utils
     tlrc
-    wireguard-tools
+    playerctl
+    notify-desktop
+    poweralertd
 
     # Dev related
     gccgo14
@@ -23,6 +26,6 @@
     dotnetCorePackages.sdk_9_0
     direnv
     gnumake
-    jdk17
+    wakatime-ls
   ];
 }

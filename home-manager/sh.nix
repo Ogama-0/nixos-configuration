@@ -53,14 +53,24 @@
     };
 
     functions = {
-      fish_greeting = "";
+      fish_greeting = ''
+        set rdm (random 0 1)
+        if test $rdm = 0 
+          echo "salut caml c'est zizou"   
+        else if test $rdm = 1
+          echo "🐫🐫🐫🐫🐫vive caml🐫🐫🐫🐫🐫"
+        end
+      '';
+
+      cdtmp = ''
+        set ash (openssl rand -hex 4)
+        mkdir /tmp/$ash
+        cd /tmp/$ash
+      '';
+
       connectIphone = {
         body =
           "nmcli device wifi connect 'iPhone de Oscar' password 'ogama75?'";
-      };
-      init-tp = {
-        body =
-          "python3 /home/kristen/developement/github.com/pixilie/nix-configuration/assets/scripts/init-tp.py $argv[1] $argv[2]";
       };
     };
   };

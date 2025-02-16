@@ -9,6 +9,7 @@
     ./tools.nix
     ./git.nix
     ./font.nix
+    ./mako.nix
   ];
 
   home.username = "ogama";
@@ -30,6 +31,11 @@
     vesktop
     spotify
     gimp
+    bitwarden-desktop
+    google-chrome
+    unityhub
+    nautilus
+
     # game
     modrinth-app
     # Dev
@@ -47,6 +53,7 @@
       cdnix = "cd /home/ogama/documents/github/nixos-configuration";
     };
   };
+  services.poweralertd.enable = true;
 
   programs.home-manager.enable = true;
 }
