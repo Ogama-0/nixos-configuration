@@ -4,16 +4,13 @@
   imports = [
     ./hardware-configuration.nix
     ./stream.nix
-    # ./systemconf/wireguard.nix ]; 
-
+    ./wireguard.nix
+    ./utilities.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-
-  # enable for wireguard 
-  boot.kernel.sysctl = { "net.ipv4.ip_forward" = "1"; };
 
   hardware.bluetooth = {
     enable = true;

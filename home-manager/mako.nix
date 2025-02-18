@@ -6,7 +6,7 @@
 
     maxVisible = 3;
 
-    defaultTimeout = 5000;
+    defaultTimeout = 7000;
     backgroundColor = "#a2d5c6";
     textColor = "#000000";
 
@@ -18,16 +18,15 @@
     maxIconSize = 55;
     padding = "10";
 
-    # extraConfig = ''
-    # [urgency=low]
-    # background-color=#a2d5c6
-    # text-color=#FFFFFF
-    # [urgency=medium]                                                                                                                                                                     
-    #   background-color=#077b8a
+    extraConfig = ''
 
-    #   [urgency=high]                                                                                                                                                                     
-    #   background-color=#5c3c92
-    # '';
+      [mode=do-not-disturb]
+      invisible=1
+
+      [mode=test]
+      background-color=#a2d5c6
+
+    '';
   };
 
 }

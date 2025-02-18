@@ -62,6 +62,55 @@
         end
       '';
 
+      init-tp = ''
+        set repository_link $argv[1]
+        set tree $argv[2]
+        set tp_name $argv[3]
+        python $PATH_SCRIPTS/init-tp.py $repository_link $tree $tp_name
+      '';
+
+      wgup = ''
+        set confname oscar
+        set devconfname oscar-dev
+        set backupconfname backup
+        set devbackupconfname backup-dev
+
+        # Correction de la déclaration des options dans argparse
+        argparse d/dev b/backup -- $argv
+
+        if set -q _flag_dev
+          if set -q _flag_backup
+            sudo systemctl start wg-quick-$devbackupconfname # Mode développement + backup
+          else
+            sudo systemctl start wg-quick-$devconfname # Mode développement seul
+          end
+        else
+          if set -q _flag_backup
+            sudo systemctl start wg-quick-$backupconfname # Mode backup seul
+          else
+            sudo systemctl start wg-quick-$confname # Mode normal
+          end
+        end
+        sudo mount -t cifs //192.168.10.51/general_storage $PATH_NAS -o username=oscar,password=mdpelo,uid=$(id -u),gid=$(id -g)
+      '';
+
+      wgdn = ''
+
+        sudo umount $PATH_NAS/
+        # Récupérer la configuration WireGuard active
+        set confname (sudo wg | grep interface | sed 's/.* //')
+
+        # Vérifier si une configuration est active
+        if test -n "$confname"
+          sudo systemctl stop wg-quick-$confname
+          echo "Configuration '$confname' arrêtée avec succès."
+        else
+          echo "Aucune configuration WireGuard active trouvée."
+        end
+
+
+      '';
+
       cdtmp = ''
         set ash (openssl rand -hex 4)
         mkdir /tmp/$ash
@@ -96,4 +145,5 @@
     nix-direnv.enable = true;
   };
   home.sessionVariables.DIRENV_LOG_FORMAT = "";
+
 }
