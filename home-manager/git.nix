@@ -17,6 +17,7 @@
       lla = "log --graph --oneline --all";
       pu = "push";
       put = "push --follow-tags";
+      pute = "push --follow-tags";
       s = "status";
       ss = "status --short";
       cm = "commit --message";
