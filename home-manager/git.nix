@@ -22,6 +22,7 @@
       ss = "status --short";
       cm = "commit --message";
       ca = "commit --amend";
+      aad = "add -A";
     };
 
     ignores = [ ".direnv/" "result" ];
