@@ -9,6 +9,7 @@ let
   background = toString ../assets/background.png;
   background_blure = toString ../assets/background_blure.png;
   background_tache = toString ../assets/background_tache.png;
+  background_monocle = toString ../assets/babackground_monocle;
 in {
   imports = [ ./barbar.nix ];
   home.packages = with pkgs; [ grim slurp wlroots swaybg ];
@@ -52,6 +53,7 @@ in {
         "${modifier}+Shift+z" = "exec makoctl dismiss";
         "${modifier}+Shift+f" = "exec nautilus";
         # Workspace related keys
+        "${modifier}+grave" = "workspace 10";
         "${modifier}+1" = "workspace 1";
         "${modifier}+2" = "workspace 2";
         "${modifier}+3" = "workspace 3";
@@ -63,6 +65,7 @@ in {
         "${modifier}+9" = "workspace 9";
         "${modifier}+0" = "workspace 10";
 
+        "${modifier}+Shift+grave" = "move container to workspace 10";
         "${modifier}+Shift+1" = "move container to workspace 1";
         "${modifier}+Shift+2" = "move container to workspace 2";
         "${modifier}+Shift+3" = "move container to workspace 3";
@@ -113,7 +116,7 @@ in {
       indicator-radius = 100;
       line-color = "ffffff";
       show-failed-attempts = true;
-      image = background_tache;
+      image = background_blure;
 
     };
   };

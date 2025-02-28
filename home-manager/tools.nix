@@ -19,6 +19,11 @@
     playerctl
     notify-desktop
     poweralertd
+    fastfetch
+    btop
+    simplescreenrecorder
+    vlc
+    mpv
 
     # Dev related
     gccgo14

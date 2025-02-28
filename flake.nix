@@ -15,7 +15,10 @@
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfreePredicate = _: true;
+      };
     in {
       nixosConfigurations = {
         personal = lib.nixosSystem {

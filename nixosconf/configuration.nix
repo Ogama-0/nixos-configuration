@@ -6,6 +6,8 @@
     ./stream.nix
     ./wireguard.nix
     ./utilities.nix
+    ./nvidia.nix
+    ./steam.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -21,7 +23,10 @@
   networking.hostName = "ogamaNixOs"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
-  networking.networkmanager.enable = true;
+  networking.networkmanager = {
+    enable = true;
+
+  };
 
   users.users.ogama = {
     isNormalUser = true;
@@ -38,8 +43,6 @@
     pulse.enable = true;
     jack.enable = true;
   };
-
-  services.upower.enable = true;
 
   security.pam.services.swaylock = { };
   security.polkit.enable = true;

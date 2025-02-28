@@ -11,13 +11,54 @@
         theme = {
           theme = "modern";
           overrides = {
-            separator = "<span size='18000'></span>";
+            separator = "<span size='18000'></span>";
             idle_bg = "#17191e";
           };
         };
       };
 
       blocks = [
+        # {
+        #   block = "custom";
+        #     command = "echo  $(${lib.getExe' pkgs.mako "makoctl"} mode)";
+        #     click = [
+        #       {
+        #         button = "left";
+        #         cmd = "${lib.getExe' pkgs.mako "makoctl"} mode -t dnd";
+        #         update = true;
+        #       }
+        #     ];
+        #     interval = "once";
+        #   }
+        {
+          block = "custom";
+          shell = "fish";
+          command =
+            "systemctl status wg-quick-oscar.service | grep 'Active' | grep 'exited' | string match -qr '\\S' && echo 'VPN On' || echo 'VPN Off' ";
+          interval = 5;
+          click = [{
+            button = "left";
+            cmd = "zenity --password | sudo -S echo bonjour ; togglewg";
+            update = true;
+          }];
+        }
+        # {
+        #   block = "custom";
+        #   shell = "fish";
+        #   command = "echo (kijesui)";
+        #   interval = "once";
+        # }
+        {
+          block = "custom";
+          json = true;
+          command = ''
+            echo "{\"icon\":\"ping\",\"text\":\"`ping -c4 1.1.1.1 | tail -n1 | cut -d'/' -f5`\"}"'';
+          interval = 60;
+          click = [{
+            button = "left";
+            cmd = "<command>";
+          }];
+        }
         { block = "music"; }
         { block = "sound"; }
         {
@@ -52,6 +93,8 @@
           path = "/";
           info_type = "available";
           interval = 60;
+          warning = 20.0;
+          alert = 10.0;
         }
         {
           block = "time";

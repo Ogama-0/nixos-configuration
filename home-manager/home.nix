@@ -35,9 +35,12 @@
     google-chrome
     unityhub
     nautilus
+    jetbrains-toolbox
 
     # game
     modrinth-app
+    steam
+    steam-run
     # Dev
     jetbrains.rider
     git

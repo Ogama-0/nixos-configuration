@@ -11,6 +11,7 @@
     zoxide
     delta
     tlrc
+    zenity
   ];
 
   programs.kitty = {
@@ -62,6 +63,8 @@
         end
       '';
 
+      kijesui = "whoami";
+
       init-tp = ''
         set repository_link $argv[1]
         set tree $argv[2]
@@ -107,8 +110,15 @@
         else
           echo "Aucune configuration WireGuard active trouvée."
         end
+      '';
 
-
+      togglewg = ''
+        set output (sudo wg)
+        if test -n "$output"
+          wgdn
+        else
+          wgup
+        end
       '';
 
       cdtmp = ''
