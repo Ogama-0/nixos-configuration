@@ -11,7 +11,7 @@ let
   background_tache = toString ../assets/background_tache.png;
   background_monocle = toString ../assets/babackground_monocle;
 in {
-  imports = [ ./barbar.nix ];
+  imports = [ ./barbar.nix ./swaylock.nix ];
   home.packages = with pkgs; [ grim slurp wlroots swaybg ];
 
   wayland.windowManager.sway = {
@@ -26,7 +26,7 @@ in {
       down = "${down}";
       left = "${left}";
       right = "${right}";
-      defaultWorkspace = "workspace 1";
+      defaultWorkspace = "workspace 10";
 
       startup = [{ command = "kitty"; }];
 
@@ -48,7 +48,10 @@ in {
         "${modifier}+${right}" = "focus right";
         "${modifier}+${up}" = "focus up";
         "${modifier}+${down}" = "focus down";
-        "${modifier}+Escape" = "exec swaylock";
+        "${modifier}+Escape" =
+          "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
+        "${modifier}+Shift+Escape" =
+          "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
         "${modifier}" = "exec swaymsg bar mode toggle";
         "${modifier}+Shift+z" = "exec makoctl dismiss";
         "${modifier}+Shift+f" = "exec nautilus";
@@ -104,21 +107,6 @@ in {
     extraConfig = ''
       exec_always swaybg -i ${background} -m fill   
     '';
-  };
-
-  programs.swaylock = {
-
-    enable = true;
-    settings = {
-      color = "000000";
-      font-size = 16;
-      indicator-idle-visible = false;
-      indicator-radius = 100;
-      line-color = "ffffff";
-      show-failed-attempts = true;
-      image = background_blure;
-
-    };
   };
 
 }

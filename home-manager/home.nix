@@ -4,12 +4,14 @@
 
   imports = [
     ./sh.nix
-    ./windowsManager.nix
+    ./display/windowsManager.nix
     ./helix.nix
     ./tools.nix
     ./git.nix
-    ./font.nix
-    ./mako.nix
+    ./display/font.nix
+    ./display/mako.nix
+    ./zed-editor.nix
+    ./display/gtk.nix
   ];
 
   home.username = "ogama";
