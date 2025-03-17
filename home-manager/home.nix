@@ -34,7 +34,7 @@
     spotify
     gimp
     bitwarden-desktop
-    google-chrome
+    # google-chrome
     unityhub
     nautilus
     jetbrains-toolbox

@@ -4,6 +4,16 @@ My personal config NixOs
 <details>
   <summary>TODO</summary><br />
   - fix the wireguard conf in the swaybar <code>home-manager/barbar.nix</code> <br />
-  - Update the swaybar <code>home-manager/barbar.nix</code> <br/>
-  - build a better swaylock <code>home-manager/swaylock.nix<code/>
+  - <details><summary> Update the swaybar <code>home-manager/barbar.nix</code> </summary>
+  - add calendar <code>https://docs.rs/i3status-rs/latest/i3status_rs/blocks/calendar/index.html</code>
+  </details>
+  - build a better swaylock <code>home-manager/swaylock.nix<code/> 
+</details>
+
+<details>
+  <summary>Utils<summary><br/>
+    - Audio manager : pavucontrol <br/>
+    - Network manager : nmcli / nm-connection-editor <br/>
+    - Bluethooth manager : blueman-manager <br/>
+    - Task manager : btop
 </details>

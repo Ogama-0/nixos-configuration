@@ -22,8 +22,14 @@
     fastfetch
     btop
     simplescreenrecorder
-    vlc
+    # vlc
     mpv
+    trash-cli
+    qbittorrent
+    spotube
+    mkvtoolnix
+    pavucontrol
+    mcrcon
 
     # Dev related
     gccgo14

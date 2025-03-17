@@ -14,16 +14,17 @@
     borderSize = 0;
     borderColor = "#d72631";
 
+    sort = "-priority";
     height = 350;
     maxIconSize = 55;
     padding = "10";
 
     extraConfig = ''
 
-      [mode=do-not-disturb]
+      [mode="do not disturb"]
       invisible=1
 
-      [mode=test]
+      [mode="test"]
       background-color=#a2d5c6
 
     '';

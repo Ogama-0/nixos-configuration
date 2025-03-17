@@ -51,6 +51,11 @@
       ll = "ls -lhaF";
       tree = "ls -T";
       ghd = "gh-dash";
+      tp = "trash-put";
+      tls = "trash-list";
+      tempt = "trash-empty";
+      tsempt = "trash-empty 10";
+      rm = "#";
     };
 
     functions = {
@@ -131,6 +136,7 @@
         body =
           "nmcli device wifi connect 'iPhone de Oscar' password 'ogama75?'";
       };
+
     };
   };
 

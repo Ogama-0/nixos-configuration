@@ -50,6 +50,18 @@
         # }
         {
           block = "custom";
+          command = ''
+            makoctl mode| tail --lines 1
+          '';
+          interval = 1;
+          click = [{
+            button = "left";
+            cmd = "makoctl mode -t 'do not disturb'";
+            update = true;
+          }];
+        }
+        {
+          block = "custom";
           json = true;
           command = ''
             echo "{\"icon\":\"ping\",\"text\":\"`ping -c4 1.1.1.1 | tail -n1 | cut -d'/' -f5`\"}"'';
