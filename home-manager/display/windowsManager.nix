@@ -48,7 +48,7 @@ in {
         "${modifier}+${right}" = "focus right";
         "${modifier}+${up}" = "focus up";
         "${modifier}+${down}" = "focus down";
-        "${modifier}+space" = ''exec makoctl mode -t "do not disturb"'';
+        # "${modifier}+space" = ''exec makoctl mode -t "do not disturb"'';
         "${modifier}+Escape" =
           "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
         "${modifier}+Shift+Escape" =
@@ -56,7 +56,7 @@ in {
         "${modifier}" = "exec swaymsg bar mode toggle";
         "${modifier}+Shift+z" = "exec makoctl dismiss";
         "${modifier}+Shift+d" = "exec vesktop";
-        "${modifier}+Shift+f" = "exec nautilus";
+        "${modifier}+space" = "exec nautilus";
         "${modifier}+Shift+s" = "exec spotify";
         "${modifier}+Shift+b" = "exec blueman-manager";
         "${modifier}+Shift+a" = "exec pavucontrol";

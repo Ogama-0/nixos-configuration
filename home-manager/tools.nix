@@ -30,6 +30,11 @@
     mkvtoolnix
     pavucontrol
     mcrcon
+    ascii
+
+    # Troll 
+    cmatrix
+    hollywood
 
     # Dev related
     gccgo14

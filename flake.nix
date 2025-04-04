@@ -8,10 +8,10 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     wakatime-ls.url = "github:mrnossiom/wakatime-ls";
     wakatime-ls.inputs.nixpkgs.follows = "nixpkgs";
-
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }@inputs:
+  outputs = { self, nixpkgs, home-manager, nixos-hardware, ... }@inputs:
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
@@ -23,7 +23,10 @@
       nixosConfigurations = {
         personal = lib.nixosSystem {
           inherit pkgs;
-          modules = [ nixosconf/configuration.nix ];
+          modules = [
+            nixosconf/configuration.nix
+            nixos-hardware.nixosModules.lenovo-ideapad-15ach6
+          ];
         };
       };
       homeConfigurations = {

@@ -19,4 +19,6 @@
     PATH_NAS = "/home/ogama/documents/nas/smb_oscar";
 
   };
+  # nautilus
+  services.gvfs.enable = true;
 }

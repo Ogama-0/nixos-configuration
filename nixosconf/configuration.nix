@@ -52,6 +52,19 @@
   '';
   nix.settings.allowed-users = [ "@wheel" "ogama" ];
 
+  # systemd.services.preshutdown-script = {
+  #   description = "Script exécuté avant l'arrêt du système";
+  #   before = [ "shutdown.target" ]; # Avant l'arrêt
+  #   wantedBy = [ "shutdown.target" ]; # Exécuté lors de l'arrêt
+  #   serviceConfig = {
+  #     Type = "oneshot";
+  #     ExecStart = ''
+  #       ${pkgs.bash}/bin/bash -e ./scripts/shellscript/unmountnas.sh  && 'echo \"nas smb unmounted\" > /var/log/preshutdown.log'
+  #     '';
+  #     RemainAfterExit = true;
+  #   };
+  # };
+
   system.stateVersion = "24.11"; # Did you read the comment?
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 }

@@ -56,6 +56,9 @@
       tempt = "trash-empty";
       tsempt = "trash-empty 10";
       rm = "#";
+      shutdown = "hollywood";
+      stnow = "shutdown now";
+      cacat = "bat";
     };
 
     functions = {
