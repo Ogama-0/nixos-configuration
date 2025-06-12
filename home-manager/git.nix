@@ -23,6 +23,7 @@
       cm = "commit --message";
       ca = "commit --amend";
       aad = "add -A";
+      pusht = "push --follow-tags";
     };
 
     ignores = [ ".direnv/" "result" ];

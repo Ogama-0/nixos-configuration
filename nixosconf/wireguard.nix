@@ -11,7 +11,7 @@
       peers = [{
         publicKey = "Idz0+pG28XDSDTdAoJpmnoXd0IurrUKCwC0BNZcgkng=";
         presharedKeyFile = "/etc/oscar-preshare-wg-vpn.key";
-        allowedIPs = [ "192.168.0.0/16" "172.0.0.0/8" ];
+        allowedIPs = [ "192.168.0.0/16" ];
         persistentKeepalive = 0;
         endpoint = "213.245.179.43:51820";
       }];

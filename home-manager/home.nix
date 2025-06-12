@@ -43,6 +43,8 @@
     modrinth-app
     steam
     steam-run
+    steamcontroller
+
     # Dev
     jetbrains.rider
     git

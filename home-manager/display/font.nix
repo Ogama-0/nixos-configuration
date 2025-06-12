@@ -4,7 +4,8 @@
   home.packages = with pkgs; [
     noto-fonts
     noto-fonts-emoji
-    (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+    # nerd-fonts.jetbrains-mono
+    # nerdfonts.cascadia-code
     font-awesome
     merriweather
     inter

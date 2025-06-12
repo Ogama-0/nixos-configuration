@@ -4,32 +4,19 @@
   programs.i3status-rust = {
     enable = true;
     bars.default = {
-      icons = "awesome6";
       theme = "modern";
-
-      settings = {
-        theme = {
-          theme = "modern";
-          overrides = {
-            separator = "<span size='18000'></span>";
-            idle_bg = "#17191e";
-          };
-        };
-      };
-
+      icons = "awesome6";
       blocks = [
         # {
         #   block = "custom";
-        #     command = "echo  $(${lib.getExe' pkgs.mako "makoctl"} mode)";
-        #     click = [
-        #       {
-        #         button = "left";
-        #         cmd = "${lib.getExe' pkgs.mako "makoctl"} mode -t dnd";
-        #         update = true;
-        #       }
-        #     ];
-        #     interval = "once";
-        #   }
+        #   command = "echo  $(makoctl mode | tail --lines 1)";
+        #   click = [{
+        #     button = "left";
+        #     cmd = "makoctl mode -t dnd";
+        #     update = true;
+        #   }];
+        #   interval = "once";
+        # }
         {
           block = "custom";
           shell = "fish";
@@ -42,21 +29,13 @@
             update = true;
           }];
         }
-        # {
-        #   block = "custom";
-        #   shell = "fish";
-        #   command = "echo (kijesui)";
-        #   interval = "once";
-        # }
         {
           block = "custom";
-          command = ''
-            makoctl mode| tail --lines 1
-          '';
-          interval = 1;
+          command = "echo  $(makoctl mode | tail --lines 1)";
+          interval = "once";
           click = [{
             button = "left";
-            cmd = "makoctl mode -t 'do not disturb'";
+            cmd = "makoctl mode -t 'dnd'";
             update = true;
           }];
         }

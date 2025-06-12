@@ -3,31 +3,53 @@
 {
   services.mako = {
     enable = true;
+    settings = {
 
-    maxVisible = 3;
+      max-visible = 3;
+      default-timeout = 7000;
+      background-color = "#a2d5c6";
+      text-color = "#000000";
 
-    defaultTimeout = 7000;
-    backgroundColor = "#a2d5c6";
-    textColor = "#000000";
+      border-radius = 15;
+      border-size = 0;
+      border-color = "#d72631";
 
-    borderRadius = 15;
-    borderSize = 0;
-    borderColor = "#d72631";
+      sort = "-priority";
+      height = 350;
+      max-icon-size = 55;
+      padding = "10";
 
-    sort = "-priority";
-    height = 350;
-    maxIconSize = 55;
-    padding = "10";
+      "mode=dnd" = { invisible = 1; };
 
-    extraConfig = ''
+      "mode=normal" = {
+        background-color = "#a2d5c6";
+        text-color = "#000000";
+      };
+      "mode=critical" = {
+        background-color = "#d72631"; # Rouge vif
+        text-color = "#ffffff";
+      };
+      "mode=low" = {
+        background-color = "#f5f5dc"; # Beige clair
+        text-color = "#333333";
+      };
+    };
 
-      [mode="do not disturb"]
-      invisible=1
+    # rules = [
+    #   {
+    #     urgency = "critical";
+    #     mode = "critical";
+    #   }
+    #   {
+    #     urgency = "low";
+    #     mode = "low";
+    #   }
+    #   {
+    #     urgency = "normal";
+    #     mode = "normal";
+    #   }
+    # ];
 
-      [mode="test"]
-      background-color=#a2d5c6
-
-    '';
   };
 
 }

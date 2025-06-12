@@ -45,6 +45,7 @@
     shellAliases = {
       ls = "${lib.getExe pkgs.eza} --color=auto --icons=auto --hyperlink";
       cat = "${lib.getExe pkgs.bat}";
+      imp = "${lib.getExe pkgs.kitty} icat";
     };
 
     shellAbbrs = {
@@ -52,13 +53,17 @@
       tree = "ls -T";
       ghd = "gh-dash";
       tp = "trash-put";
-      tls = "trash-list";
+      tl = "trash-list";
       tempt = "trash-empty";
       tsempt = "trash-empty 10";
       rm = "#";
       shutdown = "hollywood";
       stnow = "shutdown now";
       cacat = "bat";
+      wlist = "nmcli device wifi list";
+      wscan = "nmcli device wifi rescan";
+      wcnt = "nmcli device wifi connect";
+      wscls = "nmcli device wifi rescan && nmcli device wifi list";
     };
 
     functions = {

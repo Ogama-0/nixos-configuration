@@ -1,41 +1,26 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./stream.nix
-    ./wireguard.nix
-    ./utilities.nix
-    ./nvidia.nix
-    ./steam.nix
-    ./printer.nix
-  ];
+  imports = [ ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  hardware.bluetooth = {
-    enable = true;
-    powerOnBoot = true;
-  };
-  services.blueman.enable = true;
-
-  networking.hostName = "ogamaNixOs"; # Define your hostname
-
-  networking.firewall = {
-    enable = false;
-    # allowedTCPPorts = [ 7777 22 80 ];
-    # allowedUDPPorts = [ 7777 ];
-  };
+  networking.hostName = "OgamaNasNixos"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
-  networking.networkmanager.enable = true;
+  networking.networkmanager = { enable = true; };
+
+  services.openssh = {
+    enable = true;
+    ports = [ 22 ];
+    settings = { };
+  };
 
   users.users.ogama = {
     isNormalUser = true;
-    extraGroups =
-      [ "wheel" "networkmanager" "sway" ]; # Enable ‘sudo’ for the user.
+    extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
   };
 
   environment.systemPackages = with pkgs; [ nano alsa-utils ];
@@ -48,13 +33,9 @@
     jack.enable = true;
   };
 
-  security.pam.services.swaylock = { };
-  security.polkit.enable = true;
   hardware.graphics.enable = true;
-
-  environment.loginShellInit = ''
-    [[ "$(tty)" == /dev/tty1 ]] && sway
-  '';
+  environment.loginShellInit =
+    ''echo" Bonjour dans le serveur de OgamaPrime"  '';
   nix.settings.allowed-users = [ "@wheel" "ogama" ];
 
   # systemd.services.preshutdown-script = {

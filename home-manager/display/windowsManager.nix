@@ -48,7 +48,6 @@ in {
         "${modifier}+${right}" = "focus right";
         "${modifier}+${up}" = "focus up";
         "${modifier}+${down}" = "focus down";
-        # "${modifier}+space" = ''exec makoctl mode -t "do not disturb"'';
         "${modifier}+Escape" =
           "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
         "${modifier}+Shift+Escape" =

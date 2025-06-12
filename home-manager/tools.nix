@@ -18,7 +18,6 @@
     tlrc
     playerctl
     notify-desktop
-    poweralertd
     fastfetch
     btop
     simplescreenrecorder
@@ -30,11 +29,13 @@
     mkvtoolnix
     pavucontrol
     mcrcon
+    libnotify
     ascii
-
+    nmap
     # Troll 
     cmatrix
     hollywood
+    stremio
 
     # Dev related
     gccgo14
@@ -43,5 +44,9 @@
     direnv
     gnumake
     wakatime-ls
+    rustup
+
+    # Games
+    prismlauncher
   ];
 }
