@@ -9,6 +9,7 @@
     ./nvidia.nix
     ./steam.nix
     ./printer.nix
+    ./docker.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -34,8 +35,12 @@
 
   users.users.ogama = {
     isNormalUser = true;
-    extraGroups =
-      [ "wheel" "networkmanager" "sway" ]; # Enable ‘sudo’ for the user.
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+      "sway"
+      "docker"
+    ]; # Enable ‘sudo’ for the user.
   };
 
   environment.systemPackages = with pkgs; [ nano alsa-utils ];

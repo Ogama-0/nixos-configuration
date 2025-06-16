@@ -7,7 +7,7 @@ My personal config NixOs
   - <details><summary> Update the swaybar <code>home-manager/barbar.nix</code> </summary>
   - add calendar <code>https://docs.rs/i3status-rs/latest/i3status_rs/blocks/calendar/index.html</code>
   </details>
-  - build a better swaylock <code>home-manager/swaylock.nix<code/> 
+  - add a login menu
 </details>
 
 <details>

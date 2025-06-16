@@ -49,6 +49,7 @@
     };
 
     shellAbbrs = {
+      c = "cargo";
       ll = "ls -lhaF";
       tree = "ls -T";
       ghd = "gh-dash";

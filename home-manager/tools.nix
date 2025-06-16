@@ -2,40 +2,47 @@
 
 {
   home.packages = with pkgs; [
+    # Tool
+    libnotify
     brightnessctl
     wl-clipboard
     killall
     networkmanagerapplet
-    unzip
     poweralertd
     dconf
     openssl
-    wdisplays
     fastfetch
     pkg-config
     imv
     xdg-utils
-    tlrc
     playerctl
     notify-desktop
-    fastfetch
-    btop
-    simplescreenrecorder
-    # vlc
-    mpv
+
+    # App Tool Cli
+    tlrc
     trash-cli
-    qbittorrent
-    spotube
     mkvtoolnix
-    pavucontrol
+    zip
+    unzip
     mcrcon
-    libnotify
     ascii
     nmap
+
+    # App Tool Tui
+    btop
+
+    # App Tool Gui
+    stremio # streeming
+    simplescreenrecorder
+    spotube
+    mpv # View video files
+    wdisplays # display manager
+    qbittorrent # torrent downloader
+    pavucontrol # audio managment
+
     # Troll 
     cmatrix
     hollywood
-    stremio
 
     # Dev related
     gccgo14
