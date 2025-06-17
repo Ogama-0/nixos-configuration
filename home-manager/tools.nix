@@ -16,6 +16,7 @@
     imv
     xdg-utils
     playerctl
+    wl-color-picker
     notify-desktop
 
     # App Tool Cli

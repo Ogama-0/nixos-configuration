@@ -11,7 +11,7 @@ let
   background_tache = toString ../../assets/background_tache.png;
   background_monocle = toString ../../assets/babackground_monocle;
 in {
-  imports = [ ./barbar.nix ./swaylock.nix ];
+  imports = [ ./barbar.nix ./swaylock.nix ./tofi.nix ];
   home.packages = with pkgs; [ grim slurp wlroots swaybg ];
 
   wayland.windowManager.sway = {
@@ -59,6 +59,7 @@ in {
         "${modifier}+Shift+s" = "exec spotify";
         "${modifier}+Shift+b" = "exec blueman-manager";
         "${modifier}+Shift+a" = "exec pavucontrol";
+        "${modifier}+p" = "exec wl-color-picker";
 
         # Workspace related keys
         "${modifier}+grave" = "workspace 10";
