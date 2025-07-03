@@ -10,6 +10,7 @@
     ./steam.nix
     ./printer.nix
     ./docker.nix
+    ./mounting.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -75,6 +76,6 @@
   #   };
   # };
 
-  system.stateVersion = "24.11"; # Did you read the comment?
+  system.stateVersion = "25.05"; # Did you read the comment?
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 }

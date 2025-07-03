@@ -6,32 +6,27 @@
     bars.default = {
       theme = "modern";
       icons = "awesome6";
+      settings = {
+        theme = {
+          theme = "modern";
+          overrides = {
+            separator = "<span size='18000'></span>";
+            idle_bg = "#17191e";
+          };
+        };
+      };
       blocks = [
-        # {
-        #   block = "custom";
-        #   command = "echo  $(makoctl mode | tail --lines 1)";
-        #   click = [{
-        #     button = "left";
-        #     cmd = "makoctl mode -t dnd";
-        #     update = true;
-        #   }];
-        #   interval = "once";
-        # }
         {
           block = "custom";
-          shell = "fish";
-          command =
-            "systemctl status wg-quick-oscar.service | grep 'Active' | grep 'exited' | string match -qr '\\S' && echo 'VPN On' || echo 'VPN Off' ";
-          interval = 5;
-          click = [{
-            button = "left";
-            cmd = "zenity --password | sudo -S echo bonjour ; togglewg";
-            update = true;
-          }];
-        }
-        {
-          block = "custom";
-          command = "echo  $(makoctl mode | tail --lines 1)";
+          command = ''
+            mode=$(makoctl mode | tail -n1)
+            if [ "$mode" = "dnd" ]; then
+              echo '{ "text": "' "$mode"'", "state": "Info" }'
+            else
+              echo '{ "text": "' "$mode"'" }'
+            fi
+          '';
+          json = true;
           interval = "once";
           click = [{
             button = "left";
@@ -39,7 +34,9 @@
             update = true;
           }];
         }
-        {
+        { block = "sound"; }
+        { block = "music"; }
+        { # ping
           block = "custom";
           json = true;
           command = ''
@@ -50,8 +47,19 @@
             cmd = "<command>";
           }];
         }
-        { block = "music"; }
-        { block = "sound"; }
+        { # Vpn
+          block = "custom";
+          shell = "fish";
+          command = ''
+            systemctl status wg-quick-oscar.service | grep 'Active' | grep 'exited' | string match -qr '\S' && echo '{ "text":"VPN On","state":"Warning"}' || echo '{ "text":"VPN Off"}' '';
+          interval = 5;
+          json = true;
+          click = [{
+            button = "left";
+            cmd = "zenity --password | sudo -S echo bonjour ; togglewg";
+            update = true;
+          }];
+        }
         {
           block = "net";
           format = " $icon  $ssid ($signal_strength) ";

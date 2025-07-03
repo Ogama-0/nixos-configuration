@@ -11,9 +11,14 @@ let
   background_tache = toString ../../assets/background_tache.png;
   background_monocle = toString ../../assets/babackground_monocle;
 in {
-  imports = [ ./barbar.nix ./swaylock.nix ./tofi.nix ];
+  imports = [
+    ./barbar.nix
+    # ./swaylock.nix
+    ./tofi.nix
+    ./swaylockTrollKristentenervepascestjustelideeesttropbien.nix
+  ];
   home.packages = with pkgs; [ grim slurp wlroots swaybg ];
-
+  # swaylock-effect
   wayland.windowManager.sway = {
     enable = true;
     xwayland = true;
@@ -54,7 +59,7 @@ in {
           "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
         "${modifier}" = "exec swaymsg bar mode toggle";
         "${modifier}+Shift+z" = "exec makoctl dismiss";
-        "${modifier}+Shift+d" = "exec vesktop";
+        # "${modifier}+Shift+d" = "exec vesktop";
         "${modifier}+space" = "exec nautilus";
         "${modifier}+Shift+s" = "exec spotify";
         "${modifier}+Shift+b" = "exec blueman-manager";
@@ -115,6 +120,47 @@ in {
       exec_always swaybg -i ${background_monocle} -m fill
     '';
 
+  };
+  services.swayidle = {
+    enable = true;
+    # timeouts = [
+    #   {
+    #     timeout = 175;
+    #     command =
+    #       "${pkgs.notify-desktop}/bin/notify-desktop 'Screen shuting down in 5 seconds'";
+    #   }
+    #   {
+    #     timeout = 180;
+    #     command = "${pkgs.sway}/bin/swaymsg 'output * dpms off'";
+    #     resumeCommand = "${pkgs.sway}/bin/swaymsg 'output * dpms on'";
+    #   }
+    #   {
+    #     timeout = 300;
+    #     command = "${pkgs.playerctl}/bin/playerctl pause";
+    #   }
+    #   {
+    #     timeout = 300;
+    #     command = "${pkgs.swaylock-effects}/bin/swaylock";
+    #   }
+    #   {
+    #     timeout = 600;
+    #     command = "${pkgs.systemd}/bin/systemctl suspend";
+    #   }
+    # ];
+    events = [
+      {
+        event = "before-sleep";
+        command = "loginctl lock-session";
+      }
+      {
+        event = "before-sleep";
+        command = "${pkgs.playerctl}/bin/playerctl pause";
+      }
+      {
+        event = "lock";
+        command = "${pkgs.swaylock-effects}/bin/swaylock";
+      }
+    ];
   };
 
 }

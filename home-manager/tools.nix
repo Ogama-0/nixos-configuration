@@ -28,6 +28,7 @@
     mcrcon
     ascii
     nmap
+    ripgrep
 
     # App Tool Tui
     btop
@@ -35,7 +36,6 @@
     # App Tool Gui
     stremio # streeming
     simplescreenrecorder
-    spotube
     mpv # View video files
     wdisplays # display manager
     qbittorrent # torrent downloader

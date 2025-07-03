@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ inputs, config, pkgs, ... }:
 
 {
 
@@ -12,6 +12,8 @@
     ./display/mako.nix
     ./zed-editor.nix
     ./display/gtk.nix
+    # "${inputs.home-manager}/modules/programs/xcompose.nix"
+    # ./vm-compose.nix
   ];
 
   home.username = "ogama";

@@ -1,6 +1,8 @@
 { lib, ... }: {
-  wayland.windowManager.sway.config.keybindings =
-    lib.mkOptionDefault { "Mod4+d" = "exec tofi-run | xargs swaymsg exec --"; };
+  wayland.windowManager.sway.config.keybindings = lib.mkOptionDefault {
+    "Mod4+d" = "exec tofi-drun | xargs swaymsg exec --";
+    "Mod4+shift+d" = "exec tofi-run | xargs swaymsg exec --";
+  };
 
   programs.tofi = {
     enable = true;

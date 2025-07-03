@@ -1,10 +1,4 @@
-{ pkgs, ... }:
-let
-  background = toString ../assets/background.png;
-  background_blure = toString ../assets/background_blure.png;
-  background_tache = toString ../assets/background_tache.png;
-  background_monocle = toString ../assets/babackground_monocle;
-in {
+{ pkgs, ... }: {
   programs.swaylock = {
     enable = true;
     package = pkgs.swaylock-effects;
