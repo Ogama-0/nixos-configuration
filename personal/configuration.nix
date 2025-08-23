@@ -3,14 +3,14 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ./stream.nix
-    ./wireguard.nix
-    ./utilities.nix
-    ./nvidia.nix
-    ./steam.nix
-    ./printer.nix
-    ./docker.nix
-    ./mounting.nix
+    ../modules/nixosconf/stream.nix
+    ../modules/nixosconf/wireguard.nix
+    ../modules/nixosconf/utilities.nix
+    ../modules/nixosconf/nvidia.nix
+    ../modules/nixosconf/steam.nix
+    ../modules/nixosconf/printer.nix
+    ../modules/nixosconf/mounting.nix
+    ../modules/nixosconf/docker.nix
   ];
 
   # Use the systemd-boot EFI boot loader.

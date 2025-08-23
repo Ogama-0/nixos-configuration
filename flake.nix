@@ -13,6 +13,16 @@
 
   outputs = { self, nixpkgs, home-manager, nixos-hardware, ... }@inputs:
     let
+      cfg-server = {
+        user = "ogama_serv";
+        home_path = "/home/${cfg-server.user}";
+        mail = "oscar.cornut@gmail.com";
+      };
+      cfg-perso = {
+        user = "ogama";
+        home_path = "/home/${cfg-perso.user}";
+        mail = "oscar.cornut@gmail.com";
+      };
       lib = nixpkgs.lib;
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -23,23 +33,34 @@
       nixosConfigurations = {
         personal = lib.nixosSystem {
           inherit pkgs;
+          specialArgs = { cfg = cfg-perso; };
           modules = [
-            nixosconf/configuration.nix
+            ./personal/configuration.nix
             nixos-hardware.nixosModules.lenovo-ideapad-15ach6
           ];
         };
         nasogama = lib.nixosSystem {
           inherit system;
-          modules = [ ./servconfig/nixosconf/configuration.nix ];
+          specialArgs = { cfg = cfg-server; };
+          modules = [ ./serveur/configuration.nix ];
         };
       };
       homeConfigurations = {
         personal = home-manager.lib.homeManagerConfiguration {
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
+            cfg = cfg-perso;
           };
           inherit pkgs;
-          modules = [ ./home-manager/home.nix ];
+          modules = [ ./personal/home.nix ];
+        };
+        nasogama = lib.nixosSystem {
+          extraSpecialArgs = {
+            wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
+            cfg = cfg-server;
+          };
+          inherit pkgs;
+          modules = [ ./serveur/home.nix ];
         };
       };
     };

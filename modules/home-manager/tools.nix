@@ -7,7 +7,6 @@
     brightnessctl
     wl-clipboard
     killall
-    networkmanagerapplet
     poweralertd
     dconf
     openssl
@@ -16,45 +15,26 @@
     imv
     xdg-utils
     playerctl
-    wl-color-picker
-    notify-desktop
 
     # App Tool Cli
     tlrc
     trash-cli
-    mkvtoolnix
     zip
     unzip
     mcrcon
     ascii
     nmap
     ripgrep
+    git
 
     # App Tool Tui
     btop
 
-    # App Tool Gui
-    stremio # streeming
-    simplescreenrecorder
-    mpv # View video files
-    wdisplays # display manager
-    qbittorrent # torrent downloader
-    pavucontrol # audio managment
-
-    # Troll 
-    cmatrix
-    hollywood
-
     # Dev related
-    gccgo14
-    python3
-    dotnetCorePackages.sdk_9_0
+    gccgo14 # C
     direnv
     gnumake
     wakatime-ls
-    rustup
 
-    # Games
-    prismlauncher
   ];
 }

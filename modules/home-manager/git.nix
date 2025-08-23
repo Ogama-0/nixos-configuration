@@ -1,12 +1,12 @@
-{ config, pkgs, ... }:
+{ config, pkgs, cfg, ... }:
 
 {
   programs.git = {
     enable = true;
     lfs.enable = true;
 
-    userName = "ogama";
-    userEmail = "oscar.cornut@gmail.com";
+    userName = cfg.user;
+    userEmail = cfg.mail;
 
     aliases = {
       ui = "!lazygit";

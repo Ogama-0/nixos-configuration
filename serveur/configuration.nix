@@ -1,24 +1,24 @@
-{ config, lib, pkgs, ... }:
+{ cfg, pkgs, ... }:
 
 {
-  imports = [ ];
+  imports = [
+    ../modules/nixosconf/docker.nix
+    ../modules/nixosconf/crafty.nix
+    ../modules/nixosconf/jellyfin.nix
+    ../modules/nixosconf/ssh.nix
+
+  ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "OgamaNasNixos"; # Define your hostname.
+  networking.hostName = "${cfg.user}host"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
   networking.networkmanager = { enable = true; };
 
-  services.openssh = {
-    enable = true;
-    ports = [ 22 ];
-    settings = { };
-  };
-
-  users.users.ogama = {
+  users.users.ogama_serv = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
   };
@@ -35,8 +35,8 @@
 
   hardware.graphics.enable = true;
   environment.loginShellInit =
-    ''echo" Bonjour dans le serveur de OgamaPrime"  '';
-  nix.settings.allowed-users = [ "@wheel" "ogama" ];
+    ''echo" Bonjour dans le serveur de ${cfg.user}Prime"  '';
+  nix.settings.allowed-users = [ "@wheel" "${cfg.user}" ];
 
   # systemd.services.preshutdown-script = {
   #   description = "Script exécuté avant l'arrêt du système";

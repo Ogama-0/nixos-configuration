@@ -1,6 +1,6 @@
 { pkgs, lib, ... }:
-
-{
+let script-path = ../../scripts;
+in {
   home.packages = with pkgs; [
     eza
     lazygit
@@ -13,33 +13,6 @@
     tlrc
     zenity
   ];
-
-  programs.kitty = {
-    enable = true;
-
-    settings = {
-      confirm_os_window_close = 0;
-      enable_audio_bell = "no";
-      macos_option_as_alt = "left";
-    };
-
-    shellIntegration = {
-      mode = "enabled";
-      enableFishIntegration = true;
-    };
-
-    font = {
-      # name = "UbuntuMonoNerdFontMono";
-      name = "JetBrainsMonoNerdFont-Regular";
-      # name = "CaskaydiaCoveNerdFont";
-      size = 13;
-    };
-
-    extraConfig = ''
-      disable_ligatures never
-      shell fish
-    '';
-  };
 
   programs.fish = {
     enable = true;
@@ -84,18 +57,18 @@
 
       kijesui = "whoami";
 
-      init-tp = ''
-        set repository_link $argv[1]
-        set tree $argv[2]
-        set tp_name $argv[3]
-        python $PATH_SCRIPTS/init-tp.py $repository_link $tree $tp_name
-      '';
+      # init-tp = ''
+      #   set repository_link $argv[1]
+      #   set tree $argv[2]
+      #   set tp_name $argv[3]
+      #   python $PATH_SCRIPTS/init-tp.py $repository_link $tree $tp_name
+      # '';
 
-      wgup = builtins.readFile ../scripts/fish/wgup.fish;
+      wgup = builtins.readFile "${script-path}/fish/wgup.fish";
 
-      wgdn = builtins.readFile ../scripts/fish/wgdn.fish;
+      wgdn = builtins.readFile "${script-path}/fish/wgdn.fish";
 
-      togglewg = builtins.readFile ../scripts/fish/togglewg.fish;
+      togglewg = builtins.readFile "${script-path}/fish/togglewg.fish";
 
       cdtmp = ''
         set ash (openssl rand -hex 4)

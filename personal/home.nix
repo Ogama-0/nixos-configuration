@@ -1,17 +1,18 @@
-{ inputs, config, pkgs, ... }:
-
-{
-
+{ inputs, config, pkgs, ... }: {
   imports = [
-    ./sh.nix
-    ./display/windowsManager.nix
-    ./helix.nix
-    ./tools.nix
-    ./git.nix
-    ./display/font.nix
-    ./display/mako.nix
-    ./zed-editor.nix
-    ./display/gtk.nix
+    ./perso-mod/tool.nix
+
+    ../modules/home-manager/sh.nix
+    ../modules/home-manager/kitty.nix
+    ../modules/home-manager/display/windowsManager.nix
+    ../modules/home-manager/helix.nix
+    ../modules/home-manager/tools.nix
+    ../modules/home-manager/git.nix
+    ../modules/home-manager/display/font.nix
+    ../modules/home-manager/display/mako.nix
+    ../modules/home-manager/zed-editor.nix
+    ../modules/home-manager/display/gtk.nix
+    ../modules/home-manager/joplin.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
     # ./vm-compose.nix
   ];
@@ -27,31 +28,6 @@
       allowUnfreePredicate = (_: true);
     };
   };
-
-  home.packages = with pkgs; [
-
-    # Main pkgs
-    firefox
-    vesktop
-    spotify
-    gimp
-    bitwarden-desktop
-    # google-chrome
-    unityhub
-    nautilus
-    jetbrains-toolbox
-
-    # game
-    modrinth-app
-    steam
-    steam-run
-    steamcontroller
-
-    # Dev
-    jetbrains.rider
-    git
-    octaveFull
-  ];
 
   programs.bash = {
 
