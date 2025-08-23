@@ -39,7 +39,7 @@
             nixos-hardware.nixosModules.lenovo-ideapad-15ach6
           ];
         };
-        nasogama = lib.nixosSystem {
+        oserv = lib.nixosSystem {
           inherit system;
           specialArgs = { cfg = cfg-server; };
           modules = [ ./serveur/configuration.nix ];
@@ -54,7 +54,7 @@
           inherit pkgs;
           modules = [ ./personal/home.nix ];
         };
-        nasogama = lib.nixosSystem {
+        oserv = lib.nixosSystem {
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
             cfg = cfg-server;
