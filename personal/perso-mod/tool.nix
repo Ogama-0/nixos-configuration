@@ -22,6 +22,13 @@
     wl-color-picker
     notify-desktop # notify sender
     mkvtoolnix
+    libnotify # notify sender
+    poweralertd
+    dconf # use by Gnome environnement
+    imv # image viewer for Wayland
+    xdg-utils # don't know why this is here Kappa
+    playerctl # audio flux controler
+    mcrcon # rcon for minecraft
 
     # game
     modrinth-app
