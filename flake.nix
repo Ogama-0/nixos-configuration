@@ -54,7 +54,7 @@
           inherit pkgs;
           modules = [ ./personal/home.nix ];
         };
-        oserv = lib.nixosSystem {
+        oserv = home-manager.lib.homeManagerConfiguration {
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
             cfg = cfg-server;
