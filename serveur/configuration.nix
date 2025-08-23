@@ -6,6 +6,7 @@
     ../modules/nixosconf/crafty.nix
     ../modules/nixosconf/jellyfin.nix
     ../modules/nixosconf/ssh.nix
+    ./hardware-configuration.nix
 
   ];
 
@@ -13,6 +14,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  boot.kernelPackages = pkgs.linuxPackages_latest;
   networking.hostName = "${cfg.user}host"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
