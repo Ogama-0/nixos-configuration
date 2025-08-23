@@ -8,7 +8,7 @@
   ];
 
   home.username = cfg.user;
-  home.homeDirectory = cfg.path_home;
+  home.homeDirectory = cfg.home_path;
 
   home.stateVersion = "24.11"; # Please read the comment before changing.
 
