@@ -28,5 +28,6 @@ in {
     "d ${path}/config  0755 ${cfg.user} users -"
     "d ${path}/import  0755 ${cfg.user} users -"
   ];
+  networking.firewall.allowedTCPPorts = [ 30001 8123 19132 25500 ];
 
 }
