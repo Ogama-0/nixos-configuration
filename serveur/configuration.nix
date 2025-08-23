@@ -6,8 +6,10 @@
     ../modules/nixosconf/crafty.nix
     ../modules/nixosconf/jellyfin.nix
     ../modules/nixosconf/ssh.nix
-    ./hardware-configuration.nix
 
+    ./nixos/staticip.nix
+
+    ./hardware-configuration.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -39,8 +41,7 @@
   };
 
   hardware.graphics.enable = true;
-  environment.loginShellInit =
-    ''echo" Bonjour dans le serveur de ${cfg.user}Prime"  '';
+  environment.loginShellInit = "fish";
   nix.settings.allowed-users = [ "@wheel" "${cfg.user}" ];
 
   # systemd.services.preshutdown-script = {
