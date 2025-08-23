@@ -9,7 +9,7 @@ let
   background = toString ../../assets/background.png;
   background_blure = toString ../../assets/background_blure.png;
   background_tache = toString ../../assets/background_tache.png;
-  background_monocle = toString ../../assets/babackground_monocle;
+  background_monocle = toString ../../assert/background_monocle.png;
 in {
   imports = [
     ./barbar.nix
@@ -117,36 +117,12 @@ in {
     };
 
     extraConfig = ''
-      exec_always swaybg -i ${background_monocle} -m fill
-    '';
+         exec_always swaybg --image 
+      ${background_monocle}    '';
 
   };
   services.swayidle = {
     enable = true;
-    # timeouts = [
-    #   {
-    #     timeout = 175;
-    #     command =
-    #       "${pkgs.notify-desktop}/bin/notify-desktop 'Screen shuting down in 5 seconds'";
-    #   }
-    #   {
-    #     timeout = 180;
-    #     command = "${pkgs.sway}/bin/swaymsg 'output * dpms off'";
-    #     resumeCommand = "${pkgs.sway}/bin/swaymsg 'output * dpms on'";
-    #   }
-    #   {
-    #     timeout = 300;
-    #     command = "${pkgs.playerctl}/bin/playerctl pause";
-    #   }
-    #   {
-    #     timeout = 300;
-    #     command = "${pkgs.swaylock-effects}/bin/swaylock";
-    #   }
-    #   {
-    #     timeout = 600;
-    #     command = "${pkgs.systemd}/bin/systemctl suspend";
-    #   }
-    # ];
     events = [
       {
         event = "before-sleep";
