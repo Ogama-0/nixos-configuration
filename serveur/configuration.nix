@@ -6,6 +6,8 @@
     ../modules/nixosconf/crafty.nix
     ../modules/nixosconf/jellyfin.nix
     ../modules/nixosconf/ssh.nix
+    ../modules/nixosconf/samba.nix
+    ../modules/nixosconf/joplin-server.nix
 
     ./nixos/staticip.nix
 
@@ -21,7 +23,11 @@
   time.timeZone = "Europe/Paris";
 
   networking.networkmanager = { enable = true; };
+  networking.firewall = {
+    enable = true;
+    allowPing = true;
 
+  };
   users.users.ogama_serv = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.

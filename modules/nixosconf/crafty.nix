@@ -18,6 +18,8 @@ in {
         "${path}/config:/crafty/app/config"
         "${path}/import:/crafty/import"
       ];
+
+      autoStart = true;
     };
   };
   systemd.tmpfiles.rules = [
@@ -28,6 +30,13 @@ in {
     "d ${path}/config  0755 ${cfg.user} users -"
     "d ${path}/import  0755 ${cfg.user} users -"
   ];
-  networking.firewall.allowedTCPPorts = [ 30001 8123 19132 25500 ];
+  networking.firewall = {
+    allowedTCPPorts = [ 30001 8123 19132 ];
+    allowedTCPPortRanges = [{
+      from = 25500;
+      to = 25600;
+    }];
+
+  };
 
 }

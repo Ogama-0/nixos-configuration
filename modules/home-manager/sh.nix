@@ -12,6 +12,7 @@ in {
     delta
     tlrc
     zenity
+    xsel
   ];
 
   programs.fish = {
