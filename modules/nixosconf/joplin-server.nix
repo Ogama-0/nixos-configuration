@@ -3,14 +3,11 @@ let path = "${cfg.home_path}/.joplin";
 in {
   # sudo podman network create joplinnet
   virtualisation.oci-containers = {
-    backend = "podman";
-
     containers = {
       joplindb = {
         image = "postgres:16";
         volumes = [ "${path}/joplindb:/var/lib/postgresql/data" ];
-        # ports = [ "5432:5432" ];
-        extraOptions = [ "--network=joplinnet" ];
+        ports = [ "5432:5432" ];
 
         environment = {
           POSTGRES_PASSWORD = "postgres";
@@ -23,7 +20,6 @@ in {
         dependsOn = [ "joplindb" ];
         image = "joplin/server:latest";
         ports = [ "22300:22300" ];
-        extraOptions = [ "--network=joplinnet" ];
 
         environment = {
           APP_PORT = "22300";
@@ -32,8 +28,8 @@ in {
           POSTGRES_PASSWORD = "postgres";
           POSTGRES_DATABASE = "joplin";
           POSTGRES_USER = "postgres";
+          POSTGRES_HOST = "host.containers.internal";
           POSTGRES_PORT = "5432";
-          POSTGRES_HOST = "joplindb";
           TZ = "Etc/UTC";
           PUID = "1000";
           PGID = "1000";
