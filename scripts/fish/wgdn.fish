@@ -1,5 +1,5 @@
 function wgdn
-    sudo umount $PATH_NAS/
+    # sudo umount $PATH_NAS/
     # Récupérer la configuration WireGuard active
     set confname (sudo wg | grep interface | sed 's/.* //')
 

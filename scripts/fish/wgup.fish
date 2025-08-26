@@ -20,5 +20,5 @@ function wgup
             sudo systemctl start wg-quick-$confname # Mode normal
         end
     end
-    sudo mount -t cifs //192.168.10.51/general_storage $PATH_NAS -o username=oscar,password=mdpelo,uid=$(id -u),gid=$(id -g)
+    # sudo mount -t cifs //192.168.10.51/general_storage $PATH_NAS -o username=oscar,password=mdpelo,uid=$(id -u),gid=$(id -g)
 end
