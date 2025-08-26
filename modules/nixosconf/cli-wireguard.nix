@@ -4,7 +4,7 @@
       autostart = false;
 
       privateKeyFile = "/etc/oscar-wg-vpn.key";
-      address = [ "10.8.0.3/24" ];
+      address = [ "10.100.0.2/32" ];
       dns = [ "1.1.1.1" ];
       mtu = 1420;
 
