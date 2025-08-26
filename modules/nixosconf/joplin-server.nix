@@ -23,7 +23,7 @@ in {
 
         environment = {
           APP_PORT = "22300";
-          APP_BASE_URL = "http://${cfg.server.ip4}:22300";
+          APP_BASE_URL = "https://joplin.${cfg.server.domain}";
           DB_CLIENT = "pg";
           POSTGRES_PASSWORD = "postgres";
           POSTGRES_DATABASE = "joplin";

@@ -1,13 +1,13 @@
 { config, pkgs, ... }:
 
 {
-  networking.useNetworkd = true; # on utilise systemd-networkd
+  networking.useNetworkd = true;
 
   networking.interfaces.eno1 = {
-    useDHCP = false; # désactiver DHCP
+    useDHCP = false;
     ipv4.addresses = [{
-      address = "192.168.10.50"; # IP que tu veux donner au serveur
-      prefixLength = 24; # masque réseau (24 = 255.255.255.0)
+      address = "192.168.10.50";
+      prefixLength = 24;
     }];
   };
   networking.defaultGateway = {

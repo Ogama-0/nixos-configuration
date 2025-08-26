@@ -8,6 +8,8 @@
     ../modules/nixosconf/ssh.nix
     ../modules/nixosconf/samba.nix
     ../modules/nixosconf/joplin-server.nix
+    ../modules/nixosconf/nginx.nix
+    ../modules/nixosconf/serv-wireguard.nix
     # ../modules/nixosconf/immich.nix
 
     ./nixos/staticip.nix

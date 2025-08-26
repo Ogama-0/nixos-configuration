@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ../modules/nixosconf/stream.nix
-    ../modules/nixosconf/wireguard.nix
+    ../modules/nixosconf/cli-wireguard.nix
     ../modules/nixosconf/utilities.nix
     ../modules/nixosconf/nvidia.nix
     ../modules/nixosconf/steam.nix

@@ -36,7 +36,11 @@ in {
       from = 25500;
       to = 25600;
     }];
-
   };
+
+  # services.nginx.virtualHosts."${cfg.server.domain}".locations."/crafty/" = {
+  #   proxyPass = "http://127.0.0.1:30001";
+  #   proxyWebsockets = true; # optional
+  # };
 
 }

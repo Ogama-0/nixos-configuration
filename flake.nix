@@ -17,7 +17,9 @@
         user = "ogama_serv";
         home_path = "/home/${cfg-server.user}";
         mail = "oscar.cornut@gmail.com";
-        server = { ip4 = "213.245.179.43"; };
+        # ssd_path = "${cfg-server.home_path}/ssd";
+        # hdd_path = "${cfg-server.home_path}/hdd";
+        server = { domain = "ogama.me"; };
       };
       cfg-perso = {
         user = "ogama";

@@ -21,6 +21,5 @@ in {
     "d ${path}/log      0755 ${cfg.user} users -"
     "d ${path}/data     0755 ${cfg.user} users -"
   ];
-  networking.firewall.allowedTCPPorts = [ 8920 ];
 
 }
