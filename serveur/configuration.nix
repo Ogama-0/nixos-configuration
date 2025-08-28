@@ -9,7 +9,8 @@
     ../modules/nixosconf/samba.nix
     ../modules/nixosconf/joplin-server.nix
     ../modules/nixosconf/nginx.nix
-    ../modules/nixosconf/serv-wireguard.nix
+    ../modules/nixosconf/tailscale.nix
+    # ../modules/nixosconf/serv-wireguard.nix
     # ../modules/nixosconf/immich.nix
 
     ./nixos/network.nix

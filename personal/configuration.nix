@@ -4,13 +4,14 @@
   imports = [
     ./hardware-configuration.nix
     ../modules/nixosconf/stream.nix
-    ../modules/nixosconf/cli-wireguard.nix
+    # ../modules/nixosconf/cli-wireguard.nix
     ../modules/nixosconf/utilities.nix
     ../modules/nixosconf/nvidia.nix
     ../modules/nixosconf/steam.nix
     ../modules/nixosconf/printer.nix
     ../modules/nixosconf/mounting.nix
     ../modules/nixosconf/docker.nix
+    ../modules/nixosconf/tailscale.nix
   ];
 
   # Use the systemd-boot EFI boot loader.

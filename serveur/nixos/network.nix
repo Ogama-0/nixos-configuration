@@ -4,7 +4,7 @@
   networking = {
 
     networkmanager.enable = true;
-    defaultgateway = {
+    defaultGateway = {
       address = "192.168.10.1";
       interface = "eno1";
     };
