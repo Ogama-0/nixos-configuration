@@ -12,7 +12,7 @@
         publicKey = "n2tJRRBGgDfnYGOCmvLnGNwDoNnkzWgnL0NQdWTY+DI=";
         # presharedKeyFile = "/etc/oscar-preshare-wg-vpn.key";
         allowedIPs = [ "192.168.0.0/16" ];
-        persistentKeepalive = 0;
+        persistentKeepalive = 25;
         endpoint = "213.245.179.43:51820";
         # endpoint = "wireguard.ogama.me:51820";
       }];

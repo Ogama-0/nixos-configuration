@@ -12,7 +12,7 @@
     ../modules/nixosconf/serv-wireguard.nix
     # ../modules/nixosconf/immich.nix
 
-    ./nixos/staticip.nix
+    ./nixos/network.nix
 
     ./hardware-configuration.nix
   ];
@@ -25,7 +25,6 @@
   networking.hostName = "${cfg.user}host"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
-  networking.networkmanager.enable = false;
   networking.firewall = {
     enable = true;
     allowPing = true;
