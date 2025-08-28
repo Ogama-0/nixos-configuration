@@ -17,29 +17,12 @@ in {
 
       listenPort = 51820;
 
-      # This allows the wireguard server to route your traffic to the internet and hence be like a VPN
-      # For this to work you have to set the dnsserver IP of your router (or dnsserver of choice) in your clients
-      # postSetup = ''
-      #   ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 10.100.0.0/24 -o eno1 -j MASQUERADE
-      # '';
+      peers = [{
+        name = "oscar";
+        publicKey = "S6aQSsPxYBV7vjSyLYg04qyCHwvwzf/ybYdMb9kCBxQ=";
+        allowedIPs = [ "10.100.0.2/32" ];
 
-      # # This undoes the above command
-      # postShutdown = ''
-      #   ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 10.100.0.0/24 -o eno1 -j MASQUERADE
-      # '';
-
-      peers = [
-        # {
-        #   name = "backup";
-        #   publicKey = "{client public key}";
-        #   allowedIPs = [ "10.100.0.2/24" ];
-        # }
-        {
-          name = "oscar";
-          publicKey = "wPOD5pw6EkBLSHqWcOTwY+fmG5V238OlpYQj5G1SRi4=";
-          allowedIPs = [ "10.100.3.0/24" ];
-        }
-      ];
+      }];
     };
   };
   systemd.tmpfiles.rules = [
