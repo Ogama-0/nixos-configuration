@@ -25,7 +25,7 @@
   networking.hostName = "${cfg.user}host"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
-  networking.networkmanager = { enable = true; };
+  networking.networkmanager.enable = false;
   networking.firewall = {
     enable = true;
     allowPing = true;
