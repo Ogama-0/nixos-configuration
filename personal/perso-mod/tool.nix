@@ -11,6 +11,7 @@
     stremio
     qbittorrent
     notify-desktop
+    shotcut
 
     # Utility
     simplescreenrecorder

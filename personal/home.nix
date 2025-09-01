@@ -12,7 +12,7 @@
     ../modules/home-manager/display/mako.nix
     ../modules/home-manager/zed-editor.nix
     ../modules/home-manager/display/gtk.nix
-    ../modules/home-manager/joplin.nix
+    ../modules/home-manager/joplin-desktop.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
     # ./vm-compose.nix
   ];

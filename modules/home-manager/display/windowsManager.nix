@@ -116,9 +116,7 @@ in {
       };
     };
 
-    extraConfig = ''
-         exec_always swaybg --image 
-      ${background_monocle}    '';
+    extraConfig = "exec_always swaybg --image ${background_monocle}";
 
   };
   services.swayidle = {
