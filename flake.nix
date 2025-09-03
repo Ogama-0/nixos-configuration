@@ -18,7 +18,9 @@
         home_path = "/home/${cfg-server.user}";
         mail = "oscar.cornut@gmail.com";
         SSD_path = "${cfg-server.home_path}/ssd";
+        SSD_app = "${cfg-server.SSD_path}/appdata";
         HDD_path = "${cfg-server.home_path}/hdd";
+        HDD_app = "${cfg-server.HDD_path}/appdata";
         server = { domain = "ogama.me"; };
       };
       cfg-perso = {

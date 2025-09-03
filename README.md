@@ -19,3 +19,8 @@ My personal config NixOs
     - Bluethooth manager : blueman-manager <br/>
     - Task manager : btop
 </details>
+
+# TODO :
+- immich
+- use hdd and ssd disks
+

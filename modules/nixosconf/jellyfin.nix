@@ -20,6 +20,8 @@ in {
     "d ${path}/config   0755 ${cfg.user} users -"
     "d ${path}/log      0755 ${cfg.user} users -"
     "d ${path}/data     0755 ${cfg.user} users -"
+
+    "d ${cfg.HDD_app}/jellyfin/FILM     0755 ${cfg.user} users -"
   ];
 
 }
