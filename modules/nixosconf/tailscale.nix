@@ -1,1 +1,6 @@
-{ cfg, ... }: { services.tailscale = { enable = true; }; }
+{ cfg, ... }: {
+  services.tailscale = {
+    enable = true;
+    openFirewall = true;
+  };
+}
