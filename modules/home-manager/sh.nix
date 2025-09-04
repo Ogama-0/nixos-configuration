@@ -2,17 +2,40 @@
 let script-path = ../../scripts;
 in {
   home.packages = with pkgs; [
+    xsel
+    killall
+    openssl
+    fastfetch
+    pkg-config
+    brightnessctl
+
+    # App Tool Cli
+    trash-cli
+    zip
+    unzip
+    ascii
+    nmap
+    ripgrep
     eza
-    lazygit
     tokei
     bat
     fzf
-    gh-dash
     zoxide
     delta
     tlrc
     zenity
     xsel
+
+    # App Tool Tui
+    btop
+    lazygit
+    gh-dash
+
+    # Dev related
+    gccgo14 # C
+    direnv
+    gnumake
+
   ];
 
   programs.fish = {

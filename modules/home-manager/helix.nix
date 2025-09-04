@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, inputs, config, ... }:
 
 {
   programs.helix = {
@@ -6,6 +6,8 @@
     defaultEditor = true;
 
     extraPackages = with pkgs; [
+      wakatime
+      inputs.wakatime-ls.packages."x86_64-linux".wakatime-ls
       # Nix Related
       nil
       nixfmt-classic
@@ -19,12 +21,15 @@
       # Web related
       vscode-langservers-extracted
       typescript-language-server
+      svelte-language-server
 
       # Python
       ruff
       python312Packages.jedi-language-server
       python312Packages.python-lsp-server
     ];
+    ignores =
+      [ "*.png" "*.gif" "*.mcmeta" "*.eot" "*.webp" "*.ttf" "*.woff" "*.jpg" ];
 
     settings = {
       theme = "horizon-dark";
@@ -36,6 +41,13 @@
         bufferline = "multiple";
         file-picker.hidden = false;
 
+        end-of-line-diagnostics = "hint";
+
+        inline-diagnostics = {
+          cursor-line = "hint";
+          other-lines = "error";
+        };
+
         indent-guides = {
           render = true;
           characters = "╎";
@@ -46,6 +58,7 @@
           normal = "block";
           select = "underline";
         };
+        lsp = { display-inlay-hints = true; };
       };
 
       keys = {
@@ -54,6 +67,7 @@
           down = "no_op";
           left = "no_op";
           right = "no_op";
+          A-u = ":toggle lsp.display-inlay-hints";
 
           "space" = {
             f = "file_picker_in_current_directory";

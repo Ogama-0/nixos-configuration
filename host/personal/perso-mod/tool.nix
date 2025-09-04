@@ -21,6 +21,7 @@
     pavucontrol # audio managment
     networkmanagerapplet # network managment
     wl-color-picker
+    wl-clipboard
     notify-desktop # notify sender
     mkvtoolnix
     libnotify # notify sender

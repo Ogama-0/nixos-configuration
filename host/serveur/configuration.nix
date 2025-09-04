@@ -2,14 +2,14 @@
 
 {
   imports = [
-    ../modules/nixosconf/docker.nix
-    ../modules/nixosconf/crafty.nix
-    ../modules/nixosconf/jellyfin.nix
-    ../modules/nixosconf/ssh.nix
-    ../modules/nixosconf/samba.nix
-    ../modules/nixosconf/joplin-server.nix
-    ../modules/nixosconf/nginx.nix
-    ../modules/nixosconf/tailscale.nix
+    ../../modules/nixosconf/docker.nix
+    ../../modules/nixosconf/crafty.nix
+    ../../modules/nixosconf/jellyfin.nix
+    ../../modules/nixosconf/ssh.nix
+    ../../modules/nixosconf/samba.nix
+    ../../modules/nixosconf/joplin-server.nix
+    ../../modules/nixosconf/nginx.nix
+    ../../modules/nixosconf/tailscale.nix
     # ../modules/nixosconf/immich.nix
 
     ./nixos/network.nix

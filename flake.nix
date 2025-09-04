@@ -30,6 +30,7 @@
       };
       cfg-epita = {
         login = "oscar.cornut";
+        user = "oscar.cornut";
         mail = "oscar.cornut@epita.fr";
       };
       lib = nixpkgs.lib;
@@ -44,14 +45,14 @@
           inherit pkgs;
           specialArgs = { cfg = cfg-perso; };
           modules = [
-            ./personal/configuration.nix
+            ./host/personal/configuration.nix
             nixos-hardware.nixosModules.lenovo-ideapad-15ach6
           ];
         };
         oserv = lib.nixosSystem {
           inherit system;
           specialArgs = { cfg = cfg-server; };
-          modules = [ ./serveur/configuration.nix ];
+          modules = [ ./host/serveur/configuration.nix ];
         };
       };
 
@@ -63,7 +64,7 @@
             cfg = cfg-perso;
           };
           inherit pkgs;
-          modules = [ ./personal/home.nix ];
+          modules = [ ./host/personal/home.nix ];
         };
 
         oserv = home-manager.lib.homeManagerConfiguration {
@@ -72,7 +73,7 @@
             cfg = cfg-server;
           };
           inherit pkgs;
-          modules = [ ./serveur/home.nix ];
+          modules = [ ./host/serveur/home.nix ];
         };
 
         epita = home-manager.lib.homeManagerConfiguration {
@@ -83,7 +84,7 @@
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
           };
           inherit pkgs;
-          modules = [ ./epita/epita.nix ];
+          modules = [ ./host/epita/epita.nix ];
         };
       };
     };
