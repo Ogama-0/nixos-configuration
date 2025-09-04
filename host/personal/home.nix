@@ -4,7 +4,6 @@
     ../../modules/home-manager/kitty.nix
     ../../modules/home-manager/display/windowsManager.nix
     ../../modules/home-manager/helix.nix
-    ../../modules/home-manager/tools.nix
     ../../modules/home-manager/git.nix
     ../../modules/home-manager/display/font.nix
     ../../modules/home-manager/display/mako.nix

@@ -62,6 +62,8 @@
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
             cfg = cfg-perso;
+            inherit inputs;
+            inherit pkgs;
           };
           inherit pkgs;
           modules = [ ./host/personal/home.nix ];
@@ -71,6 +73,8 @@
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
             cfg = cfg-server;
+            inherit inputs;
+            inherit pkgs;
           };
           inherit pkgs;
           modules = [ ./host/serveur/home.nix ];
