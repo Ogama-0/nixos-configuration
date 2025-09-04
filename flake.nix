@@ -86,6 +86,16 @@
           inherit pkgs;
           modules = [ ./host/epita/epita.nix ];
         };
+        epita-light = home-manager.lib.homeManagerConfiguration {
+          extraSpecialArgs = {
+            inherit inputs;
+            inherit pkgs;
+            cfg = cfg-epita;
+            wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
+          };
+          inherit pkgs;
+          modules = [ ./host/epita/epita_light.nix ];
+        };
       };
     };
 }
