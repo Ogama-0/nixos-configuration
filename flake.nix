@@ -28,6 +28,10 @@
         home_path = "/home/${cfg-perso.user}";
         mail = "oscar.cornut@gmail.com";
       };
+      cfg-epita = {
+        login = "oscar.cornut";
+        mail = "oscar.cornut@epita.fr";
+      };
       lib = nixpkgs.lib;
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -50,7 +54,9 @@
           modules = [ ./serveur/configuration.nix ];
         };
       };
+
       homeConfigurations = {
+
         personal = home-manager.lib.homeManagerConfiguration {
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
@@ -59,6 +65,7 @@
           inherit pkgs;
           modules = [ ./personal/home.nix ];
         };
+
         oserv = home-manager.lib.homeManagerConfiguration {
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
@@ -66,6 +73,17 @@
           };
           inherit pkgs;
           modules = [ ./serveur/home.nix ];
+        };
+
+        epita = home-manager.lib.homeManagerConfiguration {
+          extraSpecialArgs = {
+            inherit inputs;
+            inherit pkgs;
+            cfg = cfg-epita;
+            wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
+          };
+          inherit pkgs;
+          modules = [ ./epita/epita.nix ];
         };
       };
     };
