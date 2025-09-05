@@ -9,7 +9,7 @@
     ../../modules/home-manager/joplin-desktop.nix
     ../../modules/home-manager/kitty.nix
     ../../modules/home-manager/display/gtk.nix
-
+    ../../modules/home-manager/display/rofi.nix
   ];
   # General informations
   home.username = "${cfg.login}";
