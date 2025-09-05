@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, cfg, ... }:
 let script-path = ../../scripts;
 in {
   home.packages = with pkgs; [
@@ -88,22 +88,17 @@ in {
       #   python $PATH_SCRIPTS/init-tp.py $repository_link $tree $tp_name
       # '';
 
-      wgup = builtins.readFile "${script-path}/fish/wgup.fish";
+      # wgup = builtins.readFile "${script-path}/fish/wgup.fish";
 
-      wgdn = builtins.readFile "${script-path}/fish/wgdn.fish";
+      # wgdn = builtins.readFile "${script-path}/fish/wgdn.fish";
 
-      togglewg = builtins.readFile "${script-path}/fish/togglewg.fish";
+      # togglewg = builtins.readFile "${script-path}/fish/togglewg.fish";
 
       cdtmp = ''
         set ash (openssl rand -hex 4)
         mkdir /tmp/$ash
         cd /tmp/$ash
       '';
-
-      connectIphone = {
-        body =
-          "nmcli device wifi connect 'iPhone de Oscar' password 'ogama75?'";
-      };
 
     };
   };
@@ -124,10 +119,15 @@ in {
     options = [ "--cmd cd" ];
   };
 
+  home.sessionVariables._ZO_DATA_DIR = if cfg.is-epita then
+    "~/afs/.local/share"
+  else
+    "${cfg.home_path}/.local/share";
+
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
   };
-  home.sessionVariables.DIRENV_LOG_FORMAT = "";
 
+  home.sessionVariables.DIRENV_LOG_FORMAT = "";
 }
