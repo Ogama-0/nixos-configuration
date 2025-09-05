@@ -22,17 +22,20 @@
         HDD_path = "${cfg-server.home_path}/hdd";
         HDD_app = "${cfg-server.HDD_path}/appdata";
         server = { domain = "ogama.me"; };
+        is-epita = true;
       };
       cfg-perso = {
         user = "ogama";
         home_path = "/home/${cfg-perso.user}";
         mail = "oscar.cornut@gmail.com";
+        is-epita = true;
       };
       cfg-epita = {
         home_path = "/home/${cfg-epita.user}";
         login = "oscar.cornut";
         user = "oscar.cornut";
         mail = "oscar.cornut@gmail.com";
+        is-epita = true;
       };
       lib = nixpkgs.lib;
       system = "x86_64-linux";
