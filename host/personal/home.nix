@@ -1,4 +1,4 @@
-{ inputs, config, pkgs, ... }: {
+{ ... }: {
   imports = [
     ./perso-mod/tool.nix
     ../../modules/home-manager/sh.nix
@@ -18,8 +18,6 @@
   home.username = "ogama";
   home.homeDirectory = "/home/ogama";
 
-  home.stateVersion = "24.11"; # Please read the comment before changing.
-
   nixpkgs = {
     config = {
       allowUnfree = true;
@@ -27,15 +25,8 @@
     };
   };
 
-  programs.bash = {
+  home.stateVersion = "24.11"; # Please read the comment before changing.
 
-    enable = true;
-    shellAliases = {
-      ll = "ls -l";
-      ".." = "cd ..";
-      cdnix = "cd /home/ogama/documents/github/nixos-configuration";
-    };
-  };
   services.poweralertd.enable = true;
 
   programs.home-manager.enable = true;

@@ -11,16 +11,5 @@
   home.homeDirectory = cfg.home_path;
 
   home.stateVersion = "24.11"; # Please read the comment before changing.
-
-  programs.bash = {
-
-    enable = true;
-    shellAliases = {
-      ll = "ls -l";
-      ".." = "cd ..";
-    };
-  };
-  services.poweralertd.enable = true;
-
   programs.home-manager.enable = true;
 }
