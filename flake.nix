@@ -22,13 +22,13 @@
         HDD_path = "${cfg-server.home_path}/hdd";
         HDD_app = "${cfg-server.HDD_path}/appdata";
         server = { domain = "ogama.me"; };
-        is-epita = true;
+        is-epita = false;
       };
       cfg-perso = {
         user = "ogama";
         home_path = "/home/${cfg-perso.user}";
         mail = "oscar.cornut@gmail.com";
-        is-epita = true;
+        is-epita = false;
       };
       cfg-epita = {
         home_path = "/home/${cfg-epita.user}";

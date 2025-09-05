@@ -120,9 +120,9 @@ in {
   };
 
   home.sessionVariables._ZO_DATA_DIR = if cfg.is-epita then
-    "~/afs/.local/share"
+    "${cfg.home_path}/afs/.local/share/zoxide"
   else
-    "${cfg.home_path}/.local/share";
+    "${cfg.home_path}/.local/share/zoxide";
 
   programs.direnv = {
     enable = true;
