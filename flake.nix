@@ -29,6 +29,7 @@
         mail = "oscar.cornut@gmail.com";
       };
       cfg-epita = {
+        home_path = "/home/${cfg-epita.user}";
         login = "oscar.cornut";
         user = "oscar.cornut";
         mail = "oscar.cornut@epita.fr";

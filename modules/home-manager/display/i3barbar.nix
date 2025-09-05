@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, cfg, ... }:
 
 {
   programs.i3status-rust = {
@@ -10,7 +10,7 @@
         theme = {
           theme = "modern";
           overrides = {
-            separator = "<span size='18000'></span>";
+            separator = "<span size='14500'></span>";
             idle_bg = "#17191e";
           };
         };
@@ -30,11 +30,6 @@
           }];
         }
         {
-          block = "net";
-          format = " $icon  $ssid ($signal_strength) ";
-          interval = 60;
-        }
-        {
           block = "memory";
           icons_format = "";
           format = " $icon $mem_used_percents.eng(w:2) ";
@@ -47,24 +42,6 @@
           interval = 10;
         }
         {
-          block = "battery";
-          driver = "upower";
-          interval = 30;
-          warning = 20;
-          critical = 10;
-          format = " $icon $percentage ";
-          empty_format = " $icon $percentage ";
-          full_format = " $icon $percentage ";
-        }
-        {
-          block = "disk_space";
-          path = "/";
-          info_type = "available";
-          interval = 60;
-          warning = 20.0;
-          alert = 10.0;
-        }
-        {
           block = "time";
           interval = 60;
           format = " $icon $timestamp.datetime(f:'%a %d/%m %R') ";
@@ -75,7 +52,7 @@
 
   xsession.windowManager.i3.config.bars = [{
     statusCommand =
-      "${pkgs.i3status-rust}/bin/i3status-rs /home/ogama/.config/i3status-rust/config-default.toml";
+      "${pkgs.i3status-rust}/bin/i3status-rs ${cfg.home_path}/.config/i3status-rust/config-default.toml";
     mode = "hide";
     fonts.size = 11.0;
 
