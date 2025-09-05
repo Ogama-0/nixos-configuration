@@ -8,10 +8,8 @@
   # Rofi program
   programs.rofi = {
     enable = true;
-    theme = "../../../scripts/rofi/bibjaw_1.rasi";
-    # theme = "../../../scripts/rofi/ahsan.rasi";
-    # theme = "../../../scripts/rofi/bibjaw_mini.rasi";
-    # theme = "../../../scripts/rofi/bibjaw_floating.rasi";
+    theme = ../../../scripts/rofi/epitheme.rasi;
+    # theme = ../../../scripts/rofi/epitheme_rect.rasi;
   };
 }
 

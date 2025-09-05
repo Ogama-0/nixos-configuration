@@ -32,7 +32,7 @@
         home_path = "/home/${cfg-epita.user}";
         login = "oscar.cornut";
         user = "oscar.cornut";
-        mail = "oscar.cornut@epita.fr";
+        mail = "oscar.cornut@gmail.com";
       };
       lib = nixpkgs.lib;
       system = "x86_64-linux";
