@@ -1,6 +1,7 @@
 { inputs, config, pkgs, ... }: {
   imports = [
     ./perso-mod/tool.nix
+    ../../modules/home-manager/sh.nix
     ../../modules/home-manager/kitty.nix
     ../../modules/home-manager/display/windowsManager.nix
     ../../modules/home-manager/helix.nix
