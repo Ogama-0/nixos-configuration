@@ -16,24 +16,6 @@
         };
       };
       blocks = [
-        {
-          block = "custom";
-          command = ''
-            mode=$(makoctl mode | tail -n1)
-            if [ "$mode" = "dnd" ]; then
-              echo '{ "text": "' "$mode"'", "state": "Info" }'
-            else
-              echo '{ "text": "' "$mode"'" }'
-            fi
-          '';
-          json = true;
-          interval = "once";
-          click = [{
-            button = "left";
-            cmd = "makoctl mode -t 'dnd'";
-            update = true;
-          }];
-        }
         { block = "sound"; }
         { block = "music"; }
         { # ping
@@ -45,19 +27,6 @@
           click = [{
             button = "left";
             cmd = "<command>";
-          }];
-        }
-        { # Vpn
-          block = "custom";
-          shell = "fish";
-          command = ''
-            systemctl status wg-quick-oscar.service | grep 'Active' | grep 'exited' | string match -qr '\S' && echo '{ "text":"VPN On","state":"Warning"}' || echo '{ "text":"VPN Off"}' '';
-          interval = 5;
-          json = true;
-          click = [{
-            button = "left";
-            cmd = "zenity --password | sudo -S echo bonjour ; togglewg";
-            update = true;
           }];
         }
         {
