@@ -10,7 +10,7 @@
     ../../modules/nixosconf/joplin-server.nix
     ../../modules/nixosconf/nginx.nix
     ../../modules/nixosconf/tailscale.nix
-    # ../modules/nixosconf/immich.nix
+    ../../modules/nixosconf/immich.nix
 
     ./nixos/network.nix
 
