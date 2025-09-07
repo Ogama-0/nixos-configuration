@@ -29,16 +29,13 @@ nix run nixpkgs#home-manager -- switch --flake .#<profile>
 
 <details>
   <summary> personal </summary>
-
   - add a TTY login menu
   - fix the background
-  - fix the swaylock troll
 </details>
 
 <details>
   <summary> server </summary>
-  
-  - immich
-  - use hdd and ssd disks
+  - build a web-site for ogama.me
+  - build a intenral API to for connect qbtorrent jellyfin and a web-UI
 </details>
 
