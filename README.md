@@ -27,15 +27,11 @@ nix run nixpkgs#home-manager -- switch --flake .#<profile>
 
 ## TODO :
 
-<details>
-  <summary> personal </summary>
-  - add a TTY login menu
-  - fix the background
-</details>
+### personal
+- add a TTY login menu
+- fix the background
 
-<details>
-  <summary> server </summary>
-  - build a web-site for ogama.me
-  - build a intenral API to for connect qbtorrent jellyfin and a web-UI
-</details>
+### server
+- build a web-site for ogama.me
+- build a intenral API to for connect qbtorrent jellyfin and a web-UI
 
