@@ -17,9 +17,9 @@
         user = "ogama_serv";
         home_path = "/home/${cfg-server.user}";
         mail = "oscar.cornut@gmail.com";
-        SSD_path = "${cfg-server.home_path}/ssd";
+        SSD_path = "/mnt/ssd";
         SSD_app = "${cfg-server.SSD_path}/appdata";
-        HDD_path = "${cfg-server.home_path}/hdd";
+        HDD_path = "/mnt/hdd";
         HDD_app = "${cfg-server.HDD_path}/appdata";
         server = { domain = "ogama.me"; };
         is-epita = false;
@@ -56,7 +56,10 @@
         oserv = lib.nixosSystem {
           inherit system;
           specialArgs = { cfg = cfg-server; };
-          modules = [ ./host/serveur/configuration.nix ];
+          modules = [
+            ./host/serveur/configuration.nix
+            nixos-hardware.nixosModules.dell-optiplex-3050
+          ];
         };
       };
 
