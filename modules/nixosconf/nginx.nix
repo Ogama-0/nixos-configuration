@@ -28,6 +28,13 @@
         };
       });
 
+      "crafty.${cfg.server.domain}" = (SSL // {
+        locations."/" = {
+          proxyPass = "https://127.0.0.1:30001";
+          proxyWebsockets = true;
+        };
+      });
+
       "joplin.${cfg.server.domain}" = (SSL // {
         locations."/" = {
           proxyPass = "http://127.0.0.1:22300";
