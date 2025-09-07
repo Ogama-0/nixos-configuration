@@ -7,7 +7,7 @@ in {
       joplindb = {
         image = "postgres:16";
         volumes = [ "${path}/joplindb:/var/lib/postgresql/data" ];
-        ports = [ "5432:5432" ];
+        ports = [ "5433:5432" ];
 
         environment = {
           POSTGRES_PASSWORD = "postgres";
@@ -29,7 +29,7 @@ in {
           POSTGRES_DATABASE = "joplin";
           POSTGRES_USER = "postgres";
           POSTGRES_HOST = "host.containers.internal";
-          POSTGRES_PORT = "5432";
+          POSTGRES_PORT = "5433";
           TZ = "Etc/UTC";
           PUID = "1000";
           PGID = "1000";
