@@ -27,6 +27,8 @@
       cfg-perso = {
         user = "ogama";
         home_path = "/home/${cfg-perso.user}";
+        bg_path =
+          "${cfg-perso.home_path}/nixos-configuration/assets/background";
         mail = "oscar.cornut@gmail.com";
         is-epita = false;
       };

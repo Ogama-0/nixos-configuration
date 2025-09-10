@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ cfg, lib, pkgs, ... }:
 
 let
   modifier = "Mod4";
@@ -6,10 +6,10 @@ let
   down = "j";
   left = "h";
   right = "l";
-  background = toString ../../assets/background.png;
-  background_blure = toString ../../assets/background_blure.png;
-  background_tache = toString ../../assets/background_tache.png;
-  background_monocle = toString ../../assert/background_monocle.png;
+  background = toString /background.png;
+  background_blure = toString /background_blure.png;
+  background_tache = toString /background_tache.png;
+  background_monocle = toString /background_monocle.png;
 in {
   imports = [
     ./barbar.nix
@@ -116,9 +116,12 @@ in {
       };
     };
 
-    extraConfig = "exec_always swaybg --image ${background_monocle}";
-
+    # extraConfig = "exec_always swaybg --image ${background_monocle}";
+    # extraConfig = "exec_always swaymsg output '*' bg ${background_monocle} fill";
+    extraConfig =
+      "exec_always swaymsg output '*' bg ${cfg.bg_path}${background_monocle} fill";
   };
+  # TODO : make the bg swith every 30 second or whene you switch focused desktop
   services.swayidle = {
     enable = true;
     events = [
