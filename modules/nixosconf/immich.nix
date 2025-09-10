@@ -17,7 +17,7 @@ in {
   #   "d ${immichRoot}/profile        0755 immich immich -"
   #   "d ${immichRoot}/backups        0755 immich immich -"
   # ];
-  environment.sessionVariables.IMMICH_IGNORE_MOUNT_CHECK_ERRORS = "true";
+  # environment.sessionVariables.IMMICH_IGNORE_MOUNT_CHECK_ERRORS = "true";
 
   services.immich = {
     enable = true;
