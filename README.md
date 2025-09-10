@@ -29,7 +29,7 @@ nix run nixpkgs#home-manager -- switch --flake .#<profile>
 
 ### personal
 - add a TTY login menu
-- fix the background
+- switch background every X second or when you switch from one desktop to another
 
 ### server
 - build a web-site for ogama.me
