@@ -35,7 +35,7 @@
       theme = "horizon-dark";
 
       editor = {
-        auto-format = true;
+        # auto-format = true;
         auto-save = true;
         mouse = false;
         bufferline = "multiple";
@@ -70,6 +70,7 @@
           A-u = ":toggle lsp.display-inlay-hints";
 
           "space" = {
+            "space" = ":toggle lsp.display-inlay-hints";
             f = "file_picker_in_current_directory";
             F = "file_picker";
           };
