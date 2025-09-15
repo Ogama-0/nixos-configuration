@@ -25,6 +25,7 @@ in {
     tlrc
     zenity
     xsel
+    dust
 
     # App Tool Tui
     btop
