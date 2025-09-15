@@ -26,7 +26,7 @@ in {
         "${modifier}+Shift+r" = "exec reboot";
         "${modifier}+Shift+p" = "exec shutdown -h now";
         "${modifier}+Escape" = "exec sleep 0.3 && i3lock-fancy-rapid 0 1";
-        "${modifier}+Shift+s" = "exec systemctl suspend";
+        "${modifier}+Shift+s" = "exec spotify";
         "${modifier}+Shift+e" = "exit";
         "${modifier}+Shift+f" = "exec nautilus";
 
@@ -83,7 +83,7 @@ in {
       };
 
       startup = [{
-        command = "feh --bg-fill ${../../../assets/background_monocle.png}";
+        command = "feh --bg-fill ${../../../assets/background/background_monocle.png}";
         always = true;
       }];
 
