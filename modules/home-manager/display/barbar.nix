@@ -35,7 +35,29 @@
           }];
         }
         { block = "sound"; }
-        { block = "music"; }
+        {
+          block = "music";
+        }
+        # {
+        #   block = "calendar";
+        #   next_event_format = " $icon $start.datetime(f:'%a %H:%M') $summary ";
+        #   ongoing_event_format =
+        #     " $icon $summary (ends at $end.datetime(f:'%H:%M')) ";
+        #   no_events_format = " $icon no events ";
+        #   fetch_interval = 30;
+        #   alternate_events_interval = 10;
+        #   events_within_hours = 48;
+        #   warning_threshold = 600;
+        #   browser_cmd = "firefox";
+        #   source = [{
+        #     url =
+        #       "http://p154-caldav.icloud.com/published/2/MTc0MzczOTgwODExNzQzNxPr8IrQhOG8X1scqqU1h6QhoW6RWcyU2leiHN00JJIhjylt6njWzrrgKOzy3AIPgIWLSzBtQkVG5Jm7SJ7cqeU/";
+        #     auth = { type = "unauthenticated"; };
+        #   }
+        #   # { url = ""; }
+        #     ];
+        # }
+
         { # ping
           block = "custom";
           json = true;
