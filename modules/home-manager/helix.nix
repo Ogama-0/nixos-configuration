@@ -28,14 +28,23 @@
       python312Packages.jedi-language-server
       python312Packages.python-lsp-server
     ];
-    ignores =
-      [ "*.png" "*.gif" "*.mcmeta" "*.eot" "*.webp" "*.ttf" "*.woff" "*.jpg" ];
+    ignores = [
+      "*.png"
+      "*.gif"
+      "*.mcmeta"
+      "*.eot"
+      "*.webp"
+      "*.ttf"
+      "*.woff"
+      "*.jpg"
+      ".direnv/*"
+    ];
 
     settings = {
       theme = "horizon-dark";
 
       editor = {
-        # auto-format = true;
+        auto-format = true;
         auto-save = true;
         mouse = false;
         bufferline = "multiple";
@@ -134,6 +143,14 @@
           name = "css";
           auto-format = true;
           language-servers = [ "vscode-css-language-server" "wakatime" ];
+        }
+        {
+          name = "asm";
+          #   file-types = [ "s" "asm" ];
+          #   scope = "source.asm";
+          #   comment-tokens = ";";
+          #   auto-format = false;
+          language-servers = [ "wakatime" ];
         }
       ];
     };
