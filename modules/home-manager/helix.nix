@@ -144,14 +144,14 @@
           auto-format = true;
           language-servers = [ "vscode-css-language-server" "wakatime" ];
         }
-        {
-          name = "asm";
-          #   file-types = [ "s" "asm" ];
-          #   scope = "source.asm";
-          #   comment-tokens = ";";
-          #   auto-format = false;
-          language-servers = [ "wakatime" ];
-        }
+        # {
+        #   name = "asm";
+        #   #   file-types = [ "s" "asm" ];
+        #   #   scope = "source.asm";
+        #   #   comment-tokens = ";";
+        #   #   auto-format = false;
+        #   language-servers = [ "wakatime" ];
+        # }
       ];
     };
   };
