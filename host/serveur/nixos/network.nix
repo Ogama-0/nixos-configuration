@@ -5,7 +5,7 @@
 
     networkmanager.enable = true;
     defaultGateway = {
-      address = "192.168.10.1";
+      address = "192.168.1.1";
       interface = "eno1";
     };
 
@@ -17,7 +17,7 @@
     interfaces.eno1 = {
       useDHCP = false;
       ipv4.addresses = [{
-        address = "192.168.10.50";
+        address = "192.168.1.50";
         prefixLength = 24;
       }];
     };
