@@ -26,7 +26,7 @@ in {
     zenity
     xsel
     dust
-
+    ookla-speedtest
     # App Tool Tui
     btop
     lazygit
