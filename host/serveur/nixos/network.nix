@@ -1,6 +1,9 @@
 { config, pkgs, ... }:
+let
 
-{
+  external-ip6 = "2a02:842a:830b:901::10";
+
+in {
   networking = {
 
     networkmanager.enable = true;
@@ -19,6 +22,10 @@
       ipv4.addresses = [{
         address = "192.168.1.50";
         prefixLength = 24;
+      }];
+      ipv6.addresses = [{
+        address = external-ip6;
+        prefixLength = 64;
       }];
     };
 
