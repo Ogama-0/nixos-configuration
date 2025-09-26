@@ -57,14 +57,6 @@
           '';
         };
       });
-
-      # "objectifFarm.${cfg.server.domain}" = {
-      #   enableACME = true;
-      #   locations."/" = {
-      #     proxyPass = "http://127.0.0.1:25569";
-      #     proxyWebsockets = true;
-      #   };
-      # };
     };
   };
 
