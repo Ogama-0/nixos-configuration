@@ -131,7 +131,7 @@
         {
           name = "c";
           language-servers = [ "clangd" "wakatime" ];
-          auto-format = false;
+          auto-format = true;
           formatter = { command = "clang-format"; };
         }
         {
@@ -144,14 +144,14 @@
           auto-format = true;
           language-servers = [ "vscode-css-language-server" "wakatime" ];
         }
-        # {
-        #   name = "asm";
-        #   #   file-types = [ "s" "asm" ];
-        #   #   scope = "source.asm";
-        #   #   comment-tokens = ";";
-        #   #   auto-format = false;
-        #   language-servers = [ "wakatime" ];
-        # }
+        {
+          name = "nasm";
+          #   #   file-types = [ "s" "asm" ];
+          #   #   scope = "source.asm";
+          # comment-tokens = ";";
+          #   #   auto-format = false;
+          language-servers = [ "wakatime" ];
+        }
       ];
     };
   };
