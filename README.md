@@ -30,6 +30,7 @@ nix run nixpkgs#home-manager -- switch --flake .#<profile>
 ### personal
 - add a TTY login menu
 - switch background every X second or when you switch from one desktop to another
+- search zellij 
 
 ### server
 - build a web-site for ogama.me
