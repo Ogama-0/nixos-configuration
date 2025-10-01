@@ -71,13 +71,16 @@ in {
     };
 
     functions = {
+      # fish_greeting = ''
+      #   set rdm (random 0 1)
+      #   if test $rdm = 0 
+      #     echo "salut caml c'est zizou"   
+      #   else if test $rdm = 1
+      #     echo "🐫🐫🐫🐫🐫vive caml🐫🐫🐫🐫🐫"
+      #   end
+      # '';
       fish_greeting = ''
-        set rdm (random 0 1)
-        if test $rdm = 0 
-          echo "salut caml c'est zizou"   
-        else if test $rdm = 1
-          echo "🐫🐫🐫🐫🐫vive caml🐫🐫🐫🐫🐫"
-        end
+        clear
       '';
 
       kijesui = "whoami";
