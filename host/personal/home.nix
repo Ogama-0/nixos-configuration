@@ -11,6 +11,7 @@
     ../../modules/home-manager/zed-editor.nix
     ../../modules/home-manager/display/gtk.nix
     ../../modules/home-manager/joplin-desktop.nix
+    ../../modules/home-manager/zellij/default.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
     # ./vm-compose.nix
   ];
