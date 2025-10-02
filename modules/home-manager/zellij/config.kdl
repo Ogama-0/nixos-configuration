@@ -248,16 +248,41 @@ default_shell "fish"
 auto_layout true
 
 themes {
-    horizondark {
+    onedark {
+        fg "#3B4048"
+        bg "#2C323C"
+        red "#E06C75"
+        green "#98C379" // borders
+        yellow "#E5C07B"
+        blue "#61AFEF"
+        magenta "#C678DD"
+        orange "#D19A66"
+        cyan "#56B6C2"
+        black "#282C34"
+        white "#ABB2BF"
+    }
+        
+
+    horizon-dark {
         // https://themes.vivaldi.net/themes/r6Elro6vRkq
         // https://zellij.dev/documentation/themes
-        fg 250 178 142 
+        fg "#2e303e" // down next to arrow layout
         bg "#16161c"
-        emphasis_0 46 48 62 
-        emphasis_1 233 67 111 
+        red "#E06C75"
+        green "#f1895c" // borders
+        yellow "#E5C07B"
+        blue "#61AFEF"
+        magenta "#C678DD"
+        orange "#D19A66"
+        cyan "#56B6C2"
+        black "#282C34"
+        white "#ABB2BF"
+        // green pastel : #27d796
+        // orange pastel: #f1895c
     }
 }
-theme "tokyo-night-dark"
+
+theme "horizon-dark"
 
 show_startup_tips false
 

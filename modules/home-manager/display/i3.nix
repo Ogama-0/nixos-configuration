@@ -2,7 +2,7 @@
 
 let
   modifier = "Mod4";
-  terminal = "kitty";
+  terminal = "alacritty";
   up = "k";
   down = "j";
   left = "h";
@@ -83,7 +83,8 @@ in {
       };
 
       startup = [{
-        command = "feh --bg-fill ${../../../assets/background/background_monocle.png}";
+        command =
+          "feh --bg-fill ${../../../assets/background/background_monocle.png}";
         always = true;
       }];
 

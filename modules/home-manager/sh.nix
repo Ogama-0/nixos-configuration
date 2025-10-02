@@ -45,7 +45,6 @@ in {
     shellAliases = {
       ls = "${lib.getExe pkgs.eza} --color=auto --icons=auto --hyperlink";
       cat = "${lib.getExe pkgs.bat}";
-      imp = "${lib.getExe pkgs.kitty} icat";
     };
 
     shellAbbrs = {

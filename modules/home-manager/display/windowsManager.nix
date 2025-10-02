@@ -25,7 +25,7 @@ in {
     wrapperFeatures.gtk = true; # Fixes common issues with GTK 3 apps
     config = {
       modifier = "${modifier}";
-      terminal = "kitty";
+      terminal = "alacritty";
 
       up = "${up}";
       down = "${down}";
@@ -33,7 +33,7 @@ in {
       right = "${right}";
       defaultWorkspace = "workspace 10";
 
-      startup = [{ command = "kitty"; }];
+      startup = [{ command = "alacritty"; }];
 
       fonts = {
         names = [ "Noto Sans" ];

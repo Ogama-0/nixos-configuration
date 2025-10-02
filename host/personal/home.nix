@@ -2,7 +2,7 @@
   imports = [
     ./perso-mod/tool.nix
     ../../modules/home-manager/sh.nix
-    ../../modules/home-manager/kitty.nix
+    ../../modules/home-manager/alacritty.nix
     ../../modules/home-manager/display/windowsManager.nix
     ../../modules/home-manager/helix.nix
     ../../modules/home-manager/git.nix
