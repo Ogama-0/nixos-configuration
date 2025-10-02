@@ -151,29 +151,29 @@ keybinds {
             SwitchToMode "Normal"
         }
     }
-    tmux {
-        bind "[" { SwitchToMode "Scroll"; }
-        bind "Ctrl b" { Write 2; SwitchToMode "Normal"; }
-        bind "\"" { NewPane "Down"; SwitchToMode "Normal"; }
-        bind "%" { NewPane "Right"; SwitchToMode "Normal"; }
-        bind "z" { ToggleFocusFullscreen; SwitchToMode "Normal"; }
-        bind "c" { NewTab; SwitchToMode "Normal"; }
-        bind "," { SwitchToMode "RenameTab"; }
-        bind "p" { GoToPreviousTab; SwitchToMode "Normal"; }
-        bind "n" { GoToNextTab; SwitchToMode "Normal"; }
-        bind "Left" { MoveFocus "Left"; SwitchToMode "Normal"; }
-        bind "Right" { MoveFocus "Right"; SwitchToMode "Normal"; }
-        bind "Down" { MoveFocus "Down"; SwitchToMode "Normal"; }
-        bind "Up" { MoveFocus "Up"; SwitchToMode "Normal"; }
-        bind "h" { MoveFocus "Left"; SwitchToMode "Normal"; }
-        bind "l" { MoveFocus "Right"; SwitchToMode "Normal"; }
-        bind "j" { MoveFocus "Down"; SwitchToMode "Normal"; }
-        bind "k" { MoveFocus "Up"; SwitchToMode "Normal"; }
-        bind "o" { FocusNextPane; }
-        bind "d" { Detach; }
-        bind "Space" { NextSwapLayout; }
-        bind "x" { CloseFocus; SwitchToMode "Normal"; }
-    }
+    // tmux {
+    //     bind "[" { SwitchToMode "Scroll"; }
+    //     bind "Ctrl b" { Write 2; SwitchToMode "Normal"; }
+    //     bind "\"" { NewPane "Down"; SwitchToMode "Normal"; }
+    //     bind "%" { NewPane "Right"; SwitchToMode "Normal"; }
+    //     bind "z" { ToggleFocusFullscreen; SwitchToMode "Normal"; }
+    //     bind "c" { NewTab; SwitchToMode "Normal"; }
+    //     bind "," { SwitchToMode "RenameTab"; }
+    //     bind "p" { GoToPreviousTab; SwitchToMode "Normal"; }
+    //     bind "n" { GoToNextTab; SwitchToMode "Normal"; }
+    //     bind "Left" { MoveFocus "Left"; SwitchToMode "Normal"; }
+    //     bind "Right" { MoveFocus "Right"; SwitchToMode "Normal"; }
+    //     bind "Down" { MoveFocus "Down"; SwitchToMode "Normal"; }
+    //     bind "Up" { MoveFocus "Up"; SwitchToMode "Normal"; }
+    //     bind "h" { MoveFocus "Left"; SwitchToMode "Normal"; }
+    //     bind "l" { MoveFocus "Right"; SwitchToMode "Normal"; }
+    //     bind "j" { MoveFocus "Down"; SwitchToMode "Normal"; }
+    //     bind "k" { MoveFocus "Up"; SwitchToMode "Normal"; }
+    //     bind "o" { FocusNextPane; }
+    //     bind "d" { Detach; }
+    //     bind "Space" { NextSwapLayout; }
+    //     bind "x" { CloseFocus; SwitchToMode "Normal"; }
+    // }
     shared_except "locked" {
         bind "Ctrl g" { SwitchToMode "Locked"; }
         bind "Ctrl q" { Quit; }
@@ -309,33 +309,26 @@ default_shell "fish"
 // For more examples, see: https://github.com/zellij-org/zellij/tree/main/example/themes
 // Once these themes are defined, one of them should to be selected in the "theme" section of this file
 //
-// themes {
-//     dracula {
-//         fg 248 248 242
-//         bg 40 42 54
-//         red 255 85 85
-//         green 80 250 123
-//         yellow 241 250 140
-//         blue 98 114 164
-//         magenta 255 121 198
-//         orange 255 184 108
-//         cyan 139 233 253
-//         black 0 0 0
-//         white 255 255 255
-//     }
-// }
+themes {
+    horizondark {
+        fg 250 178 142 
+        bg "#16161c"
+        emphasis_0 46 48 62 
+        emphasis_1 233 67 111 
+    }
+}
 
 // Choose the theme that is specified in the themes section.
 // Default: default
 //
-theme "onedark"
+theme "tokyo-night-dark"
 
+ // The name of the default layout to load on startup
+ // Default: "default"
+ // (Requires restart)
 
-// The name of the default layout to load on startup
-// Default: "default"
-// (Requires restart)
-//
-// default_layout "compact"
+ // default_layout "nobar"
+ // layout_dir "~/.config/zellij/layout"
 
 // Choose the mode that zellij uses when starting up.
 // Default: normal
@@ -516,6 +509,13 @@ show_startup_tips false
 // Note: be sure to escape backslashes and similar characters properly
 //
 // post_command_discovery_hook "echo $RESURRECT_COMMAND | sed <your_regex_here>"
+
+// themes{
+//     horizon-dark {
+//       https://themes.vivaldi.net/themes/r6Elro6vRkq
+//       https://zellij.dev/documentation/themes
+//     }
+// }
 
 
 web_client {
