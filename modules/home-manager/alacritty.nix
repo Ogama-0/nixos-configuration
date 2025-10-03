@@ -1,6 +1,7 @@
 { ... }:
 let
   green = "#27d796";
+  yellow = "#fab795";
   orange = "#f1895c";
   red = "#e95678";
 in {
@@ -30,8 +31,8 @@ in {
         # Normal colors
         normal = {
           black = "#222222";
+          inherit green; # red yellow;
           red = "#ff000f";
-          inherit green;
           # green = "#8ce00a";
           yellow = "#ffb900";
           blue = "#008df8";
