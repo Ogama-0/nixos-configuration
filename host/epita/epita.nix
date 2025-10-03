@@ -7,9 +7,10 @@
     ../../modules/home-manager/display/i3.nix
     ../../modules/home-manager/display/i3barbar.nix
     ../../modules/home-manager/joplin-desktop.nix
-    ../../modules/home-manager/kitty.nix
+    # ../../modules/home-manager/kitty.nix
     ../../modules/home-manager/display/gtk.nix
     ../../modules/home-manager/display/rofi.nix
+    ../../modules/home-manager/alacritty.nix
   ];
   # General informations
   home.username = "${cfg.login}";
