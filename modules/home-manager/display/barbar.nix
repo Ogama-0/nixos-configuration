@@ -57,7 +57,32 @@
         #   # { url = ""; }
         #     ];
         # }
+        { # Vpn
+          block = "custom";
+          shell = "fish";
+          command = ''
+            tailscale status | grep -q "Tailscale is stopped" ; and echo "Vpn Down" ; or echo "Vpn Up"
+          '';
 
+          interval = 5;
+          # json = true;
+          click = [{
+            button = "left";
+            cmd = ''
+              tailscale status | grep -q "Tailscale is stopped" ; and tailscale up ; or tailscale down'';
+            update = true;
+          }];
+        }
+        {
+          block = "custom";
+          shell = "fish";
+          command = ''
+            ping -6 -c1 google.com >/dev/null 2>&1; and echo ipv6; or echo no ipv6
+          '';
+          interval = 60;
+          # json = true;
+
+        }
         { # ping
           block = "custom";
           json = true;
@@ -67,19 +92,6 @@
           click = [{
             button = "left";
             cmd = "<command>";
-          }];
-        }
-        { # Vpn
-          block = "custom";
-          shell = "fish";
-          command = ''
-            systemctl status wg-quick-oscar.service | grep 'Active' | grep 'exited' | string match -qr '\S' && echo '{ "text":"VPN On","state":"Warning"}' || echo '{ "text":"VPN Off"}' '';
-          interval = 5;
-          json = true;
-          click = [{
-            button = "left";
-            cmd = "zenity --password | sudo -S echo bonjour ; togglewg";
-            update = true;
           }];
         }
         {
