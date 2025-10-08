@@ -25,14 +25,12 @@
       devShells = forAllPkgs (pkgs:
         with pkgs.lib; {
           default = pkgs.mkShell rec {
-            nativeBuildInputs = [
-              nixpie.packages.${pkgs.system}.m68k
-              # nixpie.packages.${pkgs.system}.geany
-              pkgs.xterm
-              # pkgs.binutils-m68k
-            ];
+            nativeBuildInputs =
+              [ nixpie.packages.${pkgs.system}.m68k pkgs.xterm ];
 
-            buildInputs = [ ];
+            buildInputs = [
+              # add pkgs here
+            ];
 
             LD_LIBRARY_PATH = makeLibraryPath buildInputs;
           };

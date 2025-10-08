@@ -25,7 +25,10 @@
             nativeBuildInputs = with pkgs;
               [ clang-tools ] ++ (with llvmPackages; [ clang lldb ]);
 
-            buildInputs = with pkgs; [ SDL2 sdl3 ];
+            buildInputs = with pkgs;
+              [
+                # add lib here
+              ];
 
             LD_LIBRARY_PATH = makeLibraryPath buildInputs;
           };
