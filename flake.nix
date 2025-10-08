@@ -46,6 +46,7 @@
         config.allowUnfreePredicate = _: true;
       };
     in {
+      templates = import ./templates;
       nixosConfigurations = {
         personal = lib.nixosSystem {
           inherit pkgs;
