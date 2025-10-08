@@ -9,7 +9,11 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
-        pythonEnv = pkgs.python312.withPackages (ps: with ps; [ graphviz ]);
+        pythonEnv = pkgs.python312.withPackages (ps:
+          with ps;
+          [
+            # add lib here
+          ]);
       in {
         devShells.default = pkgs.mkShell { nativeBuildInputs = [ pythonEnv ]; };
       });
