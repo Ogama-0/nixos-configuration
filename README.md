@@ -36,3 +36,12 @@ nix run nixpkgs#home-manager -- switch --flake .#<profile>
 - build a web-site for ogama.me
 - build a intenral API to for connect qbtorrent jellyfin and a web-UI
 
+# Templates : 
+```
+nix flake init --template github:/ogama-0/nixos-configuration#<template>
+```
+###Templates :
+- ``python`` : template for blank python project
+- ``c`` : template for blank c project
+- ``epita-c`` : template for epita practical in c
+- ``asm68k``: template for blank asm68k project
