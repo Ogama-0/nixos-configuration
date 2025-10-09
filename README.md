@@ -40,7 +40,7 @@ nix run nixpkgs#home-manager -- switch --flake .#<profile>
 ```
 nix flake init --template github:/ogama-0/nixos-configuration#<template>
 ```
-###Templates :
+### Templates available :
 - ``python`` : template for blank python project
 - ``c`` : template for blank c project
 - ``epita-c`` : template for epita practical in c
