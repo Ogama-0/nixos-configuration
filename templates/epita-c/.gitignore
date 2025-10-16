@@ -1,2 +1,13 @@
+*.a
+*.lib
+*.o
+*.obj
+*.out
+flake.nix
+flake.lock
+.envrc
 .direnv/
 
+.idea/
+*~
+*.DotSettings.user
