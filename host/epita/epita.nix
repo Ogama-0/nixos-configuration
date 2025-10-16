@@ -11,6 +11,7 @@
     ../../modules/home-manager/display/gtk.nix
     ../../modules/home-manager/display/rofi.nix
     ../../modules/home-manager/alacritty.nix
+    ../../modules/home-manager/zellij/default.nix
   ];
   # General informations
   home.username = "${cfg.login}";
