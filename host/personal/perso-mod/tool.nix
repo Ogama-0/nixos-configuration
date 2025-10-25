@@ -38,6 +38,8 @@
     prismlauncher
     steam-run
     steamcontroller
+    superTuxKart
+    mindustry
 
     # Dev
     jetbrains-toolbox
