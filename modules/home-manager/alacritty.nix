@@ -12,13 +12,13 @@ in {
       window = { decorations = "buttonless"; };
 
       font = {
-        size = 16.0;
-        normal.family = "UbuntuMonoNerdFont";
-        bold.family = "UbuntuMonoNerdFont";
-        italic.family = "UbuntuMonoNerdFont";
-        # normal.family = "JetBrainsMonoNerdFont";
-        # bold.family = "JetBrainsMonoNerdFont";
-        # italic.family = "JetBrainsMonoNerdFont";
+        size = 13.5;
+        # normal.family = "UbuntuMonoNerdFont";
+        # bold.family = "UbuntuMonoNerdFont";
+        # italic.family = "UbuntuMonoNerdFont";
+        normal.family = "JetBrainsMonoNerdFont";
+        bold.family = "JetBrainsMonoNerdFont";
+        italic.family = "JetBrainsMonoNerdFont";
       };
       terminal.shell = { program = "fish"; };
       colors = {
