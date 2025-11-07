@@ -11,6 +11,7 @@
     ../../modules/nixosconf/nginx.nix
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/immich.nix
+    ../../modules/nixosconf/qbittorrent.nix
 
     ./nixos/network.nix
 
