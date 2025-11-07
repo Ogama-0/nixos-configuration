@@ -12,6 +12,7 @@
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/immich.nix
     ../../modules/nixosconf/qbittorrent.nix
+
     ./nixos/network.nix
 
     ./hardware-configuration.nix
