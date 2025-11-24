@@ -4,10 +4,10 @@ rec {
     hdd = "/mnt/hdd";
   };
 
-  mkProfile = { user, mail, isEpita ? false, extra ? (_: { }) }:
+  mkProfile = { user, mail, is-epita ? false, extra ? (_: { }) }:
     let
       base = rec {
-        inherit user mail isEpita;
+        inherit user mail is-epita;
         home_path = "/home/${user}";
       };
 
@@ -46,7 +46,10 @@ rec {
 
     extra = base: rec {
       bg_path = "${base.home_path}/nixos-configuration/assets/background";
-      share.path = "${base.home_path}/Server/share";
+      share = rec {
+        path = "${base.home_path}/Server/share";
+        swapsev_path = "${path}/swapsev";
+      };
     };
   };
 
@@ -54,7 +57,7 @@ rec {
   cfg-epita = mkProfile {
     user = "oscar.cornut";
     mail = "oscar.cornut@gmail.com";
-    isEpita = true;
+    is-epita = true;
     extra = base: { };
   };
 }
