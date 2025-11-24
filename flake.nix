@@ -15,21 +15,33 @@
     let
       cfg-server = {
         user = "ogama_serv";
-        home_path = "/home/${cfg-server.user}";
         mail = "oscar.cornut@gmail.com";
+        home_path = "/home/${cfg-server.user}";
+
         SSD_path = "/mnt/ssd";
         SSD_app = "${cfg-server.SSD_path}/appdata";
         HDD_path = "/mnt/hdd";
         HDD_app = "${cfg-server.HDD_path}/appdata";
-        server = { domain = "ogama.me"; };
+
+        server = {
+          domain = "ogama.me";
+          share = {
+            temp_path = "";
+            public_HDD_path = "";
+            Apple_save_HDD_path = "";
+          };
+        };
         is-epita = false;
       };
       cfg-perso = {
+        inherit cfg-server;
         user = "ogama";
         home_path = "/home/${cfg-perso.user}";
         bg_path =
           "${cfg-perso.home_path}/nixos-configuration/assets/background";
         mail = "oscar.cornut@gmail.com";
+
+        share = { path = "${cfg-perso.home_path}/Server/share"; };
         is-epita = false;
       };
       cfg-epita = {
@@ -45,8 +57,14 @@
         inherit system;
         config.allowUnfreePredicate = _: true;
       };
+      lpkgs = { librepods = self.packages.${system}.librepods; };
     in {
       templates = import ./templates;
+
+      packages.${system} = {
+        librepods = pkgs.callPackage ./pkgs/librepods.nix { };
+      };
+
       nixosConfigurations = {
         personal = lib.nixosSystem {
           inherit pkgs;
@@ -67,11 +85,11 @@
       };
 
       homeConfigurations = {
-
         personal = home-manager.lib.homeManagerConfiguration {
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
             cfg = cfg-perso;
+            inherit lpkgs;
             inherit inputs;
             inherit pkgs;
           };
