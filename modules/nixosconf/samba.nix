@@ -31,7 +31,7 @@ in {
         "create mask" = "0644";
         "directory mask" = "0755";
       };
-      "swapser" = {
+      "swapsev" = {
         "path" = swapsev_path;
         "browseable" = "yes";
         "read only" = "no";
