@@ -1,4 +1,5 @@
-{ pkgs, ... }: {
+{ lpkgs, pkgs, ... }: {
+
   home.packages = with pkgs; [
 
     # Main pkgs
@@ -14,6 +15,8 @@
     shotcut
 
     # Utility
+
+    lpkgs.librepods
     simplescreenrecorder
     mpv # View video files
     imv # ''
@@ -44,7 +47,6 @@
     # Dev
     jetbrains-toolbox
     octaveFull
-    unityhub
     gnumake
     rustup # rust
     python3 # Python
