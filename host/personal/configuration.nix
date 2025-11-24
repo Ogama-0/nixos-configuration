@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ system, config, lib, pkgs, ... }:
 
 {
   imports = [
@@ -11,6 +11,7 @@
     ../../modules/nixosconf/mounting.nix
     ../../modules/nixosconf/docker.nix
     ../../modules/nixosconf/tailscale.nix
+    ../../modules/nixosconf/samba-cli.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -32,6 +33,8 @@
 
   networking.firewall = {
     enable = false;
+    extraCommands =
+      "iptables -t raw -A OUTPUT -p udp -m udp --dport 137 -j CT --helper netbios-ns";
     # allowedTCPPorts = [ 7777 22 80 ];
     # allowedUDPPorts = [ 7777 ];
   };
