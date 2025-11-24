@@ -45,3 +45,8 @@ nix flake init --template github:/ogama-0/nixos-configuration#<template>
 - ``c`` : template for blank c project
 - ``epita-c`` : template for epita practical in c
 - ``asm68k``: template for blank asm68k project
+# Packages :
+```
+nix shell git+https://github.com/Ogama-0/nixos-configuration#<pkgs>
+```
+- ``librepods`` : from [kavishdevar'a package](https://github.com/kavishdevar/librepods)
