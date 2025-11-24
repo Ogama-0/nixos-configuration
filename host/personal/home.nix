@@ -1,4 +1,4 @@
-{ ... }: {
+{ cfg, ... }: {
   imports = [
     ./perso-mod/tool.nix
     ../../modules/home-manager/sh.nix
@@ -16,17 +16,20 @@
     # ./vm-compose.nix
   ];
 
-  home.username = "ogama";
-  home.homeDirectory = "/home/ogama";
-
   nixpkgs = {
     config = {
       allowUnfree = true;
       allowUnfreePredicate = (_: true);
     };
   };
+  home = {
 
-  home.stateVersion = "24.11"; # Please read the comment before changing.
+    username = "ogama";
+    homeDirectory = "/home/ogama";
+    sessionVariables.swp = "${cfg.share.swapsev_path}";
+
+    stateVersion = "24.11";
+  };
 
   services.poweralertd.enable = true;
 
