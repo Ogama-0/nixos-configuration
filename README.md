@@ -47,6 +47,7 @@ nix flake init --template github:/ogama-0/nixos-configuration#<template>
 - ``asm68k``: template for blank asm68k project
 # Packages :
 ```
-nix shell git+https://github.com/Ogama-0/nixos-configuration#<pkgs>
+nix shell git+https://github.com/Ogama-0/nixos-configuration#<pkg>
 ```
+### Packages available :
 - ``librepods`` : from [kavishdevar'a package](https://github.com/kavishdevar/librepods)
