@@ -1,8 +1,10 @@
 { cfg, ... }:
 let
-  path = "${cfg.home_path}/share";
-  path_prv = "${path}/Private";
-  path_pub = "${path}/Public";
+  share = cfg.server.share;
+
+  public_path = share.public_HDD_path;
+  swapsev_path = share.swapsev_path;
+  time_m_path = share.Apple_save_HDD_path;
 in {
   services.samba = {
     enable = true;
@@ -22,18 +24,18 @@ in {
         "map to guest" = "bad user";
       };
       "public" = {
-        "path" = path_pub;
+        "path" = public_path;
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "yes";
         "create mask" = "0644";
         "directory mask" = "0755";
       };
-      "private" = {
-        "path" = path_prv;
+      "swapser" = {
+        "path" = swapsev_path;
         "browseable" = "yes";
         "read only" = "no";
-        "guest ok" = "no";
+        "guest ok" = "yes";
         "create mask" = "0644";
         "directory mask" = "0755";
       };
@@ -45,8 +47,9 @@ in {
   };
   services.gvfs.enable = true;
   systemd.tmpfiles.rules = [
-    "d ${path}        0755 ${cfg.user} users -"
-    "d ${path_prv}    0755 ${cfg.user} users -"
-    "d ${path_pub}    0755 ${cfg.user} users -"
+    "d ${share.path}      0755 ${cfg.user} users -"
+    "d ${swapsev_path}    0755 ${cfg.user} users -"
+    "d ${public_path}     0755 ${cfg.user} users -"
+    "d ${time_m_path}     0755 ${cfg.user} users -"
   ];
 }
