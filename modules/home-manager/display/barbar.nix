@@ -124,10 +124,12 @@
         {
           block = "disk_space";
           path = "/";
-          info_type = "available";
+          info_type = "used";
           interval = 60;
-          warning = 20.0;
-          alert = 10.0;
+          warning = 80.0;
+          alert = 90.0;
+          format = " $icon $available ";
+          format_alt = " $icon  $percentage ";
         }
         {
           block = "time";
