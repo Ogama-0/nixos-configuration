@@ -19,6 +19,10 @@ in {
         normal.family = "JetBrainsMonoNerdFont";
         bold.family = "JetBrainsMonoNerdFont";
         italic.family = "JetBrainsMonoNerdFont";
+        # size = 16.0;
+        # normal.family = "Monocraft";
+        # bold.family = "Monocraft";
+        # italic.family = "Monocraft";
       };
       terminal.shell = { program = "fish"; };
       colors = {

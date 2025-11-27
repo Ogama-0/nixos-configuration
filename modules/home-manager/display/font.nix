@@ -10,6 +10,7 @@
     font-awesome
     merriweather
     inter
+    monocraft
   ];
 
   fonts.fontconfig = {
@@ -17,6 +18,7 @@
     defaultFonts = {
       serif = [ "Noto Sans" "Merriweather" ];
       sansSerif = [ "Inter" ];
+      # monospace = [ "monocraft" ];
       monospace = [ "JetBrainsMonoNerdFont-Regular" ];
       emoji = [ "Noto Color Emoji" ];
     };
