@@ -58,6 +58,6 @@ rec {
     user = "oscar.cornut";
     mail = "oscar.cornut@gmail.com";
     is-epita = true;
-    extra = base: { };
+    extra = base: { login = "oscar.cornut"; };
   };
 }
