@@ -12,6 +12,7 @@
     ../../modules/home-manager/display/gtk.nix
     ../../modules/home-manager/joplin-desktop.nix
     ../../modules/home-manager/zellij/default.nix
+    # ../../modules/home-manager/firefox.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
     # ./vm-compose.nix
   ];

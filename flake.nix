@@ -8,6 +8,11 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     wakatime-ls.url = "github:mrnossiom/wakatime-ls";
     wakatime-ls.inputs.nixpkgs.follows = "nixpkgs";
+
+    zen-browser.url = "github:0xc000022070/zen-browser-flake";
+    # zen-browser.inputs.nixpkgs.follows = "nixpkgs";
+    zen-browser.inputs.home-manager.follows = "home-manager";
+
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
@@ -22,6 +27,9 @@
         config.allowUnfreePredicate = _: true;
       };
       lpkgs = { librepods = self.packages.${system}.librepods; };
+      upkgs = {
+        zen-browser = self.inputs.zen-browser.packages.${pkgs.system}.default;
+      };
     in {
       templates = import ./templates;
 
@@ -53,9 +61,10 @@
           extraSpecialArgs = {
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
             cfg = cfg-perso;
-            inherit lpkgs;
             inherit inputs;
             inherit pkgs;
+            inherit upkgs;
+            inherit lpkgs;
           };
           inherit pkgs;
           modules = [ ./host/personal/home.nix ];

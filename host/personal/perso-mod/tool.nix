@@ -1,8 +1,9 @@
-{ lpkgs, pkgs, ... }: {
+{ lpkgs, pkgs, upkgs, ... }: {
 
   home.packages = with pkgs; [
 
     # Main pkgs
+    upkgs.zen-browser
     firefox
     vesktop
     spotify
