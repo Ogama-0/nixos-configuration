@@ -41,7 +41,7 @@
     steam
     prismlauncher
     steam-run
-    steamcontroller
+    sc-controller
     superTuxKart
     mindustry
 

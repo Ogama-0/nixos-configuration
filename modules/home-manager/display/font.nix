@@ -3,7 +3,7 @@
 {
   home.packages = with pkgs; [
     noto-fonts
-    noto-fonts-emoji
+    noto-fonts-color-emoji
     nerd-fonts.jetbrains-mono
     nerd-fonts.ubuntu-mono
     nerd-fonts.caskaydia-cove
