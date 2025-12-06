@@ -1,4 +1,4 @@
-{ lpkgs, pkgs, upkgs, ... }: {
+{ pkgs, upkgs, lpkgs, ... }: {
 
   home.packages = with pkgs; [
 
@@ -10,7 +10,7 @@
     gimp
     bitwarden-desktop
     nautilus
-    stremio
+    # stremio
     qbittorrent
     notify-desktop
     shotcut
