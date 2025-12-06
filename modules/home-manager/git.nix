@@ -3,14 +3,15 @@
 {
   programs.difftastic.enable = true;
   programs.git = {
+    lfs.enable = true;
+    enable = true;
     settings = {
-      enable = true;
-      lfs.enable = true;
 
-      userName = cfg.user;
-      userEmail = cfg.mail;
-
-      aliases = {
+      user = {
+        name = cfg.user;
+        email = cfg.mail;
+      };
+      alias = {
         ui = "!lazygit";
 
         tagarchi =
