@@ -1,7 +1,7 @@
-{ self, config, lib, ... }:
+{ inputs, config, lib, ... }:
 
 let
-  inherit (self.inputs) zen-browser;
+  inherit (inputs) zen-browser;
 
   policies = {
     DisableTelemetry = true;
@@ -31,8 +31,8 @@ let
     "browser.gesture.swipe.left" = "";
     "browser.gesture.swipe.right" = "";
 
-    "browser.search.defaultenginename" = "DuckDuckGo";
-    "browser.search.order.1" = "DuckDuckGo";
+    "browser.search.defaultenginename" = "Google";
+    "browser.search.order.1" = "Google";
 
     "signon.rememberSignons" = false;
     "widget.use-xdg-desktop-portal.file-picker" = 1;
@@ -87,39 +87,40 @@ in {
 
       inherit settings userContent;
     };
+  };
 
-    programs.firefox = {
-      enable = true;
+  programs.firefox = {
+    enable = false;
 
-      # inherit policies;
+    # inherit policies;
 
-      profiles.default = {
-        isDefault = true;
+    profiles.default = {
+      isDefault = true;
 
-        settings = settings // {
-          # "zen.view.experimental-no-window-controls" = true;
-          # "zen.view.show-newtab-button-top" = false;
+      settings = settings // {
+        # "zen.view.experimental-no-window-controls" = true;
+        # "zen.view.show-newtab-button-top" = false;
 
-          # "zen.welcome-screen.seen" = true;
-          # "zen.workspaces.continue-where-left-off" = true;
-          # "zen.view.compact.enable-at-startup" = true;
-          "zen.view.window.scheme" = 2; # 0 dark theme, 1 light theme, 2 auto
-        };
+        # "zen.welcome-screen.seen" = true;
+        # "zen.workspaces.continue-where-left-off" = true;
+        # "zen.view.compact.enable-at-startup" = true;
+        "zen.view.window.scheme" = 2; # 0 dark theme, 1 light theme, 2 auto
+      };
 
-        inherit userContent;
+      inherit userContent;
 
-        # <https://www.userchrome.org/how-create-userchrome-css.html>
-        userChrome = ''
-          /* Hide close button */
-          .titlebar-close { display: none !important; }
-        '';
+      # <https://www.userchrome.org/how-create-userchrome-css.html>
+      userChrome = ''
+        /* Hide close button */
+        .titlebar-close { display: none !important; }
+      '';
 
-        search = {
-          force = true;
-          default = "google";
-          order = [ "google" "wikipedia" "youtube" ];
-        };
+      search = {
+        force = true;
+        default = "google";
+        order = [ "google" "wikipedia" "youtube" ];
       };
     };
   };
+
 }

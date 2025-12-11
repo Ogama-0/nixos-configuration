@@ -4,8 +4,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+
     home-manager.url = "github:nix-community/home-manager/release-25.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
     wakatime-ls.url = "github:mrnossiom/wakatime-ls";
     wakatime-ls.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -13,10 +15,13 @@
     zen-browser.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.inputs.home-manager.follows = "home-manager";
 
+    stylix.url = "github:nix-community/stylix/release-25.11";
+    stylix.inputs.nixpkgs.follows = "nixpkgs";
+
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
-  outputs = { self, nixpkgs, home-manager, nixos-hardware, ... }@inputs:
+  outputs = { self, nixpkgs, home-manager, nixos-hardware, stylix, ... }@inputs:
     let
       profiles = import ./host/profiles.nix;
       inherit (profiles) cfg-server cfg-perso cfg-epita;
@@ -67,7 +72,7 @@
             inherit lpkgs;
           };
           inherit pkgs;
-          modules = [ ./host/personal/home.nix ];
+          modules = [ ./host/personal/home.nix stylix.homeModules.stylix ];
         };
 
         oserv = home-manager.lib.homeManagerConfiguration {

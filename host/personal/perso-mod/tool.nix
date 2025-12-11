@@ -3,7 +3,7 @@
   home.packages = with pkgs; [
 
     # Main pkgs
-    upkgs.zen-browser
+    # upkgs.zen-browser
     firefox
     vesktop
     spotify

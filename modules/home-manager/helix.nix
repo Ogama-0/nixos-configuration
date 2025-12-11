@@ -29,7 +29,6 @@
       python312Packages.python-lsp-server
     ];
     ignores = [
-      "*.png"
       "*.gif"
       "*.mcmeta"
       "*.eot"
@@ -38,10 +37,11 @@
       "*.woff"
       "*.jpg"
       ".direnv/*"
+      ".cache/*"
     ];
 
     settings = {
-      theme = "horizon-dark";
+      # theme = "horizon-dark";
 
       editor = {
         auto-format = true;

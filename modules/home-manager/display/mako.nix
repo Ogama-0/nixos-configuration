@@ -7,12 +7,13 @@
 
       max-visible = 3;
       default-timeout = 7000;
+
       background-color = "#a2d5c6";
       text-color = "#000000";
+      border-color = "#d72631";
 
       border-radius = 15;
       border-size = 0;
-      border-color = "#d72631";
 
       sort = "-priority";
       height = 350;

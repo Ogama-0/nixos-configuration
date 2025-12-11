@@ -22,11 +22,11 @@
 
       "base_keymap" = "JetBrains";
 
-      "theme" = {
-        "mode" = "system";
-        "light" = "Horizon";
-        "dark" = "Horizon";
-      };
+      # "theme" = {
+      #   "mode" = "system";
+      #   "light" = "Horizon";
+      #   "dark" = "Horizon";
+      # };
 
     };
   };

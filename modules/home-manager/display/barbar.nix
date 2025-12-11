@@ -10,7 +10,7 @@
         theme = {
           theme = "modern";
           overrides = {
-            separator = "<span size='18000'></span>";
+            separator = "<span size='19000'></span>";
             idle_bg = "#17191e";
           };
         };
