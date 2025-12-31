@@ -6,6 +6,7 @@
     options = "--delete-older-than 30d";
   };
 
+  services.power-profiles-daemon.enable = true;
   services.upower = {
     enable = true;
     percentageLow = 10;

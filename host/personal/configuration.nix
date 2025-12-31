@@ -68,9 +68,9 @@
   security.polkit.enable = true;
   hardware.graphics.enable = true;
 
-  environment.loginShellInit = ''
-    [[ "$(tty)" == /dev/tty1 ]] && sway
-  '';
+  # environment.loginShellInit = ''
+  #   [[ "$(tty)" == /dev/tty1 ]] 
+  # '';
   nix.settings.allowed-users = [ "@wheel" "ogama" ];
 
   # systemd.services.preshutdown-script = {

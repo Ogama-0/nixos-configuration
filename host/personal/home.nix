@@ -3,15 +3,15 @@
     ./perso-mod/tool.nix
     ../../modules/home-manager/sh.nix
     ../../modules/home-manager/alacritty.nix
-    ../../modules/home-manager/display/windowsManager.nix
+    ../../modules/home-manager/display/sway
+    ../../modules/home-manager/display/hyprland
     ../../modules/home-manager/helix.nix
     ../../modules/home-manager/git.nix
     ../../modules/home-manager/display/font.nix
-    ../../modules/home-manager/display/mako.nix
     ../../modules/home-manager/zed-editor.nix
     ../../modules/home-manager/display/gtk.nix
     ../../modules/home-manager/joplin-desktop.nix
-    ../../modules/home-manager/zellij/default.nix
+    ../../modules/home-manager/zellij
     ../../modules/home-manager/firefox.nix
     ../../modules/home-manager/stylix.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"

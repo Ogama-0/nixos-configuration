@@ -30,7 +30,7 @@ nix run nixpkgs#home-manager -- switch --flake .#<profile>
 ### personal
 - add a TTY login menu
 - switch background every X second or when you switch from one desktop to another
-- search zellij 
+- make sway-conf lightway and hyprland stronger
 
 ### server
 - build a web-site for ogama.me

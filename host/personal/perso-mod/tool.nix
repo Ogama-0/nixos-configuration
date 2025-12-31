@@ -35,6 +35,9 @@
     xdg-utils # don't know why this is here Kappa
     playerctl # audio flux controler
     mcrcon # rcon for minecraft
+    fuse-overlayfs # sandbox
+    bubblewrap # ...
+    psmisc
 
     # game
     modrinth-app
@@ -44,6 +47,8 @@
     sc-controller
     superTuxKart
     mindustry
+    wineWowPackages.full
+    gamescope
 
     # Dev
     jetbrains-toolbox
