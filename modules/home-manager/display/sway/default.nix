@@ -13,9 +13,9 @@ let
 in {
   imports = [
     ./barbar.nix
-    # ./swaylock.nix
-    ./tofi.nix
-    ./swaylockTrollKristentenervepascestjustelideeesttropbien.nix
+    ./mako.nix
+    ../tofi.nix
+    ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix
   ];
   home.packages = with pkgs; [ grim slurp wlroots swaybg ];
   # swaylock-effect

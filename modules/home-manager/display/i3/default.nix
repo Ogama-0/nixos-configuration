@@ -9,6 +9,7 @@ let
   right = "l";
 in {
   home.packages = with pkgs; [ playerctl maim xclip i3lock-fancy-rapid feh ];
+  imports = [ ./i3barbar.nix ./rofi.nix ];
 
   xsession.enable = true;
 

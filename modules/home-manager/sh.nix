@@ -9,6 +9,8 @@ in {
     pkg-config
     brightnessctl
 
+    power-profiles-daemon
+
     # App Tool Cli
     trash-cli
     zip
@@ -25,17 +27,21 @@ in {
     tlrc
     zenity
     xsel
+    file
     dust
     ookla-speedtest
     # App Tool Tui
     btop
+    rocmPackages.rocm-smi # for amd gpu to btop
     lazygit
     gh-dash
+    pciutils
 
     # Dev related
     gccgo14 # C
     direnv
     gnumake
+    vulkan-tools
 
   ];
 

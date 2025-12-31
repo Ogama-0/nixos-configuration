@@ -3,6 +3,9 @@
     "Mod4+d" = "exec tofi-drun | xargs swaymsg exec --";
     "Mod4+shift+d" = "exec tofi-run | xargs swaymsg exec --";
   };
+  # wayland.windowManager.hyprland.settings = {
+  #   bind = [ "$mod, D, exec, tofi-drun" "$mod SHIFT, D, exec, tofi-run" ];
+  # };
 
   programs.tofi = {
     enable = true;
