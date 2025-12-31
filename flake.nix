@@ -46,10 +46,7 @@
         personal = lib.nixosSystem {
           inherit pkgs;
           specialArgs = { cfg = cfg-perso; };
-          modules = [
-            ./host/personal/configuration.nix
-            nixos-hardware.nixosModules.lenovo-ideapad-15ach6
-          ];
+          modules = [ ./host/personal/configuration.nix ];
         };
         oserv = lib.nixosSystem {
           inherit system;
