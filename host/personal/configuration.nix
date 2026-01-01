@@ -12,6 +12,7 @@
     ../../modules/nixosconf/docker.nix
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/samba-cli.nix
+    ../../modules/nixosconf/gtklock
   ];
 
   # Use the systemd-boot EFI boot loader.

@@ -1,0 +1,19 @@
+<interface>
+  <object class="GtkBox">
+    <property name="orientation">vertical</property>
+    <property name="spacing">20</property>
+
+    <child>
+      <object class="GtkLockUserInfo"/>
+    </child>
+
+    <child>
+      <object class="GtkLockPlayerctl"/>
+    </child>
+
+    <child>
+      <object class="GtkLockPowerBar"/>
+    </child>
+
+  </object>
+</interface>
