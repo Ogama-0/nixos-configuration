@@ -21,7 +21,12 @@ in {
     "d ${path}/log      0755 ${cfg.user} users -"
     "d ${path}/data     0755 ${cfg.user} users -"
 
-    "d ${cfg.HDD_app}/jellyfin/FILM     0755 ${cfg.user} users -"
+    "d ${cfg.HDD_app}/jellyfin/audio              0755 ${cfg.user} users -"
+    "d ${cfg.HDD_app}/jellyfin/audio/Books        0755 ${cfg.user} users -"
+    "d ${cfg.HDD_app}/jellyfin/audio/livre_audio  0755 ${cfg.user} users -"
+    "d ${cfg.HDD_app}/jellyfin/audio/Musique      0755 ${cfg.user} users -"
+    "d ${cfg.HDD_app}/jellyfin/FILM               0755 ${cfg.user} users -"
+    "d ${cfg.HDD_app}/jellyfin/SHOWS              0755 ${cfg.user} users -"
   ];
 
 }
