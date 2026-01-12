@@ -11,6 +11,10 @@ in {
       address = "192.168.1.1";
       interface = "eno1";
     };
+    defaultGateway6 = {
+      address = "fe80::1";
+      interface = "eno1";
+    };
 
     nameservers = [ "1.1.1.1" "8.8.8.8" ];
     domain = "ogama.me";
