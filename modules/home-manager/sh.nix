@@ -63,7 +63,7 @@ in {
       tl = "trash-list";
       tempt = "trash-empty";
       tsempt = "trash-empty 10";
-      mvs =
+      cps =
         "rsync --compress --verbose --recursive  --human-readable --partial --progress";
       # rm = "#";
       shutdown = "hollywood";
