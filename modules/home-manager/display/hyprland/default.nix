@@ -9,7 +9,7 @@ in {
     ./waybar.nix
     ./cursor.nix
     ./swaync.nix
-    ./hypridle.nix
+    # ./hypridle.nix
     ./hyprsunset.nix
     ./walker.nix
   ];
@@ -39,7 +39,10 @@ in {
 
         border_size = 1;
 
-        monitor = "eDP-1, 1920x1080@120, 0x0, 1"; # Laptop screen
+        monitor = [
+          "eDP-1, 1920x1080@120, 0x0, 1" # Laptop screen
+          "HDMI-A-1,preferred,auto,1" # Home-cinema
+        ];
 
         snap = {
           enabled = true;
@@ -62,7 +65,10 @@ in {
 
       input.touchpad = { disable_while_typing = false; };
 
-      misc = { disable_hyprland_logo = true; };
+      misc = {
+        disable_hyprland_logo = true;
+        vfr = false;
+      };
 
       # binds = { workspace_back_and_forth = true; };
 
@@ -71,6 +77,7 @@ in {
       binds.drag_threshold = 10;
       bind = [ # Bind one click
         # --- système ---
+        ",XF86PowerOff,exec,:" # Empêche l'écran de s'éteindre
 
         "${mod}, Return, exec, alacritty"
         "${mod} SHIFT, Q, killactive"
