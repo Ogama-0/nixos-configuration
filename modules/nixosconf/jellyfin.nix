@@ -28,5 +28,16 @@ in {
     "d ${cfg.HDD_app}/jellyfin/FILM               0755 ${cfg.user} users -"
     "d ${cfg.HDD_app}/jellyfin/SHOWS              0755 ${cfg.user} users -"
   ];
+  services.nginx.virtualHosts = {
+    "jellyfin.${cfg.server.domain}" = {
+      enableACME = true;
+      forceSSL = true;
+
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:8096";
+        proxyWebsockets = true;
+      };
+    };
+  };
 
 }

@@ -11,6 +11,20 @@ in {
     enable = true;
     openFirewall = true;
   };
+
+  services.nginx.virtualHosts = {
+    "qbittorrent.${cfg.server.domain}" = {
+
+      enableACME = true;
+      forceSSL = true;
+
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:8080";
+        proxyWebsockets = true;
+      };
+    };
+  };
+
   systemd.tmpfiles.rules = [
     "d ${qb_root}                0755 qbittorrent qbittorrent -"
     "d ${save_path}              0755 qbittorrent qbittorrent -"
