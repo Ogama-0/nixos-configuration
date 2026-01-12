@@ -14,6 +14,9 @@
     qbittorrent
     notify-desktop
     shotcut
+    protonvpn-gui
+    gnome-disk-utility
+    testdisk
 
     # Utility
 
