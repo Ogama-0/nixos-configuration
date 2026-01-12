@@ -2,6 +2,7 @@ rec {
   paths = {
     ssd = "/mnt/ssd";
     hdd = "/mnt/hdd";
+    backup = "/mnt/backup";
   };
 
   mkProfile = { user, mail, is-epita ? false, extra ? (_: { }) }:
@@ -14,7 +15,7 @@ rec {
     in base // (extra base);
 
   # ---------- config serv ---------- #
-  cfg-server = let inherit (paths) ssd hdd;
+  cfg-server = let inherit (paths) ssd hdd backup;
   in mkProfile {
     user = "ogama_serv";
     mail = "oscar.cornut@gmail.com";
@@ -25,6 +26,8 @@ rec {
 
       HDD_path = hdd;
       HDD_app = "${HDD_path}/appdata";
+
+      backup_path = backup;
 
       server = {
         domain = "ogama.me";
