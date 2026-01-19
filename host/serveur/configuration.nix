@@ -12,8 +12,8 @@
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/immich.nix
     ../../modules/nixosconf/qbittorrent.nix
-    # ../../modules/nixosconf/transmission.nix
 
+    ./users
     ./nixos/network.nix
 
     ./hardware-configuration.nix
@@ -32,13 +32,6 @@
     allowPing = true;
 
   };
-  users.users.ogama_serv = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILaKjKo1kaGVYdA5U6kvrjhDj1T3tp04CmiZE3YmA7id ogama@nixos"
-    ];
-  };
 
   environment.systemPackages = with pkgs; [ nano alsa-utils ];
 
@@ -52,7 +45,7 @@
 
   hardware.graphics.enable = true;
   environment.loginShellInit = "fish";
-  nix.settings.allowed-users = [ "@wheel" "${cfg.user}" ];
+  nix.settings.allowed-users = [ "@wheel" "${cfg.user}" "mrnos" ];
 
   system.stateVersion = "25.05"; # Did you read the comment?
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
