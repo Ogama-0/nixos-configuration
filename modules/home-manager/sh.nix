@@ -64,7 +64,7 @@ in {
       tempt = "trash-empty";
       tsempt = "trash-empty 10";
       cps =
-        "rsync --compress --verbose --recursive  --human-readable --partial --progress";
+        "rsync --compress --verbose --recursive --human-readable --partial --progress --archive";
       # rm = "#";
       shutdown = "hollywood";
       stnow = "shutdown now";
