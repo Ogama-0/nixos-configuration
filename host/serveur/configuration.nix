@@ -15,6 +15,7 @@
 
     ./users
     ./nixos/network.nix
+    ./nixos/backup-server.nix
 
     ./hardware-configuration.nix
   ];
