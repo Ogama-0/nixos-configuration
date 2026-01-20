@@ -44,8 +44,12 @@
     jack.enable = true;
   };
 
+  environment.interactiveShellInit = ''
+    exec fish
+  '';
+
   hardware.graphics.enable = true;
-  environment.loginShellInit = "fish";
+
   nix.settings.allowed-users = [ "@wheel" "${cfg.user}" ];
 
   system.stateVersion = "25.05"; # Did you read the comment?
