@@ -1,6 +1,6 @@
 { cfg, ... }: {
   imports = [
-    ./perso-mod/tool.nix
+    ./home-manager/tool.nix
     ../../modules/home-manager/sh.nix
     ../../modules/home-manager/alacritty.nix
     ../../modules/home-manager/display/sway

@@ -13,6 +13,8 @@
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/samba-cli.nix
     ../../modules/nixosconf/gtklock
+
+    ./nixosconf/backup-laptop.nix
   ];
 
   # Use the systemd-boot EFI boot loader.

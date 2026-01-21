@@ -46,7 +46,7 @@ in {
       };
 
       keybindings = lib.mkOptionDefault {
-        "${modifier}+Shift+Return" = "exec zen";
+        "${modifier}+Shift+Return" = "exec firefox";
         "${modifier}+Shift+o" = "exec reboot";
         "${modifier}+Shift+p" = "exec shutdown -h now";
         "${modifier}+Shift+r" = "exec swaymsg reload";

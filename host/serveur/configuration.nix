@@ -14,8 +14,8 @@
     ../../modules/nixosconf/qbittorrent.nix
 
     ./users
-    ./nixos/network.nix
-    ./nixos/backup-server.nix
+    ./nixosconf/network.nix
+    ./nixosconf/backup-server.nix
 
     ./hardware-configuration.nix
   ];
