@@ -4,7 +4,7 @@ in {
   services.borgbackup = {
 
     jobs = {
-      "document_perso" = {
+      "laptop-document-backup" = {
         paths = document_path;
         patterns = [
           "- ${document_path}/.Trash-1000" # don't backup trash
@@ -12,8 +12,8 @@ in {
         ];
         startAt = "daily";
         compression = "auto,zstd";
-        environment.BORG_RSH = "ssh -i ${cfg.ssh.path.pub}";
-        repo = "borg@ogamaservhost:/mnt/backup/pc-perso-backup/document";
+        environment.BORG_RSH = "ssh -i ${cfg.ssh.path.priv}";
+        repo = "borg@ogamaservhost:${cfg.server.path.backup.laptop.document}";
         encryption.mode = "none";
         prune.keep = {
           within = "1d";
@@ -21,6 +21,11 @@ in {
           weekly = 4;
           monthly = 2;
         };
+        # extraArgs = [ "--debug" "--verbose" "--show-rc" "--log-json" ];
+        # environment = {
+        #   BORG_LOGGING_CONF = "debug";
+        #   BORG_SHOW_RC = "1";
+        # };
       };
     };
   };

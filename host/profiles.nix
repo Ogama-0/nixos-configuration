@@ -103,6 +103,7 @@ rec {
         path = "${base.home_path}/Server/share";
         swapsev_path = "${path}/swapsev";
       };
+      server = cfg-server;
     };
   };
 
