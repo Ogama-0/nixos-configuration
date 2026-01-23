@@ -44,10 +44,6 @@
     jack.enable = true;
   };
 
-  environment.interactiveShellInit = ''
-    exec fish
-  '';
-
   hardware.graphics.enable = true;
 
   nix.settings.allowed-users = [ "@wheel" "${cfg.user}" ];
