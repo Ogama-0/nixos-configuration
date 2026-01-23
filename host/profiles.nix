@@ -47,7 +47,7 @@ rec {
             immich = "${HDD_app}/immich";
             qbittorrent = "${HDD_app}/qbittorrent";
           };
-          documents = "${HDD_path}/documents";
+          document = "${HDD_path}/document";
 
           share = rec {
             path = "${HDD_path}/share";
@@ -58,7 +58,10 @@ rec {
 
         backup = rec {
           path = BACKUP;
-
+          laptop = rec {
+            path = "${BACKUP}/laptop";
+            document = "${path}/document";
+          };
           HDD_path = "${path}/hdd-backup";
           SSD_path = "${path}/ssd-backup";
           HDD_app = "${HDD_path}";
@@ -72,7 +75,7 @@ rec {
               jellyfin = "${HDD_app}/jellyfin";
               immich = "${HDD_app}/immich";
             };
-            documents = "${HDD_path}/documents";
+            document = "${HDD_path}/document";
 
             share = rec {
               path = "${HDD_path}/share";

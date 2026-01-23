@@ -44,9 +44,9 @@ in {
         repo = cfg.path.backup.hdd.app.jellyfin;
       };
 
-      "hdd-documents-backup" = mkBasicJob {
-        paths = cfg.path.hdd.documents;
-        repo = cfg.path.backup.hdd.documents;
+      "hdd-document-backup" = mkBasicJob {
+        paths = cfg.path.hdd.document;
+        repo = cfg.path.backup.hdd.document;
       };
     };
 
@@ -56,7 +56,7 @@ in {
 
       "ssd-backup" = {
         authorizedKeys = [ cfg.ssh.pubkey ];
-        path = /mnt/backup/ssd-backup;
+        path = cfg.path.backup.SSD_path;
       };
 
       "hdd-share-public-backup" = {
@@ -74,23 +74,31 @@ in {
         path = cfg.path.backup.hdd.app.jellyfin;
       };
 
-      "hdd-documents-backup" = {
+      "hdd-document-backup" = {
         authorizedKeys = [ cfg.ssh.pubkey ];
-        path = cfg.path.backup.hdd.documents;
+        path = cfg.path.backup.hdd.document;
       };
       # --------- REMOTE --------- #
-      "pc-perso-backup" = {
+      "laptop-document-backup" = {
         authorizedKeys = [ cfg.ssh.pubkey ];
-        path = /mnt/backup/pc-perso-backup;
+        path = cfg.path.backup.laptop.document;
       };
     };
   };
 
   systemd.tmpfiles.rules = [
-    "d /mnt/backup/ssd-backup               0755 borg users -"
-    "d /mnt/backup/hdd-backup               0755 borg users -"
-    "d /mnt/backup/pc-perso-backup          0755 borg users -"
-    "d /mnt/backup/pc-perso-backup/document 0755 borg users -"
+    "d ${cfg.path.backup.SSD_path}                   0755 borg users -"
+
+    "d ${cfg.path.backup.HDD_path}                   0755 borg users -"
+    "d ${cfg.path.backup.hdd.document}              0755 borg users -"
+    "d ${cfg.path.backup.hdd.share.path}             0755 borg users -"
+    "d ${cfg.path.backup.hdd.share.public_HDD_path}  0755 borg users -"
+    "d ${cfg.path.backup.HDD_app}                    0755 borg users -"
+    "d ${cfg.path.backup.hdd.app.immich}             0755 borg users -"
+    "d ${cfg.path.backup.hdd.app.jellyfin}           0755 borg users -"
+
+    "d ${cfg.path.backup.laptop.path}                0755 borg users -"
+    "d ${cfg.path.backup.laptop.document}            0755 borg users -"
   ];
   users.users.borg = {
     openssh.authorizedKeys.keys = [
