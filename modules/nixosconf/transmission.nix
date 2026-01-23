@@ -1,7 +1,7 @@
 { pkgs, config, cfg, ... }:
 let
-  Jellyfin_torrent_path = "${cfg.HDD_app}/jellyfin/FILM/TORRENT";
-  home = "${cfg.HDD_app}/transmission";
+  Jellyfin_torrent_path = "${cfg.path.hdd.app.jellyfin}/FILM/TORRENT";
+  home = "${cfg.path.HDD_app}/transmission";
 in {
   services.transmission = {
     package = pkgs.transmission_4;

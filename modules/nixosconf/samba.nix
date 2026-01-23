@@ -1,10 +1,10 @@
 { cfg, ... }:
 let
-  share = cfg.server.share;
 
-  public_path = share.public_HDD_path;
-  swapsev_path = share.swapsev_path;
-  time_m_path = share.Apple_save_HDD_path;
+  share = cfg.path.hdd.share;
+  public_path = cfg.path.hdd.share.public_HDD_path;
+  swapsev_path = cfg.path.ssd.share.swapsev_path;
+  time_m_path = cfg.path.hdd.share.Apple_save_HDD_path;
 in {
   services.samba = {
     enable = true;

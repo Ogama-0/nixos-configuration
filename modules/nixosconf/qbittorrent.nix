@@ -2,10 +2,10 @@
 let
   qb_root = "/home/${cfg.user}/.qbittorrent";
   save_path = "${qb_root}/torrent_file";
-  hdd_file_path = "${cfg.HDD_app}/qbittorrent";
+  hdd_file_path = "${cfg.path.hdd.app.qbittorrent}";
   torrent_file_path = "${hdd_file_path}/torrents";
   incomplet_file_path = "${hdd_file_path}/logs";
-  movie_file_path = "${cfg.HDD_app}/jellyfin/FILM";
+  movie_file_path = "${cfg.path.hdd.app.jellyfin}/FILM";
 in {
   services.qbittorrent = {
     enable = true;

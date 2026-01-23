@@ -1,11 +1,9 @@
 { pkgs, config, cfg, ... }:
 
 let
-  immichHost =
-    "immich.${cfg.server.domain}"; # TODO: put your immich domain name here
+  immichHost = "immich.${cfg.server.domain}";
 
-  immichRoot =
-    "${cfg.HDD_app}/immich"; # TODO: Tweak these to your desired storage locations
+  immichRoot = "${cfg.path.hdd.app.immich}";
 
 in {
   # systemd.tmpfiles.rules = [
