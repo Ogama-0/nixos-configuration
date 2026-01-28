@@ -35,8 +35,8 @@ rec {
 
         HDD_path = HDD;
         SSD_path = SSD;
-        HDD_app = "${HDD_path}";
-        SSD_app = "${SSD_path}";
+        HDD_app = "${HDD_path}/appdata";
+        SSD_app = "${SSD_path}/appdata";
         ssd = {
           app = { jellyfin = "${SSD_app}/jellyfin"; };
           share = { swapsev_path = "${base.home_path}/swapsev"; };
@@ -64,8 +64,8 @@ rec {
           };
           HDD_path = "${path}/hdd-backup";
           SSD_path = "${path}/ssd-backup";
-          HDD_app = "${HDD_path}";
-          SSD_app = "${SSD_path}";
+          HDD_app = "${HDD_path}/appdata";
+          SSD_app = "${SSD_path}/appdata";
           ssd = {
             app = { jellyfin = "${SSD_app}/jellyfin"; };
             share = { swapsev_path = "${base.home_path}/swapsev"; };
