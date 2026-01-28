@@ -26,8 +26,8 @@ in {
     "d ${cfg.path.hdd.app.jellyfin}/audio/livre_audio  0755 ${cfg.user} users -"
     "d ${cfg.path.hdd.app.jellyfin}/audio/Musique      0755 ${cfg.user} users -"
 
-    "d ${cfg.path.hdd.app.jellyfin}/FILM               0755 ${cfg.user} users -"
-    "d ${cfg.path.hdd.app.jellyfin}/SHOWS              0755 ${cfg.user} users -"
+    "d ${cfg.path.hdd.app.jellyfin}/FILM               0777 ${cfg.user} users -" # 777 for allow qbittorrent, to write
+    "d ${cfg.path.hdd.app.jellyfin}/SHOWS              0777 ${cfg.user} users -"
   ];
   services.nginx.virtualHosts = {
     "jellyfin.${cfg.server.domain}" = {
