@@ -41,7 +41,7 @@
     # allowedTCPPorts = [ 7777 22 80 ];
     # allowedUDPPorts = [ 7777 ];
   };
-  time.timeZone = "Europe/Paris";
+  time.timeZone = "America/Monterrey";
 
   services.resolved.enable = true;
   networking.networkmanager.enable = true;
