@@ -1,7 +1,7 @@
 rec {
   paths = {
     SSD = "/mnt/ssd";
-    HDD = "/mnt/hdd";
+    HDD = "/mnt/hdd-tmp";
     BACKUP = "/mnt/backup";
   };
 

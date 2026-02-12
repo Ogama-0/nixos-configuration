@@ -11,11 +11,12 @@ in {
   };
 
   fileSystems."${HDD_path}" = {
-    device = "/dev/disk/by-uuid/8f067717-34ae-4f64-b2ed-b674c6d388b3";
+    # device = "/dev/disk/by-uuid/8f067717-34ae-4f64-b2ed-b674c6d388b3"; #old broken disk
+    device = "/dev/disk/by-uuid/c25a051e-110e-4e1d-8955-12cefe409c65"; # tmp hdd
     fsType = "ext4";
   };
   fileSystems."${backup}" = {
-    device = "/dev/disk/by-uuid/f105b93a-a670-40da-9af2-8b6b2c322d9a";
+    device = "/dev/disk/by-uuid/4cb52e18-8ad9-455b-9a1b-f4d60b5e2fbb";
     fsType = "ext4";
   };
 
