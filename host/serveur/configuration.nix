@@ -2,16 +2,18 @@
 
 {
   imports = [
-    ../../modules/nixosconf/docker.nix
-    ../../modules/nixosconf/crafty.nix
-    ../../modules/nixosconf/jellyfin.nix
     ../../modules/nixosconf/ssh.nix
-    ../../modules/nixosconf/samba.nix
-    ../../modules/nixosconf/joplin-server.nix
-    ../../modules/nixosconf/nginx.nix
     ../../modules/nixosconf/tailscale.nix
+    ../../modules/nixosconf/samba.nix
+
+    ../../modules/nixosconf/nginx.nix
+    ../../modules/nixosconf/jellyfin.nix
     ../../modules/nixosconf/immich.nix
-    ../../modules/nixosconf/qbittorrent.nix
+
+    # ../../modules/nixosconf/docker.nix
+    # ../../modules/nixosconf/crafty.nix        # <- docker
+    # ../../modules/nixosconf/joplin-server.nix # <- docker
+    # ../../modules/nixosconf/qbittorrent.nix  
 
     ./users
     ./nixosconf/network.nix
