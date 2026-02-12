@@ -2,7 +2,7 @@
 
 let
   immichHost = "immich.${cfg.server.domain}";
-
+  immichTailHost = "immich.tail.${cfg.server.domain}";
   immichRoot = "${cfg.path.hdd.app.immich}";
 
 in {
@@ -32,7 +32,11 @@ in {
       enable = true;
       port = 2281;
     };
-    settings.server.externalDomain = "https://${immichHost}";
+    settings.server.externalDomain = # [
+      "https://${immichHost}" # internet
+      # "https://${immichTailHost}" # tailnet
+      # ]
+    ;
 
     openFirewall = true;
   };
@@ -40,6 +44,23 @@ in {
   services.nginx.virtualHosts = {
 
     "${immichHost}" = {
+
+      enableACME = true;
+      forceSSL = true;
+
+      locations."/" = {
+        proxyPass = "http://[::1]:${toString config.services.immich.port}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
+        extraConfig = ''
+          client_max_body_size 50000M;
+          proxy_read_timeout   600s;
+          proxy_send_timeout   600s;
+          send_timeout         600s;
+        '';
+      };
+    };
+    "${immichTailHost}" = {
 
       enableACME = true;
       forceSSL = true;
