@@ -106,6 +106,16 @@
           language-servers = [ "ruff" "jedi" "pylsp" "wakatime" ];
         }
         {
+          name = "r";
+          auto-format = true;
+          language-servers = [ "R" "wakatime" ];
+        }
+        {
+          name = "rmarkdown";
+          auto-format = true;
+          language-servers = [ "R" "wakatime" ];
+        }
+        {
           name = "rust";
           auto-format = true;
           language-servers = [ "rust-analyzer" "wakatime" ];
