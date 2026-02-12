@@ -61,6 +61,9 @@
     python3 # Python
     dotnetCorePackages.sdk_9_0 # C#
 
+    rstudio # R for tec
+    R
+
     # Troll 
     cmatrix
     hollywood
