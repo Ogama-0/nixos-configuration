@@ -11,7 +11,7 @@
     username = cfg.user;
     homeDirectory = cfg.home_path;
     sessionVariables = {
-      swp = "${cfg.server.share.swapsev_path}";
+      swp = "${cfg.path.ssd.share.swapsev_path}";
       # TORR_DIR = "${config.services.transmission.settings.watch-dir}";
     };
 
