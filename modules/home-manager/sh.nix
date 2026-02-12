@@ -12,6 +12,7 @@ in {
     power-profiles-daemon
 
     # App Tool Cli
+    lsof
     trash-cli
     zip
     unzip
