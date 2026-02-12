@@ -4,7 +4,7 @@
     ../../modules/home-manager/sh.nix
     ../../modules/home-manager/alacritty.nix
     ../../modules/home-manager/display/sway
-    ../../modules/home-manager/display/hyprland
+    # ../../modules/home-manager/display/hyprland
     ../../modules/home-manager/helix.nix
     ../../modules/home-manager/git.nix
     ../../modules/home-manager/display/font.nix

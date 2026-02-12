@@ -13,7 +13,7 @@ in {
     targets.alacritty.enable = false;
     targets.swaylock.enable = false;
     targets.fish.enable = false;
-    targets.mako.enable = false;
+    # targets.mako.enable = true;
     targets.starship.enable = false;
     targets.tofi.enable = true;
     # targets.swaync.enable = false;
