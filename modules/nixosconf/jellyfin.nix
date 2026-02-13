@@ -29,16 +29,9 @@ in {
     "d ${cfg.path.hdd.app.jellyfin}/FILM               0777 ${cfg.user} users -" # 777 for allow qbittorrent, to write
     "d ${cfg.path.hdd.app.jellyfin}/SHOWS              0777 ${cfg.user} users -"
   ];
-  services.nginx.virtualHosts = {
-    "jellyfin.${cfg.server.domain}" = {
-      enableACME = true;
-      forceSSL = true;
-
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:8096";
-        proxyWebsockets = true;
-      };
-    };
+  services.nginx.virtualHosts = cfg.ngnix.mkVhost {
+    subdomain = "jellyfin";
+    proxyPass = "http://127.0.0.1:8096";
   };
 
 }

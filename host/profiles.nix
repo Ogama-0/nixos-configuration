@@ -17,6 +17,33 @@ rec {
           };
           pubkey = ssh_pubkey;
         };
+
+        server.domain = "ogama.me";
+        ngnix.mkVhost = { subdomain, proxyPass, extra ? { } }: {
+
+          "${subdomain}.${server.domain}" = {
+
+            enableACME = true;
+            forceSSL = true;
+
+            locations."/" = ({
+              inherit proxyPass;
+              proxyWebsockets = true;
+            } // extra);
+          };
+          "${subdomain}.tail.${server.domain}" = {
+
+            enableACME = true;
+            forceSSL = true;
+
+            locations."/" = ({
+              inherit proxyPass;
+              proxyWebsockets = true;
+              recommendedProxySettings = true;
+            } // extra);
+          };
+        };
+
       };
 
     in base // (extra base);
@@ -86,7 +113,6 @@ rec {
 
         };
       };
-      server = { domain = "ogama.me"; };
     };
   };
 
