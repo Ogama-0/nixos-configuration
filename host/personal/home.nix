@@ -1,4 +1,4 @@
-{ cfg, ... }: {
+{ cfg, pkgs, ... }: {
   imports = [
     ./home-manager/tool.nix
     ../../modules/home-manager/sh.nix
@@ -25,6 +25,12 @@
     };
   };
   home = {
+
+    pointerCursor = {
+      gtk.enable = true;
+      package = pkgs.vanilla-dmz;
+      name = "Vanilla-DMZ";
+    };
 
     username = "ogama";
     homeDirectory = "/home/ogama";
