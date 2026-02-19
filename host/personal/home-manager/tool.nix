@@ -64,6 +64,8 @@
     rstudio # R for tec
     R
 
+    qemu # vm
+
     # Troll 
     cmatrix
     hollywood
