@@ -116,6 +116,11 @@
           language-servers = [ "R" "wakatime" ];
         }
         {
+          name = "latex";
+          auto-format = false;
+          language-servers = [ "texlab" "wakatime" ];
+        }
+        {
           name = "rust";
           auto-format = true;
           language-servers = [ "rust-analyzer" "wakatime" ];
