@@ -13,6 +13,7 @@ in {
 
     # App Tool Cli
     lsof
+    immich-cli
     trash-cli
     zip
     unzip
