@@ -13,8 +13,10 @@
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/samba-cli.nix
     ../../modules/nixosconf/gtklock
+    ../../modules/nixosconf/vm.nix
 
     ./nixosconf/backup-laptop.nix
+    ./nixosconf/volumes.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -23,7 +25,9 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
+
     kernelPackages = pkgs.linuxPackages_latest;
+    supportedFilesystems = [ "ntfs" ];
   };
 
   hardware.bluetooth = {
