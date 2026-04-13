@@ -14,6 +14,7 @@
     ../../modules/nixosconf/samba-cli.nix
     ../../modules/nixosconf/gtklock
     ../../modules/nixosconf/vm.nix
+    ../../modules/nixosconf/localsend.nix
 
     ./nixosconf/backup-laptop.nix
     ./nixosconf/volumes.nix
@@ -46,6 +47,7 @@
     # allowedUDPPorts = [ 7777 ];
   };
   time.timeZone = "America/Monterrey";
+  # time.timeZone = "America/Mazatlan"; # Los Cabos
 
   services.resolved.enable = true;
   networking.networkmanager.enable = true;

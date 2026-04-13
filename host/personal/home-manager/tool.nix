@@ -21,7 +21,7 @@
     # Utility
 
     lpkgs.librepods
-    simplescreenrecorder
+    kooha # screen recorder rust
     mpv # View video files
     imv # ''
     wdisplays # display manager
@@ -41,6 +41,7 @@
     fuse-overlayfs # sandbox
     bubblewrap # ...
     psmisc
+    shotcut
 
     # game
     modrinth-app

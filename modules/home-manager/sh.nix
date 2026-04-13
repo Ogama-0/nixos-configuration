@@ -13,6 +13,7 @@ in {
 
     # App Tool Cli
     lsof
+    dig
     immich-cli
     trash-cli
     zip
@@ -47,6 +48,9 @@ in {
 
   ];
 
+  # documentation.man.generateCaches =
+  #   false; # remove the build man-pages at every rebuild
+
   programs.fish = {
     enable = true;
 
@@ -59,6 +63,7 @@ in {
       c = "cargo";
       cr = "cargo run";
       ll = "ls -lhaF";
+      llo = "ls -lhaF -s oldest";
       tree = "ls -T";
       ghd = "gh-dash";
       tp = "trash-put";
@@ -77,6 +82,7 @@ in {
       wcn = "nmcli device wifi connect";
       wscn = "nmcli device wifi rescan && nmcli device wifi connect";
       wsl = "nmcli device wifi rescan && nmcli device wifi list";
+
     };
 
     functions = {
