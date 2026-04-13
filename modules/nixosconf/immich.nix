@@ -32,12 +32,14 @@ in {
       enable = true;
       port = 2281;
     };
-    settings.server.externalDomain = "https://${immichHost}";
+    settings.server.externalDomain = "http://${immichTailHost}";
 
     openFirewall = true;
   };
 
   services.nginx.virtualHosts = cfg.ngnix.mkVhost {
+
+    https = false;
     subdomain = "immich";
     proxyPass = "http://[::1]:${toString config.services.immich.port}";
     extra = {

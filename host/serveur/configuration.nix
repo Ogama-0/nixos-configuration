@@ -10,14 +10,15 @@
     ../../modules/nixosconf/jellyfin.nix
     ../../modules/nixosconf/immich.nix
 
-    # ../../modules/nixosconf/docker.nix
+    ../../modules/nixosconf/docker.nix
+    ../../modules/nixosconf/joplin-server.nix # <- docker
     # ../../modules/nixosconf/crafty.nix        # <- docker
-    # ../../modules/nixosconf/joplin-server.nix # <- docker
     # ../../modules/nixosconf/qbittorrent.nix  
 
     ./users
     ./nixosconf/network.nix
     ./nixosconf/backup-server.nix
+    ./nixosconf/grafana.nix
 
     ./hardware-configuration.nix
   ];

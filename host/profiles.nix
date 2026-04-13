@@ -19,12 +19,11 @@ rec {
         };
 
         server.domain = "ogama.me";
-        ngnix.mkVhost = { subdomain, proxyPass, extra ? { } }: {
+        ngnix.mkVhost = { subdomain, proxyPass, https ? true, extra ? { } }: {
 
           "${subdomain}.${server.domain}" = {
-
-            enableACME = true;
-            forceSSL = true;
+            enableACME = https;
+            forceSSL = https;
 
             locations."/" = ({
               inherit proxyPass;
@@ -33,9 +32,13 @@ rec {
           };
           "${subdomain}.tail.${server.domain}" = {
 
-            enableACME = true;
-            forceSSL = true;
+            # sslCertificate =
+            #   "/var/lib/tailscale/certs/ogamaservhost.tail7b660a.ts.net.crt";
+            # sslCertificateKey =
+            #   "/var/lib/tailscale/certs/ogamaservhost.tail7b660a.ts.net.key";
 
+            enableACME = https;
+            forceSSL = https;
             locations."/" = ({
               inherit proxyPass;
               proxyWebsockets = true;

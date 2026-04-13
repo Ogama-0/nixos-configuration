@@ -1,12 +1,12 @@
 { pkgs, cfg, ... }:
 let
   path = "${cfg.home_path}/.joplin";
-  hostname = "joplin.${cfg.server.domain}";
-  url = "https://${hostname}";
+  subdomain = "joplin";
   port = 22300;
   dockerNetwork = "joplin-net";
 in {
   virtualisation.oci-containers = {
+    backend = "docker";
     containers = {
       joplindb = {
         image = "postgres:16";
@@ -28,7 +28,7 @@ in {
 
         environment = {
           APP_PORT = "${toString port}";
-          APP_BASE_URL = url;
+          APP_BASE_URL = "https://${subdomain}.tail.${cfg.server.domain}";
           DB_CLIENT = "pg";
           POSTGRES_PASSWORD = "postgres";
 
@@ -54,29 +54,8 @@ in {
   ];
   networking.firewall.allowedTCPPorts = [ port ];
 
-  services.nginx.virtualHosts = {
-    "${hostname}" = {
-      enableACME = true;
-      forceSSL = true;
-
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString port}";
-        proxyWebsockets = true;
-      };
-    };
+  services.nginx.virtualHosts = cfg.ngnix.mkVhost {
+    inherit subdomain;
+    proxyPass = "http://127.0.0.1:${toString port}";
   };
-
-  systemd.services.docker-joplin-network = {
-    description = "Create Docker network for Joplin";
-    after = [ "docker.service" ];
-    wants = [ "docker.service" ];
-    wantedBy = [ "multi-user.target" ];
-
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = [ "../../scripts/docker/create-joplin-network.sh" ];
-    };
-  };
-
 }
