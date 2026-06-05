@@ -51,3 +51,4 @@ nix shell git+https://github.com/Ogama-0/nixos-configuration#<pkg>
 ```
 ### Packages available :
 - ``librepods`` : from [kavishdevar'a package](https://github.com/kavishdevar/librepods)
+- ``free-claude-code`` : from [Alishahryar1'a package](https://github.com/Alishahryar1/free-claude-code)
