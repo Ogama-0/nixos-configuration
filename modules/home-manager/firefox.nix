@@ -1,4 +1,9 @@
-{ inputs, config, lib, ... }:
+{
+  inputs,
+  config,
+  lib,
+  ...
+}:
 
 let
   inherit (inputs) zen-browser;
@@ -61,19 +66,19 @@ let
     }
   '';
 
-in {
+in
+{
 
   imports = [ zen-browser.homeModules.beta ];
 
-  home.sessionVariables.BROWSER =
-    lib.getExe config.programs.zen-browser.package;
+  home.sessionVariables.BROWSER = lib.getExe config.programs.zen-browser.package;
 
   stylix.targets.firefox = {
     enable = false;
     profileNames = [ "default" ];
   };
   stylix.targets.zen-browser = {
-    enable = false;
+    # enable = false;
     profileNames = [ "default" ];
   };
 
@@ -98,7 +103,7 @@ in {
       isDefault = true;
 
       settings = settings // {
-        # "zen.view.experimental-no-window-controls" = true;
+        "zen.view.experimental-no-window-controls" = true;
         # "zen.view.show-newtab-button-top" = false;
 
         # "zen.welcome-screen.seen" = true;
@@ -118,7 +123,11 @@ in {
       search = {
         force = true;
         default = "google";
-        order = [ "google" "wikipedia" "youtube" ];
+        order = [
+          "google"
+          "wikipedia"
+          "youtube"
+        ];
       };
     };
   };
