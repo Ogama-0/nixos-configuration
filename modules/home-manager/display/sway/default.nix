@@ -1,4 +1,9 @@
-{ cfg, lib, pkgs, ... }:
+{
+  cfg,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   modifier = "Mod4";
@@ -10,14 +15,20 @@ let
   background_blure = toString /background_blure.png;
   background_tache = toString /background_tache.png;
   background_monocle = toString /background_monocle.png;
-in {
+in
+{
   imports = [
     ./barbar.nix
     ./mako.nix
     ../tofi.nix
     ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix
   ];
-  home.packages = with pkgs; [ grim slurp wlroots swaybg ];
+  home.packages = with pkgs; [
+    grim
+    slurp
+    wlroots
+    swaybg
+  ];
   # swaylock-effect
   wayland.windowManager.sway = {
     enable = true;
@@ -33,7 +44,7 @@ in {
       right = "${right}";
       defaultWorkspace = "workspace 10";
 
-      startup = [{ command = "alacritty"; }];
+      startup = [ { command = "alacritty"; } ];
 
       fonts = {
         names = [ "Noto Sans" ];
@@ -46,7 +57,7 @@ in {
       };
 
       keybindings = lib.mkOptionDefault {
-        "${modifier}+Shift+Return" = "exec firefox";
+        "${modifier}+Shift+Return" = "exec zen-beta";
         "${modifier}+Shift+o" = "exec reboot";
         "${modifier}+Shift+p" = "exec shutdown -h now";
         "${modifier}+Shift+r" = "exec swaymsg reload";
@@ -54,10 +65,8 @@ in {
         "${modifier}+${right}" = "focus right";
         "${modifier}+${up}" = "focus up";
         "${modifier}+${down}" = "focus down";
-        "${modifier}+Escape" =
-          "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
-        "${modifier}+Shift+Escape" =
-          "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
+        "${modifier}+Escape" = "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
+        "${modifier}+Shift+Escape" = "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
         "${modifier}" = "exec swaymsg bar mode toggle";
         "${modifier}+Shift+z" = "exec makoctl dismiss";
         # "${modifier}+Shift+d" = "exec vesktop";
@@ -100,45 +109,34 @@ in {
         "XF86AudioNext" = "exec playerctl next";
         "XF86AudioPlay" = "exec playerctl play-pause";
 
-        "XF86AudioRaiseVolume" = ''
-          exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ && makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"'';
+        "XF86AudioRaiseVolume" =
+          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ && makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"'';
 
-        "XF86AudioLowerVolume" = ''
-          exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- &&  makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"'';
+        "XF86AudioLowerVolume" =
+          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- &&  makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"'';
         "XF86AudioMute" =
           "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && makoctl dismiss -a && notify-desktop $(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'MUTED' && printf 'Sound OFF' || printf 'Sound ON')";
 
-        "XF86MonBrightnessUp" = ''
-          exec brightnessctl --exponent=2 s +10% && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf "Brightness: %.0f%%", ($1/max)*100;}')"'';
-        "XF86MonBrightnessDown" = ''
-          exec brightnessctl --exponent=2 s 10%- && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf "Brightness: %.0f%%", ($1/max)*100;}')"'';
+        "XF86MonBrightnessUp" =
+          ''exec brightnessctl --exponent=2 s +10% && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf "Brightness: %.0f%%", ($1/max)*100;}')"'';
+        "XF86MonBrightnessDown" =
+          ''exec brightnessctl --exponent=2 s 10%- && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf "Brightness: %.0f%%", ($1/max)*100;}')"'';
 
         "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
       };
     };
 
-    # extraConfig = "exec_always swaybg --image ${background_monocle}";
-    # extraConfig = "exec_always swaymsg output '*' bg ${background_monocle} fill";
-    extraConfig =
-      "exec_always swaymsg output '*' bg ${cfg.bg_path}${background_monocle} fill";
+    extraConfig = "exec_always swaymsg output '*' bg ${cfg.bg_path}${background_monocle} fill";
   };
   # TODO : make the bg swith every 30 second or whene you switch focused desktop
-  services.swayidle = {
-    enable = true;
-    events = [
-      {
-        event = "before-sleep";
-        command = "loginctl lock-session";
-      }
-      {
-        event = "before-sleep";
-        command = "${pkgs.playerctl}/bin/playerctl pause";
-      }
-      {
-        event = "lock";
-        command = "${pkgs.swaylock-effects}/bin/swaylock";
-      }
-    ];
-  };
+  # services.swayidle = {
+  #   enable = true;
+  #   events = {
+  #     lock = "${pkgs.swaylock-effects}/bin/swaylock";
+  #     before-sleep = ''
+  #       ${pkgs.playerctl}/bin/playerctl pause ; loginctl lock-session
+  #     '';
+  #   };
+  # };
 
 }

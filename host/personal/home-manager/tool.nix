@@ -1,4 +1,10 @@
-{ pkgs, upkgs, lpkgs, ... }: {
+{
+  pkgs,
+  upkgs,
+  lpkgs,
+  ...
+}:
+{
 
   home.packages = with pkgs; [
 
@@ -14,9 +20,10 @@
     qbittorrent
     notify-desktop
     shotcut
-    protonvpn-gui
+    proton-vpn
     gnome-disk-utility
     testdisk
+    lpkgs.free-claude-code
 
     # Utility
 
@@ -49,9 +56,9 @@
     prismlauncher
     steam-run
     sc-controller
-    superTuxKart
+    supertuxkart
     mindustry
-    wineWowPackages.full
+    wineWow64Packages.full
     gamescope
 
     # Dev
@@ -67,7 +74,7 @@
 
     qemu # vm
 
-    # Troll 
+    # Troll
     cmatrix
     hollywood
   ];

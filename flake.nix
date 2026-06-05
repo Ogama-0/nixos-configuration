@@ -3,9 +3,9 @@
   description = "main nixos configuration";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
-
-    home-manager.url = "github:nix-community/home-manager/release-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/backport-525067-to-release-26.05";
+    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     wakatime-ls.url = "github:mrnossiom/wakatime-ls";
@@ -15,13 +15,21 @@
     zen-browser.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.inputs.home-manager.follows = "home-manager";
 
-    stylix.url = "github:nix-community/stylix/release-25.11";
+    stylix.url = "github:nix-community/stylix/release-26.05";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
-  outputs = { self, nixpkgs, home-manager, nixos-hardware, stylix, ... }@inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      nixos-hardware,
+      stylix,
+      ...
+    }@inputs:
     let
       profiles = import ./host/profiles.nix;
       inherit (profiles) cfg-server cfg-perso cfg-epita;
@@ -31,26 +39,35 @@
         inherit system;
         config.allowUnfreePredicate = _: true;
       };
-      lpkgs = { librepods = self.packages.${system}.librepods; };
+      lpkgs = {
+        librepods = self.packages.${system}.librepods;
+        free-claude-code = self.packages.${system}.free-claude-code;
+      };
       upkgs = {
         zen-browser = self.inputs.zen-browser.packages.${pkgs.system}.default;
       };
-    in {
+    in
+    {
       templates = import ./templates;
 
       packages.${system} = {
         librepods = pkgs.callPackage ./pkgs/librepods.nix { };
+        free-claude-code = pkgs.callPackage ./pkgs/freeclaudecode.nix { };
       };
 
       nixosConfigurations = {
         personal = lib.nixosSystem {
           inherit pkgs;
-          specialArgs = { cfg = cfg-perso; };
+          specialArgs = {
+            cfg = cfg-perso;
+          };
           modules = [ ./host/personal/configuration.nix ];
         };
         oserv = lib.nixosSystem {
           inherit system;
-          specialArgs = { cfg = cfg-server; };
+          specialArgs = {
+            cfg = cfg-server;
+          };
           modules = [
             ./host/serveur/configuration.nix
             nixos-hardware.nixosModules.dell-optiplex-3050
@@ -69,7 +86,10 @@
             inherit lpkgs;
           };
           inherit pkgs;
-          modules = [ ./host/personal/home.nix stylix.homeModules.stylix ];
+          modules = [
+            ./host/personal/home.nix
+            stylix.homeModules.stylix
+          ];
         };
 
         oserv = home-manager.lib.homeManagerConfiguration {

@@ -1,7 +1,9 @@
-{ ... }: {
+{ ... }:
+{
   # Reuse from https://github.com/saatvik333/hyprland-dotfiles/blob/main/hypr/config/animations.conf
 
   wayland.windowManager.hyprland = {
+    configType = "hyprlang";
     settings = {
       animations = {
         enabled = true;

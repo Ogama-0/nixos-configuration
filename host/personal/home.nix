@@ -1,6 +1,8 @@
-{ cfg, pkgs, ... }: {
+{ cfg, pkgs, ... }:
+{
   imports = [
     ./home-manager/tool.nix
+    ./home-manager/default-app.nix
     ../../modules/home-manager/sh.nix
     ../../modules/home-manager/alacritty.nix
     ../../modules/home-manager/display/sway
@@ -24,8 +26,8 @@
       allowUnfreePredicate = (_: true);
     };
   };
-  home = {
 
+  home = {
     pointerCursor = {
       gtk.enable = true;
       package = pkgs.vanilla-dmz;

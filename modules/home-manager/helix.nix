@@ -1,4 +1,9 @@
-{ pkgs, inputs, config, ... }:
+{
+  pkgs,
+  inputs,
+  config,
+  ...
+}:
 
 {
   programs.helix = {
@@ -10,7 +15,7 @@
       inputs.wakatime-ls.packages."x86_64-linux".wakatime-ls
       # Nix Related
       nil
-      nixfmt-classic
+      nixfmt
 
       # Markdown
       marksman
@@ -70,7 +75,9 @@
           normal = "block";
           select = "underline";
         };
-        lsp = { display-inlay-hints = true; };
+        lsp = {
+          display-inlay-hints = true;
+        };
       };
 
       keys = {
@@ -93,40 +100,64 @@
     languages = {
       language-server = {
         wakatime.command = "wakatime-ls";
-        rust-analyzer.config = { check.command = "clippy"; };
+        rust-analyzer.config = {
+          check.command = "clippy";
+        };
       };
 
       language = [
         {
           name = "nix";
           auto-format = true;
-          formatter = { command = "nixfmt"; };
-          language-servers = [ "nil" "wakatime" ];
+          formatter = {
+            command = "nixfmt";
+          };
+          language-servers = [
+            "nil"
+            "wakatime"
+          ];
         }
         {
           name = "python";
           auto-format = false;
-          language-servers = [ "ruff" "jedi" "pylsp" "wakatime" ];
+          language-servers = [
+            "ruff"
+            "jedi"
+            "pylsp"
+            "wakatime"
+          ];
         }
         {
           name = "r";
           auto-format = true;
-          language-servers = [ "R" "wakatime" ];
+          language-servers = [
+            "R"
+            "wakatime"
+          ];
         }
         {
           name = "rmarkdown";
           auto-format = true;
-          language-servers = [ "R" "wakatime" ];
+          language-servers = [
+            "R"
+            "wakatime"
+          ];
         }
         {
           name = "latex";
           auto-format = false;
-          language-servers = [ "texlab" "wakatime" ];
+          language-servers = [
+            "texlab"
+            "wakatime"
+          ];
         }
         {
           name = "rust";
           auto-format = true;
-          language-servers = [ "rust-analyzer" "wakatime" ];
+          language-servers = [
+            "rust-analyzer"
+            "wakatime"
+          ];
         }
         {
           name = "markdown";
@@ -135,7 +166,10 @@
         {
           name = "ocaml";
           auto-format = true;
-          language-servers = [ "ocamllsp" "wakatime" ];
+          language-servers = [
+            "ocamllsp"
+            "wakatime"
+          ];
         }
         {
           name = "javascript";
@@ -148,24 +182,46 @@
         }
         {
           name = "c";
-          language-servers = [ "clangd" "wakatime" ];
+          language-servers = [
+            "clangd"
+            "wakatime"
+          ];
           auto-format = true;
-          formatter = { command = "clang-format"; };
+          formatter = {
+            command = "clang-format";
+          };
         }
         {
           name = "html";
           auto-format = true;
-          language-servers = [ "vscode-html-language-server" "wakatime" ];
+          language-servers = [
+            "vscode-html-language-server"
+            "wakatime"
+          ];
         }
         {
           name = "css";
           auto-format = true;
-          language-servers = [ "vscode-css-language-server" "wakatime" ];
+          language-servers = [
+            "vscode-css-language-server"
+            "wakatime"
+          ];
         }
         {
           name = "erlang";
           auto-format = true;
-          language-servers = [ "elp" "wakatime" ];
+          language-servers = [
+            "elp"
+            "wakatime"
+          ];
+        }
+        {
+          name = "prolog";
+          auto-format = true;
+          language-servers = [
+            "swipl"
+            "wakatime"
+          ];
         }
         {
           name = "nasm";

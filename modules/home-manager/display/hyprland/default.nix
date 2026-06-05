@@ -1,7 +1,9 @@
 { config, pkgs, ... }:
 
-let mod = "SUPER";
-in {
+let
+  mod = "SUPER";
+in
+{
   imports = [
     ./animation.nix
     ./hyprpolkitagent.nix
@@ -23,6 +25,7 @@ in {
   wayland.windowManager.hyprland = {
     enable = true;
     xwayland.enable = true;
+    configType = "hyprlang";
 
     settings = {
       # env = [
@@ -63,7 +66,9 @@ in {
 
       };
 
-      input.touchpad = { disable_while_typing = false; };
+      input.touchpad = {
+        disable_while_typing = false;
+      };
 
       misc = {
         disable_hyprland_logo = true;
@@ -75,7 +80,8 @@ in {
       cursor.inactive_timeout = 5;
 
       binds.drag_threshold = 10;
-      bind = [ # Bind one click
+      bind = [
+        # Bind one click
         # --- système ---
         ",XF86PowerOff,exec,:" # Empêche l'écran de s'éteindre
 
@@ -112,33 +118,33 @@ in {
         "${mod}, Space, togglefloating"
         "${mod}, F, fullscreen, toggle"
 
-      ] ++ (builtins.concatLists (builtins.genList (i:
-        let ws = i + 1;
-        in [
-          "$mod, code:1${toString i}, workspace, ${toString ws}"
-          "$mod SHIFT, code:1${toString i}, movetoworkspacesilent, ${
-            toString ws
-          }"
-        ]) 9));
+      ]
+      ++ (builtins.concatLists (
+        builtins.genList (
+          i:
+          let
+            ws = i + 1;
+          in
+          [
+            "$mod, code:1${toString i}, workspace, ${toString ws}"
+            "$mod SHIFT, code:1${toString i}, movetoworkspacesilent, ${toString ws}"
+          ]
+        ) 9
+      ));
 
       binde = [
         # --- Son ---
 
-        ''
-          , XF86AudioRaiseVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ && makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"''
+        '', XF86AudioRaiseVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ && makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"''
 
-        ''
-          , XF86AudioLowerVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- && makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"''
+        '', XF86AudioLowerVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- && makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"''
 
-        ''
-          , XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && makoctl dismiss -a && notify-desktop "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q MUTED && echo Sound OFF || echo Sound ON)"''
+        '', XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && makoctl dismiss -a && notify-desktop "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q MUTED && echo Sound OFF || echo Sound ON)"''
 
         # --- Luminosité ---
-        ''
-          , XF86MonBrightnessUp, exec, brightnessctl --exponent=2 s +10% && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf \"Brightness: %.0f%%\", ($1/max)*100;}')"''
+        '', XF86MonBrightnessUp, exec, brightnessctl --exponent=2 s +10% && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf \"Brightness: %.0f%%\", ($1/max)*100;}')"''
 
-        ''
-          , XF86MonBrightnessDown, exec, brightnessctl --exponent=2 s 10%- && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf \"Brightness: %.0f%%\", ($1/max)*100;}')"''
+        '', XF86MonBrightnessDown, exec, brightnessctl --exponent=2 s 10%- && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf \"Brightness: %.0f%%\", ($1/max)*100;}')"''
 
       ];
       bindo = [
