@@ -18,7 +18,7 @@
     ./users
     ./nixosconf/network.nix
     ./nixosconf/backup-server.nix
-    ./nixosconf/grafana.nix
+    # ./nixosconf/grafana.nix
 
     ./hardware-configuration.nix
   ];

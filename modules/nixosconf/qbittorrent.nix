@@ -12,16 +12,13 @@ in {
     openFirewall = true;
   };
 
-  services.nginx.virtualHosts = {
-    "qbittorrent.${cfg.server.domain}" = {
+  services.nginx.virtualHosts."qbittorrent.${cfg.server.domain}" = {
+    enableACME = true;
+    forceSSL = true;
 
-      enableACME = true;
-      forceSSL = true;
-
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:8080";
-        proxyWebsockets = true;
-      };
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:8080";
+      proxyWebsockets = true;
     };
   };
 

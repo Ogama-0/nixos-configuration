@@ -19,34 +19,6 @@ rec {
         };
 
         server.domain = "ogama.me";
-        ngnix.mkVhost = { subdomain, proxyPass, https ? true, extra ? { } }: {
-
-          "${subdomain}.${server.domain}" = {
-            enableACME = https;
-            forceSSL = https;
-
-            locations."/" = ({
-              inherit proxyPass;
-              proxyWebsockets = true;
-            } // extra);
-          };
-          "${subdomain}.tail.${server.domain}" = {
-
-            # sslCertificate =
-            #   "/var/lib/tailscale/certs/ogamaservhost.tail7b660a.ts.net.crt";
-            # sslCertificateKey =
-            #   "/var/lib/tailscale/certs/ogamaservhost.tail7b660a.ts.net.key";
-
-            enableACME = https;
-            forceSSL = https;
-            locations."/" = ({
-              inherit proxyPass;
-              proxyWebsockets = true;
-              recommendedProxySettings = true;
-            } // extra);
-          };
-        };
-
       };
 
     in base // (extra base);

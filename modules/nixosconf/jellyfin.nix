@@ -1,9 +1,10 @@
 { cfg, ... }:
+
 let path = "${cfg.home_path}/.jellyfin";
 in {
   services.jellyfin = {
     enable = true;
-    openFirewall = true;
+    # openFirewall = true;
 
     cacheDir = "${path}/cache";
     configDir = "${path}/config";
@@ -12,8 +13,8 @@ in {
 
     group = "users";
     user = cfg.user;
-
   };
+
   systemd.tmpfiles.rules = [
     "d ${path}          0755 ${cfg.user} users -"
     "d ${path}/cache    0755 ${cfg.user} users -"
@@ -29,9 +30,14 @@ in {
     "d ${cfg.path.hdd.app.jellyfin}/FILM               0777 ${cfg.user} users -" # 777 for allow qbittorrent, to write
     "d ${cfg.path.hdd.app.jellyfin}/SHOWS              0777 ${cfg.user} users -"
   ];
-  services.nginx.virtualHosts = cfg.ngnix.mkVhost {
-    subdomain = "jellyfin";
-    proxyPass = "http://127.0.0.1:8096";
-  };
 
+  services.nginx.virtualHosts."jellyfin.${cfg.server.domain}" = {
+    enableACME = true;
+    forceSSL = true;
+
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:8096";
+      proxyWebsockets = true;
+    };
+  };
 }

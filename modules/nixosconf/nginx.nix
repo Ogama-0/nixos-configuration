@@ -8,7 +8,6 @@
       SSL = {
         enableACME = true;
         forceSSL = true;
-
       };
     in {
       "${cfg.server.domain}" =
@@ -23,21 +22,6 @@
       # joplin
       # immich
       # qbittorrent
-
-      # TEMPLATE :
-      #
-      # services.nginx.virtualHosts = {
-      #   "${appname}.${cfg.server.domain}" = {
-
-      #     enableACME = true;
-      #     forceSSL = true;
-
-      #     locations."/" = {
-      #       proxyPass = "http://127.0.0.1:${port}";
-      #       proxyWebsockets = true;
-      #     };
-      #   };
-      # };
 
     };
   };

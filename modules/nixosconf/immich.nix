@@ -4,7 +4,6 @@ let
   immichHost = "immich.${cfg.server.domain}";
   immichTailHost = "immich.tail.${cfg.server.domain}";
   immichRoot = "${cfg.path.hdd.app.immich}";
-
 in {
   # systemd.tmpfiles.rules = [
   #   "d ${immichRoot}                0755 immich immich -"
@@ -20,6 +19,7 @@ in {
   services.immich = {
     enable = true;
     port = 2283;
+
     mediaLocation = "${immichRoot}";
 
     database = {
@@ -33,16 +33,15 @@ in {
       port = 2281;
     };
     settings.server.externalDomain = "http://${immichTailHost}";
-
-    openFirewall = true;
   };
 
-  services.nginx.virtualHosts = cfg.ngnix.mkVhost {
+  services.nginx.virtualHosts.${immichTailHost} = {
+    enableACME = false;
+    forceSSL = false;
 
-    https = false;
-    subdomain = "immich";
-    proxyPass = "http://[::1]:${toString config.services.immich.port}";
-    extra = {
+    locations."/" = {
+      proxyPass = "http://[::1]:${toString config.services.immich.port}";
+      proxyWebsockets = true;
       recommendedProxySettings = true;
       extraConfig = ''
         client_max_body_size 50000M;

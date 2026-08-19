@@ -44,18 +44,14 @@ in {
       to = 25600;
     }];
   };
-  services.nginx.virtualHosts = {
-    "crafty.${cfg.server.domain}" = {
 
-      enableACME = true;
-      forceSSL = true;
+  services.nginx.virtualHosts."crafty.${cfg.server.domain}" = {
+    enableACME = true;
+    forceSSL = true;
 
-      locations."/" = {
-        proxyPass = "https://127.0.0.1:30001";
-        proxyWebsockets = true;
-      };
+    locations."/" = {
+      proxyPass = "https://127.0.0.1:30001";
+      proxyWebsockets = true;
     };
-
   };
-
 }

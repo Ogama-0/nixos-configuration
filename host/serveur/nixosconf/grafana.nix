@@ -21,28 +21,28 @@
       analytics.reporting_enabled = false;
     };
 
-    provision = {
-      enable = true;
+    # provision = {
+    #   enable = true;
 
-      datasources.settings.datasources = [
-        {
-          name = "Prometheus";
-          type = "prometheus";
-          access = "proxy";
-          url = "http://127.0.0.1:${toString config.services.prometheus.port}";
-        }
+    #   datasources.settings.datasources = [
+    #     {
+    #       name = "Prometheus";
+    #       type = "prometheus";
+    #       access = "proxy";
+    #       url = "http://127.0.0.1:${toString config.services.prometheus.port}";
+    #     }
 
-        {
-          name = "Loki";
-          type = "loki";
-          access = "proxy";
-          url = "http://127.0.0.1:${
-              toString
-              config.services.loki.configuration.server.http_listen_port
-            }";
-        }
-      ];
-    };
+    #     {
+    #       name = "Loki";
+    #       type = "loki";
+    #       access = "proxy";
+    #       url = "http://127.0.0.1:${
+    #           toString
+    #           config.services.loki.configuration.server.http_listen_port
+    #         }";
+    #     }
+    #   ];
+    # };
   };
 
   # -------------------- Loki -------------------- #
@@ -216,11 +216,14 @@
     };
   };
   systemd.tmpfiles.rules = [ "d /var/lib/promtail 0755 promtail promtail -" ];
-  # -------------------- ngnix -------------------- #
-  services.nginx.virtualHosts = cfg.ngnix.mkVhost {
-    subdomain = "grafana";
-    proxyPass = "http://127.0.0.1:3000";
-    https = false;
-  };
 
+  services.nginx.virtualHosts."grafana.tail.${cfg.server.domain}" = {
+    enableACME = false;
+    forceSSL = false;
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:3000";
+      proxyWebsockets = true;
+      recommendedProxySettings = true;
+    };
+  };
 }
