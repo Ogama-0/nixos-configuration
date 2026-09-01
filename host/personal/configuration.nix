@@ -1,4 +1,10 @@
-{ system, config, lib, pkgs, ... }:
+{
+  system,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   imports = [
@@ -27,7 +33,7 @@
       efi.canTouchEfiVariables = true;
     };
 
-    kernelPackages = pkgs.linuxPackages_latest;
+    # kernelPackages = pkgs.linuxPackages_latest;
     supportedFilesystems = [ "ntfs" ];
   };
 
@@ -41,17 +47,21 @@
 
   networking.firewall = {
     enable = false;
-    extraCommands =
-      "iptables -t raw -A OUTPUT -p udp -m udp --dport 137 -j CT --helper netbios-ns";
-    # allowedTCPPorts = [ 7777 22 80 ];
-    # allowedUDPPorts = [ 7777 ];
+    extraCommands = "iptables -t raw -A OUTPUT -p udp -m udp --dport 137 -j CT --helper netbios-ns";
+    allowedTCPPorts = [ 7777 ];
+    allowedUDPPorts = [ 7777 ];
   };
-  time.timeZone = "America/Monterrey";
+  # time.timeZone = "America/Monterrey";
   # time.timeZone = "America/Mazatlan"; # Los Cabos
+  time.timeZone = "Europe/Paris";
 
   services.resolved.enable = true;
   networking.networkmanager.enable = true;
-  networking.nameservers = [ "1.1.1.1" "8.8.8.8" "4.4.4.4" ];
+  networking.nameservers = [
+    "1.1.1.1"
+    "8.8.8.8"
+    "4.4.4.4"
+  ];
 
   users.users.ogama = {
     isNormalUser = true;
@@ -63,7 +73,10 @@
     ]; # Enable ‘sudo’ for the user.
   };
 
-  environment.systemPackages = with pkgs; [ nano alsa-utils ];
+  environment.systemPackages = with pkgs; [
+    nano
+    alsa-utils
+  ];
 
   services.pipewire = {
     enable = true;
@@ -78,11 +91,17 @@
   hardware.graphics.enable = true;
 
   # environment.loginShellInit = ''
-  #   [[ "$(tty)" == /dev/tty1 ]] 
+  #   [[ "$(tty)" == /dev/tty1 ]]
   # '';
 
-  nix.settings.allowed-users = [ "@wheel" "ogama" ];
+  nix.settings.allowed-users = [
+    "@wheel"
+    "ogama"
+  ];
 
   system.stateVersion = "24.11"; # Did you read the comment?
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 }

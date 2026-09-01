@@ -1,9 +1,17 @@
-{ inputs, lib, pkgs, config, cfg, ... }:
+{
+  inputs,
+  lib,
+  pkgs,
+  config,
+  cfg,
+  ...
+}:
 let
   inherit (inputs) stylix;
   background_monocle = ../../assets/background/background_monocle.png;
 
-in {
+in
+{
 
   # imports = [ stylix.homeModules.stylix ];
   stylix = {
@@ -26,8 +34,7 @@ in {
       # colors.override = config.lib.stylix.colors;
     };
 
-    base16Scheme =
-      lib.mkDefault "${pkgs.base16-schemes}/share/themes/horizon-dark.yaml";
+    base16Scheme = lib.mkDefault "${pkgs.base16-schemes}/share/themes/horizon-dark.yaml";
     image = background_monocle;
     polarity = "dark";
     fonts = {
@@ -62,13 +69,11 @@ in {
       popups = 0.9;
       terminal = 0.95;
     };
-    # cursor = //TODO
     icons = {
       enable = true;
-      dark = "candy-icons";
-      light = "candy-icons";
-      package = pkgs.candy-icons;
-
+      package = pkgs.papirus-icon-theme;
+      light = "Papirus-Light";
+      dark = "Papirus-Dark";
     };
   };
 }

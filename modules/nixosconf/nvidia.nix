@@ -1,17 +1,29 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Pilotes graphiques
-  boot.kernelModules = [ "nvidia" "nvidia-drm" ];
-  boot.kernelParams =
-    [ "modprobe.blacklist=nouveau,nova_core,nvidiafb" "nvidia-drm.modeset=1" ];
-  services.xserver.videoDrivers = [ "nvidia" "modesetting" ];
+  boot.kernelModules = [
+    "nvidia"
+    "nvidia-drm"
+  ];
+  boot.kernelParams = [
+    "modprobe.blacklist=nouveau,nova_core,nvidiafb"
+    "nvidia-drm.modeset=1"
+  ];
+  services.xserver.videoDrivers = [
+    "nvidia"
+    "modesetting"
+  ];
 
   hardware.nvidia = {
     modesetting.enable = true;
 
-    open =
-      true; # j'ai vu sur https://nixos.wiki/wiki/nvidia que ils conseillais de mettre a true pour les laptop RTX 20XX +
+    open = true; # j'ai vu sur https://nixos.wiki/wiki/nvidia que ils conseillais de mettre a true pour les laptop RTX 20XX +
 
     nvidiaSettings = true;
 
@@ -27,6 +39,7 @@
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
+  boot.kernelPackages = pkgs.linuxPackages_7_1;
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

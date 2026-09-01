@@ -11,10 +11,11 @@
     # Main pkgs
     # upkgs.zen-browser
     firefox
+    google-chrome
     vesktop
     spotify
     gimp
-    bitwarden-desktop
+    # bitwarden-desktop elecron issue : https://github.com/NixOS/nixpkgs/issues/528213
     nautilus
     # stremio
     qbittorrent
@@ -23,7 +24,10 @@
     proton-vpn
     gnome-disk-utility
     testdisk
-    lpkgs.free-claude-code
+    # lpkgs.free-claude-code
+
+    # Android tools :
+    android-tools
 
     # Utility
 
@@ -57,6 +61,7 @@
     steam-run
     sc-controller
     supertuxkart
+    # upkgs.
     mindustry
     wineWow64Packages.full
     gamescope

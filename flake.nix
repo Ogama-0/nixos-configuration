@@ -1,10 +1,9 @@
 {
-
   description = "main nixos configuration";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/backport-525067-to-release-26.05";
-    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/release-26.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -12,7 +11,7 @@
     wakatime-ls.inputs.nixpkgs.follows = "nixpkgs";
 
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    zen-browser.inputs.nixpkgs.follows = "nixpkgs";
+    zen-browser.inputs.nixpkgs.follows = "nixpkgs-unstable";
     zen-browser.inputs.home-manager.follows = "home-manager";
 
     stylix.url = "github:nix-community/stylix/release-26.05";
@@ -25,6 +24,7 @@
     {
       self,
       nixpkgs,
+      # nixpkgs-unstable,
       home-manager,
       nixos-hardware,
       stylix,
@@ -41,18 +41,20 @@
       };
       lpkgs = {
         librepods = self.packages.${system}.librepods;
-        free-claude-code = self.packages.${system}.free-claude-code;
+        # free-claude-code = self.packages.${system}.free-claude-code;
       };
       upkgs = {
         zen-browser = self.inputs.zen-browser.packages.${pkgs.system}.default;
+        # mindustry = self.inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.mindustry;
       };
+
     in
     {
       templates = import ./templates;
 
       packages.${system} = {
         librepods = pkgs.callPackage ./pkgs/librepods.nix { };
-        free-claude-code = pkgs.callPackage ./pkgs/freeclaudecode.nix { };
+        # free-claude-code = pkgs.callPackage ./pkgs/freeclaudecode.nix { };
       };
 
       nixosConfigurations = {

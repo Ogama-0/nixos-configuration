@@ -17,7 +17,8 @@ let
     owner = "Alishahryar1";
     repo = "free-claude-code";
     rev = "main";
-    hash = "sha256-2Ty2EvrRrR/5BFY2VrauYFOP7LAkSayrAW2gXPxlnL0=";
+    # hash = "sha256-rr3VfdCvyFAXuZNKTJ95nzx1S1aGvpn/t1i5VPrdlo8=";
+    hash = "sha256-3t5POOE+tJmKsCdTHuUqSfkHX36BGxBC0M0OkN2QWPk=";
   };
 in
 python.pkgs.buildPythonPackage {
