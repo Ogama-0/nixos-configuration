@@ -224,6 +224,16 @@
           ];
         }
         {
+          name = "bash";
+          auto-format = true;
+          language-servers = [ "bash-language-server" "wakatime" ];
+        }
+        {
+          name = "fish";
+          auto-format = true;
+          language-servers = [ "fish-lsp" "wakatime" ];
+        }
+        {
           name = "nasm";
           #   #   file-types = [ "s" "asm" ];
           #   #   scope = "source.asm";

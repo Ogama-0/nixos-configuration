@@ -10,7 +10,7 @@
     font-awesome
     merriweather
     inter
-    monocraft
+    # monocraft
   ];
 
   fonts.fontconfig = {
