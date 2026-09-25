@@ -18,6 +18,9 @@
     stylix.inputs.nixpkgs.follows = "nixpkgs";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
+    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -28,6 +31,7 @@
       home-manager,
       nixos-hardware,
       stylix,
+      sops-nix,
       ...
     }@inputs:
     let
@@ -73,6 +77,7 @@
           modules = [
             ./host/serveur/configuration.nix
             nixos-hardware.nixosModules.dell-optiplex-3050
+            sops-nix.nixosModules.sops
           ];
         };
       };

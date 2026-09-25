@@ -11,6 +11,7 @@
     ../../modules/nixosconf/immich.nix
 
     ../../modules/nixosconf/docker.nix
+    ../../modules/nixosconf/ovh-ddns.nix
     ../../modules/nixosconf/joplin-server.nix # <- docker
     # ../../modules/nixosconf/crafty.nix        # <- docker
     # ../../modules/nixosconf/qbittorrent.nix  

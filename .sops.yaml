@@ -1,0 +1,10 @@
+keys:
+  - &admin_ogama age1770ph0u393hjkl58jvt6ng7guej2tj463xx85avr5khwm4g3hejsq26efx
+  - &host_oserv age120ez2v3ptnmd2eq9gxenfpmfvduemfta9k2eg65a4m5k8whha4fqy3ux62
+
+creation_rules:
+  - path_regex: sops/oserv\.yaml$
+    key_groups:
+      - age:
+          - *admin_ogama
+          - *host_oserv
