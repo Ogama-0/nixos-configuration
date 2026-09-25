@@ -1,6 +1,13 @@
-{ pkgs, lib, cfg, ... }:
-let script-path = ../../scripts;
-in {
+{
+  pkgs,
+  lib,
+  cfg,
+  ...
+}:
+let
+  script-path = ../../scripts;
+in
+{
   home.packages = with pkgs; [
     xsel
     killall
@@ -60,6 +67,7 @@ in {
     };
 
     shellAbbrs = {
+      gf = "gcc -std=c99 -pedantic -Werror -Wall -Wextra -Wvla";
       c = "cargo";
       cr = "cargo run";
       ll = "ls -lhaF";
@@ -70,8 +78,7 @@ in {
       tl = "trash-list";
       tempt = "trash-empty";
       tsempt = "trash-empty 10";
-      cps =
-        "rsync --compress --verbose --recursive --human-readable --partial --progress --archive";
+      cps = "rsync --compress --verbose --recursive --human-readable --partial --progress --archive";
       # rm = "#";
       shutdown = "hollywood";
       stnow = "shutdown now";
@@ -88,8 +95,8 @@ in {
     functions = {
       # fish_greeting = ''
       #   set rdm (random 0 1)
-      #   if test $rdm = 0 
-      #     echo "salut caml c'est zizou"   
+      #   if test $rdm = 0
+      #     echo "salut caml c'est zizou"
       #   else if test $rdm = 1
       #     echo "🐫🐫🐫🐫🐫vive caml🐫🐫🐫🐫🐫"
       #   end
@@ -138,10 +145,11 @@ in {
     options = [ "--cmd cd" ];
   };
 
-  home.sessionVariables._ZO_DATA_DIR = if cfg.is-epita then
-    "${cfg.home_path}/afs/.local/share/zoxide"
-  else
-    "${cfg.home_path}/.local/share/zoxide";
+  home.sessionVariables._ZO_DATA_DIR =
+    if cfg.is-epita then
+      "${cfg.home_path}/afs/.local/share/zoxide"
+    else
+      "${cfg.home_path}/.local/share/zoxide";
 
   programs.direnv = {
     enable = true;

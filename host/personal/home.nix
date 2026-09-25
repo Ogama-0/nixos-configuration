@@ -16,6 +16,8 @@
     ../../modules/home-manager/zellij
     ../../modules/home-manager/firefox.nix
     ../../modules/home-manager/stylix.nix
+    ../../modules/home-manager/vim.nix
+    ../../modules/home-manager/keyboard.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
     # ./vm-compose.nix
   ];

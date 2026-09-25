@@ -11,10 +11,12 @@ let
   down = "j";
   left = "h";
   right = "l";
-  background = toString /background.png;
-  background_blure = toString /background_blure.png;
-  background_tache = toString /background_tache.png;
-  background_monocle = toString /background_monocle.png;
+  wallpeper = toString /background.png;
+  wallpeper_blure = toString /background_blure.png;
+  wallpaper_tache = toString /background_tache.png;
+  wallpaper_party = toString /home/ogama/documents/wallpaper;
+
+  wallpeper_monocle = toString /background_monocle.png;
 in
 {
   imports = [
@@ -126,7 +128,7 @@ in
       };
     };
 
-    extraConfig = "exec_always swaymsg output '*' bg ${cfg.bg_path}${background_monocle} fill";
+    extraConfig = "exec_always swaymsg output '*' bg ${cfg.bg_path}${wallpaper_party} fill";
   };
   # TODO : make the bg swith every 30 second or whene you switch focused desktop
   # services.swayidle = {

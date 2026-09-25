@@ -14,6 +14,7 @@
     google-chrome
     vesktop
     spotify
+    deezer-desktop
     gimp
     # bitwarden-desktop elecron issue : https://github.com/NixOS/nixpkgs/issues/528213
     nautilus
@@ -24,7 +25,9 @@
     proton-vpn
     gnome-disk-utility
     testdisk
+    vlc
     # lpkgs.free-claude-code
+    claude-code
 
     # Android tools :
     android-tools

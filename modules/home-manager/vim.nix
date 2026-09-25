@@ -3,7 +3,11 @@
   programs.vim = {
     enable = true;
 
-    plugins = with pkgs.vimPlugins; [ vim-sensible onedark-vim vim-wakatime ];
+    plugins = with pkgs.vimPlugins; [
+      vim-sensible
+      onedark-vim
+      vim-wakatime
+    ];
 
     settings = {
       background = "dark";
