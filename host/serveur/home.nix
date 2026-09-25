@@ -5,8 +5,12 @@
     ../../modules/home-manager/helix.nix
     ../../modules/home-manager/git.nix
     ../../modules/home-manager/display/font.nix
+    ../../modules/home-manager/wakatime.nix
     ./home-manager/tools.nix
   ];
+
+  sops.age.keyFile = "${cfg.home_path}/.config/sops/age/keys.txt";
+
   home = {
 
     username = cfg.user;

@@ -96,6 +96,7 @@
           modules = [
             ./host/personal/home.nix
             stylix.homeModules.stylix
+            sops-nix.homeManagerModules.sops
           ];
         };
 
@@ -107,7 +108,10 @@
             inherit pkgs;
           };
           inherit pkgs;
-          modules = [ ./host/serveur/home.nix ];
+          modules = [
+            ./host/serveur/home.nix
+            sops-nix.homeManagerModules.sops
+          ];
         };
 
         epita = home-manager.lib.homeManagerConfiguration {
@@ -118,7 +122,10 @@
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
           };
           inherit pkgs;
-          modules = [ ./host/epita/epita.nix ];
+          modules = [
+            ./host/epita/epita.nix
+            sops-nix.homeManagerModules.sops
+          ];
         };
         epita-light = home-manager.lib.homeManagerConfiguration {
           extraSpecialArgs = {
@@ -128,7 +135,10 @@
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
           };
           inherit pkgs;
-          modules = [ ./host/epita/epita_light.nix ];
+          modules = [
+            ./host/epita/epita_light.nix
+            sops-nix.homeManagerModules.sops
+          ];
         };
       };
     };

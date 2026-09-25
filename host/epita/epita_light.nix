@@ -6,8 +6,12 @@
     ../../modules/home-manager/display/font.nix
     ../../modules/home-manager/display/i3.nix
     ../../modules/home-manager/kitty.nix
+    ../../modules/home-manager/wakatime.nix
 
   ];
+
+  sops.age.keyFile = "/home/${cfg.login}/.config/sops/age/keys.txt";
+
   # General informations
   home.username = "${cfg.login}";
   home.homeDirectory = "/home/${cfg.login}";

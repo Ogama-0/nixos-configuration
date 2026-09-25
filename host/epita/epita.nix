@@ -12,8 +12,12 @@
     ../../modules/home-manager/alacritty.nix
     ../../modules/home-manager/display/rofi.nix
     ../../modules/home-manager/zellij/default.nix
+    ../../modules/home-manager/wakatime.nix
     ./tools.nix
   ];
+
+  sops.age.keyFile = "/home/${cfg.login}/.config/sops/age/keys.txt";
+
   # General informations
   home.username = "${cfg.login}";
   home.homeDirectory = "/home/${cfg.login}";

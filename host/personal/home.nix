@@ -18,9 +18,12 @@
     ../../modules/home-manager/stylix.nix
     ../../modules/home-manager/vim.nix
     ../../modules/home-manager/keyboard.nix
+    ../../modules/home-manager/wakatime.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
     # ./vm-compose.nix
   ];
+
+  sops.age.keyFile = "${cfg.home_path}/.config/sops/age/keys.txt";
 
   nixpkgs = {
     config = {

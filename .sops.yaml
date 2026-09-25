@@ -3,6 +3,10 @@ keys:
   - &host_oserv age120ez2v3ptnmd2eq9gxenfpmfvduemfta9k2eg65a4m5k8whha4fqy3ux62
 
 creation_rules:
+  - path_regex: sops/wakatime\.yaml$
+    key_groups:
+      - age:
+          - *admin_ogama
   - path_regex: sops/oserv\.yaml$
     key_groups:
       - age:
