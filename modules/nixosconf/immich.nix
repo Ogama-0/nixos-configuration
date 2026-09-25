@@ -1,10 +1,16 @@
-{ pkgs, config, cfg, ... }:
+{
+  pkgs,
+  config,
+  cfg,
+  ...
+}:
 
 let
   immichHost = "immich.${cfg.server.domain}";
   immichTailHost = "immich.tail.${cfg.server.domain}";
   immichRoot = "${cfg.path.hdd.app.immich}";
-in {
+in
+{
   # systemd.tmpfiles.rules = [
   #   "d ${immichRoot}                0755 immich immich -"
   #   "d ${immichRoot}/upload         0755 immich immich -"
@@ -35,20 +41,32 @@ in {
     settings.server.externalDomain = "http://${immichTailHost}";
   };
 
-  services.nginx.virtualHosts.${immichTailHost} = {
-    enableACME = false;
-    forceSSL = false;
-
-    locations."/" = {
-      proxyPass = "http://[::1]:${toString config.services.immich.port}";
-      proxyWebsockets = true;
-      recommendedProxySettings = true;
-      extraConfig = ''
-        client_max_body_size 50000M;
-        proxy_read_timeout   600s;
-        proxy_send_timeout   600s;
-        send_timeout         600s;
-      '';
-    };
+  services.caddy.virtualHosts."http://${immichTailHost}" = {
+    extraConfig = ''
+      reverse_proxy http://[::1]:${toString config.services.immich.port} {
+        transport http {
+          read_timeout  600s
+          write_timeout 600s
+        }
+      }
+    '';
   };
+
+  # services.nginx.virtualHosts.${immichTailHost} = {
+  #   enableACME = false;
+  #   forceSSL = false;
+
+  #   locations."/" = {
+  #     proxyPass = "http://[::1]:${toString config.services.immich.port}";
+  #     proxyWebsockets = true;
+  #     recommendedProxySettings = true;
+
+  #     extraConfig = ''
+  #       client_max_body_size 50000M;
+  #       proxy_read_timeout   600s;
+  #       proxy_send_timeout   600s;
+  #       send_timeout         600s;
+  #     '';
+  #   };
+  # };
 }

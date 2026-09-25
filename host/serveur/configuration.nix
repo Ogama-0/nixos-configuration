@@ -6,15 +6,16 @@
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/samba.nix
 
-    ../../modules/nixosconf/nginx.nix
+    # ../../modules/nixosconf/nginx.nix
+    ../../modules/nixosconf/caddy.nix
+
     ../../modules/nixosconf/jellyfin.nix
     ../../modules/nixosconf/immich.nix
 
     ../../modules/nixosconf/docker.nix
-    ../../modules/nixosconf/ovh-ddns.nix
     ../../modules/nixosconf/joplin-server.nix # <- docker
     # ../../modules/nixosconf/crafty.nix        # <- docker
-    # ../../modules/nixosconf/qbittorrent.nix  
+    # ../../modules/nixosconf/qbittorrent.nix
 
     ./users
     ./nixosconf/network.nix
@@ -38,7 +39,10 @@
 
   };
 
-  environment.systemPackages = with pkgs; [ nano alsa-utils ];
+  environment.systemPackages = with pkgs; [
+    nano
+    alsa-utils
+  ];
 
   services.pipewire = {
     enable = true;
@@ -50,8 +54,14 @@
 
   hardware.graphics.enable = true;
 
-  nix.settings.allowed-users = [ "@wheel" "${cfg.user}" ];
+  nix.settings.allowed-users = [
+    "@wheel"
+    "${cfg.user}"
+  ];
 
   system.stateVersion = "25.05"; # Did you read the comment?
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 }

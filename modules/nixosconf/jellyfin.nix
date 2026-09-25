@@ -1,7 +1,9 @@
 { cfg, ... }:
 
-let path = "${cfg.home_path}/.jellyfin";
-in {
+let
+  path = "${cfg.home_path}/.jellyfin";
+in
+{
   services.jellyfin = {
     enable = true;
     # openFirewall = true;
@@ -31,13 +33,19 @@ in {
     "d ${cfg.path.hdd.app.jellyfin}/SHOWS              0777 ${cfg.user} users -"
   ];
 
-  services.nginx.virtualHosts."jellyfin.${cfg.server.domain}" = {
-    enableACME = true;
-    forceSSL = true;
-
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:8096";
-      proxyWebsockets = true;
-    };
+  services.caddy.virtualHosts."jellyfin.${cfg.server.domain}" = {
+    extraConfig = ''
+      reverse_proxy http://127.0.0.1:8096
+    '';
   };
+
+  # services.nginx.virtualHosts."jellyfin.${cfg.server.domain}" = {
+  #   enableACME = true;
+  #   forceSSL = true;
+
+  #   locations."/" = {
+  #     proxyPass = "http://127.0.0.1:8096";
+  #     proxyWebsockets = true;
+  #   };
+  # };
 }

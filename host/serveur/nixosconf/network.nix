@@ -3,6 +3,17 @@
   networking = {
 
     networkmanager.enable = true;
+    # eno1's addressing is fully handled by the scripted `interfaces.eno1`
+    # config below (static IPv4 + kernel SLAAC for IPv6). NetworkManager
+    # otherwise auto-creates its own profile for the interface and defaults
+    # IPv6 to link-local-only, which silently blocks the SLAAC address and
+    # breaks anything depending on oserv's public IPv6. Keep NM off it
+    # entirely rather than trying to reconcile two owners of the interface.
+    networkmanager.unmanaged = [ "interface-name:eno1" ];
+    # eno1 has forwarding enabled (Tailscale/Docker need it), and per the
+    # kernel's IPv6 semantics accept_ra=1 is a no-op once forwarding is on
+    # for that interface — only accept_ra=2 forces RA/SLAAC processing
+    # (address + default route) regardless of forwarding.
     defaultGateway = {
       address = "192.168.1.1";
       interface = "eno1";
@@ -31,5 +42,7 @@
     };
 
   };
+
+  boot.kernel.sysctl."net.ipv6.conf.eno1.accept_ra" = 2;
 
 }
