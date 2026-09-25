@@ -145,6 +145,8 @@ in
     options = [ "--cmd cd" ];
   };
 
+  home.sessionVariables.SHELL = lib.getExe pkgs.fish;
+
   home.sessionVariables._ZO_DATA_DIR =
     if cfg.is-epita then
       "${cfg.home_path}/afs/.local/share/zoxide"
