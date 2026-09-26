@@ -7,6 +7,10 @@ creation_rules:
     key_groups:
       - age:
           - *admin_ogama
+  - path_regex: sops/proton-calendar\.yaml$
+    key_groups:
+      - age:
+          - *admin_ogama
   - path_regex: sops/oserv\.yaml$
     key_groups:
       - age:

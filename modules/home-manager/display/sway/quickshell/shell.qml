@@ -4,4 +4,5 @@ import "components"
 Scope {
     Clock {}
     Music {}
+    Calendar {}
 }
