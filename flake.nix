@@ -21,6 +21,9 @@
 
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    quickshell.url = "github:quickshell-mirror/quickshell";
+    quickshell.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
   outputs =
@@ -49,6 +52,7 @@
       };
       upkgs = {
         zen-browser = self.inputs.zen-browser.packages.${pkgs.system}.default;
+        quickshell = self.inputs.quickshell.packages.${pkgs.system}.default;
         # mindustry = self.inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.mindustry;
       };
 

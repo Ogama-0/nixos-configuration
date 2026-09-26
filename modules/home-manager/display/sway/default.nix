@@ -22,6 +22,7 @@ in
   imports = [
     ./barbar.nix
     ./mako.nix
+    ./quickshell
     ../tofi.nix
     ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix
   ];
