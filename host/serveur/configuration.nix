@@ -5,6 +5,7 @@
     ../../modules/nixosconf/ssh.nix
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/samba.nix
+    ../../modules/nixosconf/avahi.nix
 
     # ../../modules/nixosconf/nginx.nix
     ../../modules/nixosconf/caddy.nix

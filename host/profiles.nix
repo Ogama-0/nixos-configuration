@@ -54,7 +54,7 @@ rec {
           share = rec {
             path = "${HDD_path}/share";
             public_HDD_path = "${path}/public";
-            Apple_save_HDD_path = "${path}/public";
+            Apple_save_HDD_path = "${path}/timemachine";
           };
         };
 
