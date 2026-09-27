@@ -1,5 +1,4 @@
 {
-  cfg,
   lib,
   pkgs,
   ...
@@ -14,7 +13,6 @@ let
   wallpeper = toString /background.png;
   wallpeper_blure = toString /background_blure.png;
   wallpaper_tache = toString /background_tache.png;
-  wallpaper_party = toString /home/ogama/documents/wallpaper;
 
   wallpeper_monocle = toString /background_monocle.png;
 in
@@ -30,7 +28,6 @@ in
     grim
     slurp
     wlroots
-    swaybg
   ];
   # swaylock-effect
   wayland.windowManager.sway = {
@@ -78,6 +75,7 @@ in
         "${modifier}+Shift+b" = "exec blueman-manager";
         "${modifier}+Shift+a" = "exec pavucontrol";
         "${modifier}+p" = "exec wl-color-picker";
+        "${modifier}+w" = "exec quickshell ipc -c widgets call wallpaper togglePicker";
 
         # Workspace related keys
         "${modifier}+grave" = "workspace 10";
@@ -128,10 +126,7 @@ in
         "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
       };
     };
-
-    extraConfig = "exec_always swaymsg output '*' bg ${cfg.bg_path}${wallpaper_party} fill";
   };
-  # TODO : make the bg swith every 30 second or whene you switch focused desktop
   # services.swayidle = {
   #   enable = true;
   #   events = {

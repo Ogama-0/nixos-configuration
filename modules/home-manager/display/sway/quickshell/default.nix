@@ -52,6 +52,7 @@ in
     '';
 
     "quickshell/widgets/shell.qml" = themedQmlFile ./shell.qml;
+    "quickshell/widgets/components/Wallpaper.qml" = themedQmlFile ./components/Wallpaper.qml;
     "quickshell/widgets/components/Clock.qml" = themedQmlFile ./components/Clock.qml;
     "quickshell/widgets/components/Music.qml" = themedQmlFile ./components/Music.qml;
     "quickshell/widgets/components/Calendar.qml" = themedQmlFile ./components/Calendar.qml;
