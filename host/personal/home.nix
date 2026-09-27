@@ -18,7 +18,7 @@
     ../../modules/home-manager/stylix.nix
     ../../modules/home-manager/vim.nix
     ../../modules/home-manager/keyboard.nix
-    ../../modules/home-manager/wakatime.nix
+    ../../modules/home-manager/wakapi.nix
     ../../modules/home-manager/calendar-sync.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
     # ./vm-compose.nix

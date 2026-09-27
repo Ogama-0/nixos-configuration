@@ -12,7 +12,7 @@
     ../../modules/home-manager/alacritty.nix
     ../../modules/home-manager/display/rofi.nix
     ../../modules/home-manager/zellij/default.nix
-    ../../modules/home-manager/wakatime.nix
+    ../../modules/home-manager/wakapi.nix
     ./tools.nix
   ];
 

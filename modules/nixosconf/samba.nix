@@ -61,8 +61,22 @@ in {
         "map to guest" = "bad user";
 
         # macOS/Time Machine compatibility (AAPL extensions, resource forks)
-        "vfs objects" = "catia fruit streams_xattr";
+        "vfs objects" = "catia fruit streams_xattr full_audit";
         "fruit:aapl" = "yes";
+
+        # auth_audit gives clean auth success/failure entries without the
+        # volume of a full file-operation audit.
+        "log level" = "1 auth_audit:3";
+
+        # full_audit logs only connect/disconnect (not file operations) via
+        # syslog under identifier "smbd_audit", landing in the systemd
+        # journal tagged with the real share name (%S resolves correctly
+        # here, unlike in "log file" above — full_audit runs with an actual
+        # connection context). alloy-config.alloy filters on that identifier
+        # and extracts a "share" label from the "%S|%U|%I" prefix.
+        "full_audit:prefix" = "%S|%U|%I";
+        "full_audit:success" = "connect disconnect";
+        "full_audit:failure" = "connect disconnect";
       };
       "public" = {
         "path" = public_path;
@@ -107,5 +121,6 @@ in {
     "d ${swapsev_path}    0755 ${cfg.user} users -"
     "d ${public_path}     0755 ${cfg.user} users -"
     "d ${time_m_path}     0755 ${cfg.user} users -"
+    "d /var/log/samba     0755 root root -"
   ];
 }

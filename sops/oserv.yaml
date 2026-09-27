@@ -3,6 +3,8 @@ ovh_app_secret: ENC[AES256_GCM,data:BT8XXdSLsAJWJ5eLuyX3epWdqkwpqUJNzHsNDJ14YNI=
 ovh_consumer_key: ENC[AES256_GCM,data:k23f/fs+D8saTDXHi14tdZgboGQBGWO4mk+fx7aJHTI=,iv:foXHu3mmVBgoPOUhRyWn6WLLNPQgjwT7h1iRddbEYdg=,tag:TsBEqZ6wxvrPK+6hViPKHg==,type:str]
 samba_leoniecornut_password: ENC[AES256_GCM,data:4R0ghD7a,iv:9zP15k1OOl1kFYCj8fXQyNvxZNSyJKvJyuUG4wO4auE=,tag:5cX4+bdtXGeeL24OKY0SrQ==,type:str]
 samba_nicolascornut_password: ENC[AES256_GCM,data:dcqNtao=,iv:ehMfUr++1JJLqX+K3xlnnmHzuvIn2/38ekt87sTGFJU=,tag:Vn9UPb6sxndpp1e6/BlRQw==,type:str]
+grafana_secret_key: ENC[AES256_GCM,data:p7x+latnQBYcEfxMRQKYInh2OOytN5DaDFpmoCLZ6V+FlDQiw8Gknox8vJPeuBV742r0WJ7dUYsIKmt4BwE+qA==,iv:SXEzLVh+ihmm6Jl6Q+6lJj5sZY293nbU+a0k77jYR7U=,tag:uZcHU98h60PabhhMUE+eIA==,type:str]
+wakapi_password_salt: ENC[AES256_GCM,data:eb49XyaiujAWMeG5Mk8JCkMltvKN8BLo8Pc2sa8swzpAXZd3h8V4+edWvRqeZqteFzJ5t9DqgQJKBL4geAUCOw==,iv:YGqCcWARLWc3VBYnZch+sxp3+R2v2i72Pe+AtYYlpz4=,tag:4vDr+HQfYlkxE+LFDncsuA==,type:str]
 sops:
     age:
         - enc: |
@@ -23,7 +25,7 @@ sops:
             3MlEObgDhpQVG82fC1KmyK3EOuOWe9BbaL17UAsMrWapOaOA+T6xKQ==
             -----END AGE ENCRYPTED FILE-----
           recipient: age120ez2v3ptnmd2eq9gxenfpmfvduemfta9k2eg65a4m5k8whha4fqy3ux62
-    lastmodified: "2026-09-25T18:46:18Z"
-    mac: ENC[AES256_GCM,data:hcNBGFp6iZGz9Fe3l0bW7izbQ+wX+xwVGT4iv0g6fpoAtcVQLMCaqj2jfjtY6CCrGjWEBSzKls6TTH2rftGNy8o5abNz0qjpubihA97xFDwuHI0GC2bG5vvOpwebOs1IJr11EzYpLAk6YLrxQ9Cyf9m8COFlxB5igpfx4QOXcVE=,iv:zJkPW64W5W6zBzjRqULz/ThPLwr8ww/z3OzKRLQVnHQ=,tag:lbWvI1Tj104b7Q9qrg2v4A==,type:str]
+    lastmodified: "2026-09-27T00:24:51Z"
+    mac: ENC[AES256_GCM,data:E2gjzwIUBRIWM/4EXx4s3KXQSrW7QDmhwspuPTVGe0lKlIegdgEpUD9FXdKx/iuGw9ts7P7fjq0EV+1Irew1H1a2E2kpr9P3OB5moVYXcduHmqqwZPy9Yf/Av0tonauiwHtuPxr4pwk5cFgJuUWvTdz4pN9t3ugMAogm9c0XyjA=,iv:GLu/VxZ9hEoh/yH1YBUxaNbzZPmQMi+tWJzPF/9z1n8=,tag:A8KtNmYrFYLe7X5aoQBkpA==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.13.3

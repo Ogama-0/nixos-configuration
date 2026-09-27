@@ -7,6 +7,13 @@
     # security.acme block needed at all.
     email = cfg.mail;
 
+    # Exposes caddy_http_requests_total / caddy_http_request_duration_seconds
+    # (with a "code" label) on the admin API's default 127.0.0.1:2019/metrics,
+    # scraped by grafana.nix's Prometheus job.
+    globalConfig = ''
+      metrics
+    '';
+
     virtualHosts = {
       "${cfg.server.domain}".extraConfig = ''
         respond 404

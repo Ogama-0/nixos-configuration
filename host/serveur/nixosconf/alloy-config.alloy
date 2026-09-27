@@ -1,0 +1,105 @@
+loki.write "default" {
+	endpoint {
+		url = "http://127.0.0.1:3030/loki/api/v1/push"
+	}
+}
+
+// ---------------------------------------------------------------------
+// systemd journal — covers jellyfin.service, immich-server.service,
+// immich-machine-learning.service, samba-smbd/nmbd.service, caddy.service
+// and everything else running as a systemd unit, labeled by unit name.
+// ---------------------------------------------------------------------
+
+loki.relabel "journal" {
+	forward_to = []
+
+	rule {
+		source_labels = ["__journal__systemd_unit"]
+		target_label  = "unit"
+	}
+	rule {
+		source_labels = ["__journal__hostname"]
+		target_label  = "host"
+	}
+	rule {
+		source_labels = ["__journal_priority_keyword"]
+		target_label  = "level"
+	}
+	rule {
+		source_labels = ["__journal_syslog_identifier"]
+		target_label  = "syslog_identifier"
+	}
+}
+
+loki.source.journal "read" {
+	max_age       = "12h"
+	forward_to    = [loki.process.journal.receiver]
+	relabel_rules = loki.relabel.journal.rules
+	labels        = { job = "journal" }
+}
+
+loki.process "journal" {
+	forward_to = [loki.write.default.receiver]
+
+	// modules/nixosconf/samba.nix enables vfs_full_audit for
+	// connect/disconnect only (not full file-operation audit), which logs
+	// via syslog under identifier "smbd_audit" with prefix "%S|%U|%I" —
+	// this lands in the journal (still unit=samba-smbd.service) and gets
+	// a "share" label extracted here.
+	stage.match {
+		selector = "{syslog_identifier=\"smbd_audit\"}"
+
+		stage.regex {
+			expression = "^(?P<share>[^|]+)\\|"
+		}
+		stage.labels {
+			values = { share = "" }
+		}
+	}
+}
+
+// ---------------------------------------------------------------------
+// docker container logs
+// ---------------------------------------------------------------------
+
+local.file_match "docker" {
+	path_targets = [{ __path__ = "/var/lib/docker/containers/*/*.log" }]
+}
+
+loki.source.file "docker" {
+	targets    = local.file_match.docker.targets
+	forward_to = [loki.process.docker.receiver]
+}
+
+loki.process "docker" {
+	forward_to = [loki.write.default.receiver]
+
+	stage.static_labels {
+		values = { job = "docker" }
+	}
+}
+
+// ---------------------------------------------------------------------
+// generic syslog-style files under /var/log
+// ---------------------------------------------------------------------
+
+local.file_match "syslog" {
+	path_targets = [{ __path__ = "/var/log/*.log" }]
+}
+
+loki.source.file "syslog" {
+	targets    = local.file_match.syslog.targets
+	forward_to = [loki.process.syslog.receiver]
+}
+
+loki.process "syslog" {
+	forward_to = [loki.write.default.receiver]
+
+	stage.static_labels {
+		values = { job = "syslog" }
+	}
+}
+
+// Samba per-share connection/auth logs are handled above, inside
+// loki.process "journal" — see modules/nixosconf/samba.nix for why a
+// separate file (via a "log file = ...%S" substitution) doesn't work.

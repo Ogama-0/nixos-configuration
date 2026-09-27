@@ -5,7 +5,7 @@
     ../../modules/home-manager/helix.nix
     ../../modules/home-manager/git.nix
     ../../modules/home-manager/display/font.nix
-    ../../modules/home-manager/wakatime.nix
+    ../../modules/home-manager/wakapi.nix
     ./home-manager/tools.nix
   ];
 

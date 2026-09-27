@@ -12,6 +12,7 @@
 
     ../../modules/nixosconf/jellyfin.nix
     ../../modules/nixosconf/immich.nix
+    ../../modules/nixosconf/wakapi.nix
 
     ../../modules/nixosconf/docker.nix
     ../../modules/nixosconf/joplin-server.nix # <- docker
@@ -21,7 +22,7 @@
     ./users
     ./nixosconf/network.nix
     ./nixosconf/backup-server.nix
-    # ./nixosconf/grafana.nix
+    ./nixosconf/grafana.nix
 
     ./hardware-configuration.nix
   ];
