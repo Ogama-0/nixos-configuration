@@ -44,7 +44,13 @@ in
       right = "${right}";
       defaultWorkspace = "workspace 10";
 
-      startup = [ { command = "alacritty"; } ];
+      startup = [
+        { command = "alacritty"; }
+        {
+          command = "systemctl --user restart quickshell-widgets";
+          always = true;
+        }
+      ];
 
       fonts = {
         names = [ "Noto Sans" ];
