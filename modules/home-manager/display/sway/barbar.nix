@@ -21,43 +21,27 @@
           command = ''
             mode=$(makoctl mode | tail -n1)
             if [ "$mode" = "dnd" ]; then
-              echo '{ "text": "' "$mode"'", "state": "Info" }'
+              echo "{ \"text\": \"$mode\", \"state\": \"Info\" }"
             else
-              echo '{ "text": "' "$mode"'" }'
+              echo "{ \"text\": \"$mode\" }"
             fi
           '';
           json = true;
           interval = "once";
-          click = [{
-            button = "left";
-            cmd = "makoctl mode -t 'dnd'";
-            update = true;
-          }];
+          click = [
+            {
+              button = "left";
+              cmd = "makoctl mode -t 'dnd'";
+              update = true;
+            }
+          ];
         }
         { block = "sound"; }
         {
           block = "music";
         }
-        # {
-        #   block = "calendar";
-        #   next_event_format = " $icon $start.datetime(f:'%a %H:%M') $summary ";
-        #   ongoing_event_format =
-        #     " $icon $summary (ends at $end.datetime(f:'%H:%M')) ";
-        #   no_events_format = " $icon no events ";
-        #   fetch_interval = 30;
-        #   alternate_events_interval = 10;
-        #   events_within_hours = 48;
-        #   warning_threshold = 600;
-        #   browser_cmd = "firefox";
-        #   source = [{
-        #     url =
-        #       "http://p154-caldav.icloud.com/published/2/MTc0MzczOTgwODExNzQzNxPr8IrQhOG8X1scqqU1h6QhoW6RWcyU2leiHN00JJIhjylt6njWzrrgKOzy3AIPgIWLSzBtQkVG5Jm7SJ7cqeU/";
-        #     auth = { type = "unauthenticated"; };
-        #   }
-        #   # { url = ""; }
-        #     ];
-        # }
-        { # Vpn
+        {
+          # Vpn
           block = "custom";
           shell = "fish";
           command = ''
@@ -66,12 +50,13 @@
 
           interval = 5;
           # json = true;
-          click = [{
-            button = "left";
-            cmd = ''
-              tailscale status | grep -q "Tailscale is stopped" ; and tailscale up ; or tailscale down'';
-            update = true;
-          }];
+          click = [
+            {
+              button = "left";
+              cmd = ''tailscale status | grep -q "Tailscale is stopped" ; and tailscale up ; or tailscale down'';
+              update = true;
+            }
+          ];
         }
         {
           block = "custom";
@@ -82,17 +67,6 @@
           interval = 60;
           # json = true;
 
-        }
-        { # ping
-          block = "custom";
-          json = true;
-          command = ''
-            echo "{\"icon\":\"ping\",\"text\":\"`ping -c4 1.1.1.1 | tail -n1 | cut -d'/' -f5`\"}"'';
-          interval = 60;
-          click = [{
-            button = "left";
-            cmd = "<command>";
-          }];
         }
         {
           block = "net";
@@ -139,32 +113,33 @@
       ];
     };
   };
-  wayland.windowManager.sway.config.bars = [{
-    statusCommand =
-      "${pkgs.i3status-rust}/bin/i3status-rs /home/ogama/.config/i3status-rust/config-default.toml";
-    mode = "hide";
-    fonts.size = 11.0;
+  wayland.windowManager.sway.config.bars = [
+    {
+      statusCommand = "${pkgs.i3status-rust}/bin/i3status-rs /home/ogama/.config/i3status-rust/config-default.toml";
+      mode = "hide";
+      fonts.size = 11.0;
 
-    colors = {
-      background = "#17191e";
+      colors = {
+        background = "#17191e";
 
-      focusedWorkspace = rec {
-        text = "#ffffff";
-        background = "#61AFEF";
-        border = background;
+        focusedWorkspace = rec {
+          text = "#ffffff";
+          background = "#61AFEF";
+          border = background;
+        };
+
+        inactiveWorkspace = rec {
+          text = "#abb2bf";
+          background = "#282c34";
+          border = background;
+        };
+
+        urgentWorkspace = rec {
+          text = "#ffffff";
+          background = "#bf4034";
+          border = background;
+        };
       };
-
-      inactiveWorkspace = rec {
-        text = "#abb2bf";
-        background = "#282c34";
-        border = background;
-      };
-
-      urgentWorkspace = rec {
-        text = "#ffffff";
-        background = "#bf4034";
-        border = background;
-      };
-    };
-  }];
+    }
+  ];
 }
