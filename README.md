@@ -67,9 +67,10 @@ Available: `librepods` ([kavishdevar's package](https://github.com/kavishdevar/l
 
 ### personal
 - add a TTY login menu
-- switch background every X seconds, or when switching workspace
-- make the Sway config lighter, Hyprland config stronger
+- manage sway idle &co
+- quickshell widget graphana status server
 
 ### server
 - build a website for ogama.me
-- build an internal API tying together qBittorrent, Jellyfin, and a web UI
+- build a qbtorrent instance over qbtorrent.tail.ogama.me
+- build a (?open drive) drive system
