@@ -28,6 +28,11 @@
 
   # Use the systemd-boot EFI boot loader.
   boot = {
+    # Keep amdgpu's post-resume register-retry warnings (a known upstream
+    # bug on Cezanne/Renoir APUs) out of the framebuffer during lid-open;
+    # they still land in `journalctl -k` at this level.
+    consoleLogLevel = 3;
+
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
