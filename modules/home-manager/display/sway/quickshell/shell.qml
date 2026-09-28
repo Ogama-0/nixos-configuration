@@ -6,4 +6,5 @@ Scope {
     Clock {}
     Music {}
     Calendar {}
+    Lock {}
 }

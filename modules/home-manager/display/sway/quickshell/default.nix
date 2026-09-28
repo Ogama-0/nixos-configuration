@@ -3,6 +3,14 @@
 let
   colors = config.lib.stylix.colors;
 
+  # Two independent lockscreen designs; stylix.polarity picks which one
+  # gets installed as Lock.qml (see ../../../stylix.nix for where the host
+  # sets its polarity).
+  lockComponent =
+    if config.stylix.polarity == "dark"
+    then ./components/LockDark.qml
+    else ./components/LockLight.qml;
+
   withThemeColors = builtins.replaceStrings
     [
       "@cardBg@"
@@ -11,6 +19,9 @@ let
       "@dateColor@"
       "@dividerColor@"
       "@tempColor@"
+      "@lockBg@"
+      "@systemctlBin@"
+      "@lockscreenImage@"
     ]
     [
       "#B3${colors.base00}"
@@ -19,6 +30,9 @@ let
       "#CC${colors.base04}"
       "#22${colors.base03}"
       "#FF${colors.base0D}"
+      "#FF${colors.base00}"
+      "${pkgs.systemd}/bin/systemctl"
+      "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png"
     ];
 
   themedQmlFile = path: {
@@ -30,6 +44,7 @@ in
     upkgs.quickshell
     pkgs.curl
     pkgs.cava
+    pkgs.imagemagick
   ];
 
   xdg.configFile = {
@@ -37,10 +52,14 @@ in
       [general]
       bars = 20
       framerate = 60
+      sensitivity = 195
 
       [input]
       method = pipewire
       source = auto
+
+      [smoothing]
+      noise_reduction = 30
 
       [output]
       method = raw
@@ -56,6 +75,7 @@ in
     "quickshell/widgets/components/Clock.qml" = themedQmlFile ./components/Clock.qml;
     "quickshell/widgets/components/Music.qml" = themedQmlFile ./components/Music.qml;
     "quickshell/widgets/components/Calendar.qml" = themedQmlFile ./components/Calendar.qml;
+    "quickshell/widgets/components/Lock.qml" = themedQmlFile lockComponent;
   };
 
   systemd.user.services.quickshell-widgets = {
