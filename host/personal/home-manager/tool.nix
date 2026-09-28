@@ -13,8 +13,8 @@
     firefox
     google-chrome
     vesktop
-    spotify
-    deezer-desktop
+    # spotify
+    deezer-enhanced
     gimp
     # bitwarden-desktop elecron issue : https://github.com/NixOS/nixpkgs/issues/528213
     nautilus
