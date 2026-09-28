@@ -87,6 +87,7 @@
   };
 
   security.pam.services.swaylock = { };
+  security.pam.services.quickshell-lock = { };
   security.polkit.enable = true;
   hardware.graphics.enable = true;
 
