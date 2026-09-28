@@ -21,6 +21,7 @@ in
     ./barbar.nix
     ./mako.nix
     ./quickshell
+    ./idle.nix
     ../tofi.nix
     ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix
   ];
@@ -133,14 +134,4 @@ in
       };
     };
   };
-  # services.swayidle = {
-  #   enable = true;
-  #   events = {
-  #     lock = "${pkgs.swaylock-effects}/bin/swaylock";
-  #     before-sleep = ''
-  #       ${pkgs.playerctl}/bin/playerctl pause ; loginctl lock-session
-  #     '';
-  #   };
-  # };
-
 }
