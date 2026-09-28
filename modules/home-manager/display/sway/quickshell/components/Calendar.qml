@@ -42,6 +42,22 @@ PanelWindow {
         return e["start-time"] + "  " + e["title"]
     }
 
+    // Multiple synced calendars can carry the same invite (e.g. a shared
+    // event copied into two subscriptions) - collapse those "twins" down
+    // to a single entry, keyed on title + start, keeping the first seen.
+    function dedupeEvents(events) {
+        const seen = new Set()
+        const result = []
+        for (const e of events) {
+            const key = e["title"] + "|" + e["start-date"] + "|"
+                + (e["all-day"] === "True" ? "allday" : e["start-time"])
+            if (seen.has(key)) continue
+            seen.add(key)
+            result.push(e)
+        }
+        return result
+    }
+
     anchors {
         top: true
         left: true
@@ -84,6 +100,8 @@ PanelWindow {
                         events = events.concat(JSON.parse(line))
                     } catch (e) {}
                 }
+
+                events = root.dedupeEvents(events)
 
                 const now = new Date()
                 const today = now.toISOString().slice(0, 10)

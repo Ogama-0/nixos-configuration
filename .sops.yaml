@@ -12,7 +12,7 @@ creation_rules:
       - age:
           - *admin_ogama
           - *user_ogama_serv
-  - path_regex: sops/proton-calendar\.yaml$
+  - path_regex: sops/calendars\.yaml$
     key_groups:
       - age:
           - *admin_ogama
