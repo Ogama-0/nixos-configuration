@@ -23,7 +23,7 @@
 ## Review Focus
 
 - Timezone not in the lookup table (e.g. a genuinely new travel destination) — the sync script must fall back to Paris coordinates rather than crash or leave darkman unconfigured (Task 2).
-- A `home-manager switch` running while darkman is mid-transition (or vice versa) — switch always resets the active symlinks back to the dark default, so after any rebuild the user could silently be back on dark until the next sunset/sunrise event; this is accepted default behavior but must be visible in a task's verification step, not just assumed (Task 1 wallpaper/gtk verification step, and Task 4/5/6/7 each re-verify post-switch state).
+- A `home-manager switch` running while darkman is mid-transition (or vice versa) — switch always resets the active symlinks back to the dark default, so after any rebuild the user could silently be back on dark until the next sunset/sunrise event; this is accepted default behavior but must be visible in a task's verification step, not just assumed (Task 1's gtk verification step, and Task 4/5/6/7 each re-verify post-switch state).
 - Two theming systems fighting over the same generated file (stylix's `autoEnable` vs. this plan's hand-baked variants) — every task that takes over a target must confirm the corresponding `stylix.targets.<x>.enable = false` is set and `nix flake check` still passes (Tasks 3-7).
 - `darkman set dark`/`darkman set light` run back-to-back (rapid toggling) — symlink swaps must be atomic (`ln -sf`) so a partially-written config is never read mid-swap (all of Tasks 3-7 use `ln -sf`, verified in each task's manual check).
 - Missing `/etc/timezone` file (e.g. first boot before it's ever written) — sync script must not throw and must fall back to the default Paris coordinates (Task 2).
@@ -40,7 +40,7 @@
 - **Modify** `modules/home-manager/display/hyprland/waybar.nix` — replace the commented-out static style with a real one that imports a runtime-swappable `colors.css`; add two color files.
 - **Modify** `modules/home-manager/display/tofi.nix` — replace `programs.tofi` with two hand-written full config variants + a runtime symlink.
 - **Modify** `modules/home-manager/display/hyprland/swaync.nix` — replace the commented-out static style with a real one that imports a runtime-swappable `colors.css`; add two color files.
-- **Modify** `modules/home-manager/display/sway/quickshell/default.nix` — dual-bake every `themedQmlFile` output, add a wallpaper dark/light pair, add darkman scripts that restart the `quickshell-widgets` service.
+- **Modify** `modules/home-manager/display/sway/quickshell/default.nix` — dual-bake every `themedQmlFile` output, add darkman scripts that restart the `quickshell-widgets` service.
 - **Modify** `host/personal/home.nix` — import `../../modules/home-manager/darkman.nix`.
 
 ---
@@ -997,7 +997,7 @@ git commit -m "feat: switch swaync colors with darkman"
 
 ---
 
-### Task 7: quickshell (bar + lockscreen) and wallpaper dark/light
+### Task 7: quickshell (bar + lockscreen) dark/light
 
 **Files:**
 - Modify: `modules/home-manager/display/sway/quickshell/default.nix`
@@ -1129,21 +1129,7 @@ in
 
 (the `widgets` directory itself becomes a symlink to either `widgets-dark` or `widgets-light`, swapped by darkman, instead of home-manager writing directly into `quickshell/widgets/`.)
 
-- [ ] **Step 2: Add wallpaper handling**
-
-Note: no separate light-mode wallpaper image exists in the repo yet. Reuse the existing `assets/wallpaper/background_monocle.png` for both variants for now — the mechanism below is fully functional and only needs a new file path swapped in once a light wallpaper asset is added.
-
-Add to `modules/home-manager/darkman.nix`'s `let` block:
-```nix
-  # No dedicated light wallpaper asset exists in the repo yet, so both
-  # variants point at the same image; the switching mechanism is fully
-  # functional and only needs a new file path here once a light wallpaper
-  # is added.
-  wallpaperDark = ../../assets/wallpaper/background_monocle.png;
-  wallpaperLight = ../../assets/wallpaper/background_monocle.png;
-```
-
-- [ ] **Step 3: Add darkman scripts**
+- [ ] **Step 2: Add darkman scripts**
 
 Edit `modules/home-manager/darkman.nix`:
 
@@ -1152,26 +1138,23 @@ Edit `modules/home-manager/darkman.nix`:
         ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
         ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets
       '';
-      wallpaper = ''
-        ${pkgs.sway}/bin/swaymsg output "*" bg ${wallpaperDark} fill
-      '';
 ```
-(add to `darkModeScripts`; light variant with `widgets-light` and `wallpaperLight`, added to `lightModeScripts`.)
+(add to `darkModeScripts`; light variant with `widgets-light`, added to `lightModeScripts`.)
 
-- [ ] **Step 4: Verify**
+- [ ] **Step 3: Verify**
 
 Run: `nix flake check`
 Expected: no errors.
 
 Run: `home-manager switch --flake .#personal`
-Then: `darkman set dark` — confirm the quickshell bar/clock restarts and shows the dark palette, and `swaymsg -t get_outputs` still shows the wallpaper applied (visually, no crash).
+Then: `darkman set dark` — confirm the quickshell bar/clock restarts and shows the dark palette.
 Then: `darkman set light` — confirm the quickshell bar/clock restarts and shows the light palette; lock the screen (`swaymsg exec 'quickshell ipc -c widgets call lock lock'`) and confirm `LockLight.qml` is shown, not `LockDark.qml`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add modules/home-manager/display/sway/quickshell/default.nix modules/home-manager/darkman.nix
-git commit -m "feat: switch quickshell widgets, lockscreen, and wallpaper with darkman"
+git commit -m "feat: switch quickshell widgets and lockscreen with darkman"
 ```
 
 ---
