@@ -72,6 +72,10 @@ in
       tofi = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-dark" "${config.xdg.configHome}/tofi/config"
       '';
+      swaync = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/swaync/colors-dark.css" "${config.xdg.configHome}/swaync/colors.css"
+        ${pkgs.swaynotificationcenter}/bin/swaync-client --reload-css || true
+      '';
     };
 
     lightModeScripts = {
@@ -87,6 +91,10 @@ in
       '';
       tofi = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-light" "${config.xdg.configHome}/tofi/config"
+      '';
+      swaync = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/swaync/colors-light.css" "${config.xdg.configHome}/swaync/colors.css"
+        ${pkgs.swaynotificationcenter}/bin/swaync-client --reload-css || true
       '';
     };
   };

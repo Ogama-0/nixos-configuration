@@ -24,7 +24,7 @@ in
     targets.mako.enable = false;
     targets.starship.enable = false;
     targets.tofi.enable = false;
-    # targets.swaync.enable = false;
+    targets.swaync.enable = false;
     targets.waybar.enable = false;
 
     base16Scheme = lib.mkDefault "${pkgs.base16-schemes}/share/themes/horizon-dark.yaml";
