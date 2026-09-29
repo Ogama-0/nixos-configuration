@@ -65,6 +65,10 @@ in
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -r light
       '';
+      waybar-theme = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/waybar/colors-dark.css" "${config.xdg.configHome}/waybar/colors.css"
+        ${pkgs.procps}/bin/pkill -x -SIGUSR2 waybar || true
+      '';
     };
 
     lightModeScripts = {
@@ -73,6 +77,10 @@ in
       '';
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -a light
+      '';
+      waybar-theme = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/waybar/colors-light.css" "${config.xdg.configHome}/waybar/colors.css"
+        ${pkgs.procps}/bin/pkill -x -SIGUSR2 waybar || true
       '';
     };
   };
