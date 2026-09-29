@@ -21,18 +21,11 @@ in
     targets.alacritty.enable = false;
     targets.swaylock.enable = false;
     targets.fish.enable = false;
-    # targets.mako.enable = true;
+    targets.mako.enable = false;
     targets.starship.enable = false;
-    targets.tofi.enable = true;
-    # targets.swaync.enable = false;
-    targets.waybar = {
-      enable = true;
-      # enableLeftBackColors = true;
-      # enableRightBackColors = true;
-      # enableCenterBackColors = true;
-      opacity.enable = false;
-      # colors.override = config.lib.stylix.colors;
-    };
+    targets.tofi.enable = false;
+    targets.swaync.enable = false;
+    targets.waybar.enable = false;
 
     base16Scheme = lib.mkDefault "${pkgs.base16-schemes}/share/themes/horizon-dark.yaml";
     image = background_monocle;

@@ -1,6 +1,16 @@
-{ pkgs, ... }:
+{ pkgs, config, lib, ... }:
 let
   script_path = ../../../../scripts/swaync;
+  colors = import ../../lib/theme-colors.nix;
+
+  colorDefs = c: ''
+    @define-color base00 #${c.base00};
+    @define-color base02 #${c.base02};
+    @define-color base05 #${c.base05};
+    @define-color base08 #${c.base08};
+    @define-color base0D #${c.base0D};
+  '';
+
   wifi = {
     command = script_path + "/wifi-toggle.sh";
     update-command = script_path + "/update-wifi-toggle.sh";
@@ -18,6 +28,15 @@ let
     update-command = script_path + "/update-night-shift-toggle.sh";
   };
 in {
+
+  xdg.configFile = {
+    "swaync/colors-dark.css".text = colorDefs colors.dark;
+    "swaync/colors-light.css".text = colorDefs colors.light;
+  };
+
+  home.activation.swayncColorDefault = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/swaync/colors-dark.css" "${config.xdg.configHome}/swaync/colors.css"
+  '';
 
   services.swaync = {
     enable = true;
@@ -90,67 +109,33 @@ in {
 
         };
       };
-      # style = ''
-      #           :root {
-      #     --border-radius: 22px;
-      #     --cc-bg: transparent;
-
-      #     --widget-background: rgba(46, 46, 46, 0.7);
-      #     --noti-bg-alpha: 0.6;
-
-      #     --padding: calc(var(--border-radius) / 2);
-      #   }
-
-      #   .control-center {
-      #     border-radius: 0;
-
-      #     border-radius: var(--border-radius);
-      #   }
-
-      #   .widgets > .widget,
-      #   .widget-mpris > carouselindicatordots,
-      #   .widget-mpris > box > button {
-      #     background: var(--widget-background);
-      #     padding: calc(var(--border-radius) / 2);
-      #     border: var(--border);
-      #   }
-
-      #   .control-center-list-placeholder {
-      #     padding: var(--border-radius);
-      #   }
-
-      #   .notification-group {
-      #     border-radius: var(--border-radius);
-      #     padding: 8px;
-      #   }
-
-      #   .widget.widget-mpris {
-      #     background: transparent;
-      #     border-radius: 0;
-      #     padding: 0;
-      #     border: none;
-      #   }
-      #   .widget.widget-mpris > carouselindicatordots {
-      #     --dots-padding: 4px;
-      #     padding: var(--dots-padding);
-      #     padding-left: var(--dots-padding);
-      #     padding-right: calc(6px + var(--dots-padding));
-      #     margin: 0;
-      #     margin-top: var(--padding);
-      #   }
-      #   .widget-mpris > box > button:hover {
-      #     background: rgba(46, 46, 46, 1);
-      #   }
-      #   .widget-mpris-player {
-      #     box-shadow: none;
-      #     border: var(--border);
-      #     margin: 0 var(--padding);
-      #   }
-      #   .widget-mpris-player:only-child {
-      #     margin: 0;
-      #   }
-      # '';
-
     };
+    style = ''
+      @import url("colors.css");
+
+      :root {
+        --border-radius: 22px;
+        --cc-bg: @base00;
+        --widget-background: @base02;
+        --padding: calc(var(--border-radius) / 2);
+      }
+
+      .notification-group {
+        background: @base00;
+        color: @base05;
+        border-radius: var(--border-radius);
+        padding: 8px;
+      }
+
+      .notification-background.critical {
+        background: @base08;
+      }
+
+      .widgets > .widget {
+        background: var(--widget-background);
+        color: @base05;
+        padding: calc(var(--border-radius) / 2);
+      }
+    '';
   };
 }
