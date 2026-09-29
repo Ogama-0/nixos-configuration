@@ -44,6 +44,10 @@ hex.
   desktop (`personal`) concern only.
 - Wallpaper: stays whatever `stylix.image` currently sets. No dark/light
   wallpaper pair, no `swaymsg` background switching.
+- Quickshell bar/widget shell (`shell.qml`, `Wallpaper.qml`, `Clock.qml`,
+  `Music.qml`, `Calendar.qml`, `RevealMask.qml`, `LaserBar.qml`): still
+  under active development by the user — out of scope, not touched, not
+  restarted. Only the quickshell lockscreen (`Lock.qml`) is switched.
 - Changing the default build-time theme: `modules/home-manager/stylix.nix`
   keeps producing the dark theme by default on a fresh
   `nixos-rebuild switch` / `home-manager switch`. darkman only adjusts the
@@ -109,7 +113,7 @@ target below — no hand-copied hex.
 | mako | Dual-baked `mode=dark` / `mode=light` sections in `modules/home-manager/display/sway/mako.nix`; switch via `makoctl mode -a <mode> -r <other>` | mako supports named modes natively; no file swap needed. |
 | swaync | Dual-baked CSS; symlink swap + `swaync-client --reload-css` | |
 | tofi | Dual-baked colors file; symlink swap only | tofi launches fresh per invocation (app launcher), so no reload signal is needed — next launch just picks up the new symlink target. |
-| quickshell (bar + lockscreen) | Dual-baked color tokens substituted into QML (as `modules/home-manager/display/sway/quickshell/default.nix` already does for the lockscreen dark/light split); symlink swap + quickshell IPC reload call | If quickshell's live reload doesn't pick up swapped tokens cleanly, fall back to restarting the quickshell daemon (`pkill -x quickshell` + relaunch) — still far cheaper than a full home-manager switch. Exact IPC call to confirm during implementation. |
+| quickshell lockscreen only | Dual-baked color tokens substituted into `Lock-dark.qml`/`Lock-light.qml`; plain symlink swap of `components/Lock.qml`, no daemon restart | Bar/widget shell excluded (active development, see Non-goals). Assumes quickshell loads `Lock.qml` fresh per lock invocation rather than caching it — if that assumption is wrong, live verification will surface it as a known limitation rather than adding an in-scope daemon restart. |
 
 ### 4. darkman wiring
 
@@ -127,7 +131,7 @@ following the pattern in Pixilie's `darkman.nix` reference). Imported from
   anything audited above.
 - Manual verification of each darkman script: `darkman set dark` /
   `darkman set light` (or equivalent CLI toggle) and visually confirm
-  waybar, mako, swaync, tofi, quickshell bar/lockscreen, and gtk apps all
+  waybar, mako, swaync, tofi, quickshell lockscreen, and gtk apps all
   flip, without restarting the sway session.
 - Confirm actual sunset/sunrise-triggered transition once, or trust
   darkman's own scheduling (it's a mature, focused tool) after the manual
@@ -138,8 +142,10 @@ following the pattern in Pixilie's `darkman.nix` reference). Imported from
 - Exact stylix-internal (or standalone) function to parse a base16 YAML
   scheme file into colors without going through the global `polarity`
   switch.
-- Exact quickshell IPC call (or confirmation that a daemon restart is
-  simpler/more reliable) for live color-token reload.
+- Resolved during implementation: quickshell scope was narrowed to the
+  lockscreen only (bar/widget shell excluded, under active development),
+  and the lockscreen switch uses a plain symlink swap with no daemon
+  restart or IPC call, assuming `Lock.qml` loads fresh per lock invocation.
 - Whether swaync is even themed via stylix today (audit found no explicit
   `stylix.targets.swaync` call, relying on `autoEnable`) — confirm before
   writing its dual-bake.

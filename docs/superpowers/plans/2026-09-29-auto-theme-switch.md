@@ -40,7 +40,7 @@
 - **Modify** `modules/home-manager/display/hyprland/waybar.nix` — replace the commented-out static style with a real one that imports a runtime-swappable `colors.css`; add two color files.
 - **Modify** `modules/home-manager/display/tofi.nix` — replace `programs.tofi` with two hand-written full config variants + a runtime symlink.
 - **Modify** `modules/home-manager/display/hyprland/swaync.nix` — replace the commented-out static style with a real one that imports a runtime-swappable `colors.css`; add two color files.
-- **Modify** `modules/home-manager/display/sway/quickshell/default.nix` — dual-bake every `themedQmlFile` output, add darkman scripts that restart the `quickshell-widgets` service.
+- **Modify** `modules/home-manager/display/sway/quickshell/default.nix` — dual-bake only the lockscreen component (`Lock-dark.qml`/`Lock-light.qml`); the bar/widget shell is under active development and stays untouched, no service restart.
 - **Modify** `host/personal/home.nix` — import `../../modules/home-manager/darkman.nix`.
 
 ---
@@ -997,7 +997,9 @@ git commit -m "feat: switch swaync colors with darkman"
 
 ---
 
-### Task 7: quickshell (bar + lockscreen) dark/light
+### Task 7: quickshell lockscreen dark/light (bar excluded)
+
+**Scope note (superseded the original plan text below the line, per user instruction mid-execution):** the quickshell bar/widget shell (`shell.qml`, `Wallpaper.qml`, `Clock.qml`, `Music.qml`, `Calendar.qml`, `RevealMask.qml`, `LaserBar.qml`) is still under active development by the user and must **not** be touched, dual-baked, restructured, or have its systemd service restarted by this task. Only the lockscreen (`components/Lock.qml`, already split into a stable `LockDark.qml`/`LockLight.qml` pair) is in scope. The existing bar/widget-shell generation in `modules/home-manager/display/sway/quickshell/default.nix` (the `themedQmlFile`/`perVariantFiles`-style logic, or whatever form it currently takes) stays exactly as-is — read the file's current state before editing and change nothing outside what's described below.
 
 **Files:**
 - Modify: `modules/home-manager/display/sway/quickshell/default.nix`
@@ -1005,19 +1007,21 @@ git commit -m "feat: switch swaync colors with darkman"
 
 **Interfaces:**
 - Consumes: `import ../../../lib/theme-colors.nix`.
-- Note: this task does **not** touch `stylix.nix` — quickshell was never a `stylix.targets.*` entry; it already reads `config.lib.stylix.colors` directly, which this task replaces with the shared `theme-colors.nix` import for consistency with every other target.
+- Note: this task does **not** touch `stylix.nix`.
 
-- [ ] **Step 1: Dual-bake every themed QML file**
+- [ ] **Step 1: Dual-bake only the lockscreen component**
 
-Edit `modules/home-manager/display/sway/quickshell/default.nix`:
+Edit `modules/home-manager/display/sway/quickshell/default.nix`. Leave every existing binding and `xdg.configFile` entry that builds the bar/widget shell untouched. Add a new lockscreen-only token-substitution helper and two new `xdg.configFile` entries (`components/Lock-dark.qml`, `components/Lock-light.qml`), replacing whatever single `components/Lock.qml` entry currently exists (which today picks `LockDark.qml`/`LockLight.qml` at build time via `stylix.polarity`) with these two variants plus a runtime-swappable default:
 
 ```nix
-{ pkgs, upkgs, config, lib, ... }:
+  # Lockscreen-only theming — reuses the same @token@ substitution the file
+  # already uses for the bar, but keyed off the shared palette instead of
+  # config.lib.stylix.colors, and scoped to just the lock component. Do not
+  # extend this to shell.qml/Wallpaper/Clock/Music/Calendar/RevealMask/
+  # LaserBar — those are the in-progress bar and are out of scope.
+  lockThemeColors = import ../../../lib/theme-colors.nix;
 
-let
-  colors = import ../../../lib/theme-colors.nix;
-
-  withThemeColors = c: laserColor: builtins.replaceStrings
+  withLockThemeColors = c: laserColor: builtins.replaceStrings
     [
       "@cardBg@"
       "@cardBorder@"
@@ -1047,99 +1051,42 @@ let
       "#FF${c.base08}"
     ];
 
-  themedQmlFile = variant: lockComponent: path: {
-    text = withThemeColors colors.${variant}
+  lockVariant = variant: lockComponent: {
+    text = withLockThemeColors lockThemeColors.${variant}
       (if variant == "light" then "#FFFFFF" else "#000000")
-      (builtins.readFile path);
+      (builtins.readFile lockComponent);
   };
-
-  perVariantFiles = variant: lockComponent: {
-    "shell.qml" = themedQmlFile variant lockComponent ./shell.qml;
-    "components/Wallpaper.qml" = themedQmlFile variant lockComponent ./components/Wallpaper.qml;
-    "components/Clock.qml" = themedQmlFile variant lockComponent ./components/Clock.qml;
-    "components/Music.qml" = themedQmlFile variant lockComponent ./components/Music.qml;
-    "components/Calendar.qml" = themedQmlFile variant lockComponent ./components/Calendar.qml;
-    "components/Lock.qml" = themedQmlFile variant lockComponent lockComponent;
-    "components/RevealMask.qml" = themedQmlFile variant lockComponent ./components/RevealMask.qml;
-    "components/LaserBar.qml" = themedQmlFile variant lockComponent ./components/LaserBar.qml;
-  };
-in
-{
-  home.packages = [
-    upkgs.quickshell
-    pkgs.curl
-    pkgs.cava
-    pkgs.imagemagick
-  ];
-
-  xdg.configFile =
-    (lib.mapAttrs' (name: value: {
-      name = "quickshell/widgets-dark/${name}";
-      inherit value;
-    }) (perVariantFiles "dark" ./components/LockDark.qml))
-    //
-    (lib.mapAttrs' (name: value: {
-      name = "quickshell/widgets-light/${name}";
-      inherit value;
-    }) (perVariantFiles "light" ./components/LockLight.qml))
-    // {
-      "quickshell/widgets/cava.conf".text = ''
-        [general]
-        bars = 20
-        framerate = 60
-        sensitivity = 195
-
-        [input]
-        method = pipewire
-        source = auto
-
-        [smoothing]
-        noise_reduction = 30
-
-        [output]
-        method = raw
-        raw_target = /dev/stdout
-        data_format = ascii
-        ascii_max_range = 100
-        bar_delimiter = 59
-        frame_delimiter = 10
-      '';
-    };
-
-  home.activation.quickshellWidgetsDefault = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
-  '';
-
-  systemd.user.services.quickshell-widgets = {
-    Unit = {
-      Description = "Quickshell desktop widgets (clock, Paris weather, media player)";
-      After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];
-    };
-    Service = {
-      ExecStart = "${upkgs.quickshell}/bin/quickshell -c widgets";
-      Restart = "on-failure";
-    };
-    Install = {
-      WantedBy = [ "graphical-session.target" ];
-    };
-  };
-}
 ```
 
-(the `widgets` directory itself becomes a symlink to either `widgets-dark` or `widgets-light`, swapped by darkman, instead of home-manager writing directly into `quickshell/widgets/`.)
+Add to the existing `xdg.configFile` attrset (alongside whatever bar-related entries already exist — do not remove those):
+
+```nix
+    "quickshell/widgets/components/Lock-dark.qml" = lockVariant "dark" ./components/LockDark.qml;
+    "quickshell/widgets/components/Lock-light.qml" = lockVariant "light" ./components/LockLight.qml;
+```
+
+Remove any existing single `"quickshell/widgets/components/Lock.qml" = ...;` entry from `xdg.configFile` — that path becomes a runtime symlink instead, not a home-manager-managed file (same reasoning as Task 2's fix: a path can't be both home-manager-managed and runtime-swapped without a collision).
+
+Add a default-symlink activation step, following the same pattern as Tasks 4/5/6:
+
+```nix
+  home.activation.quickshellLockDefault = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-dark.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
+  '';
+```
+
+Do not add, modify, or remove the `systemd.user.services.quickshell-widgets` block, and do not restart it from this task's darkman scripts — the assumption (to state explicitly in your report) is that quickshell's lock IPC call (`quickshell ipc -c widgets call lock lock`) loads `Lock.qml` fresh from disk on each invocation rather than caching it in the long-running daemon process, so a plain symlink swap is sufficient without touching the running bar/daemon at all. If you find evidence this assumption is wrong (e.g. quickshell explicitly documents caching QML component sources), say so in your report as a concern rather than adding a restart — restarting the daemon is out of scope per the user's explicit instruction not to manage the bar.
 
 - [ ] **Step 2: Add darkman scripts**
 
 Edit `modules/home-manager/darkman.nix`:
 
 ```nix
-      quickshell-theme = ''
-        ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
-        ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets
+      quickshell-lock-theme = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-dark.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
       '';
 ```
-(add to `darkModeScripts`; light variant with `widgets-light`, added to `lightModeScripts`.)
+(add to `darkModeScripts`; light variant with `Lock-light.qml`, added to `lightModeScripts`. No systemd restart call — see Step 1's note.)
 
 - [ ] **Step 3: Verify**
 
@@ -1147,14 +1094,15 @@ Run: `nix flake check`
 Expected: no errors.
 
 Run: `home-manager switch --flake .#personal`
-Then: `darkman set dark` — confirm the quickshell bar/clock restarts and shows the dark palette.
-Then: `darkman set light` — confirm the quickshell bar/clock restarts and shows the light palette; lock the screen (`swaymsg exec 'quickshell ipc -c widgets call lock lock'`) and confirm `LockLight.qml` is shown, not `LockDark.qml`.
+Then: `darkman set dark && cat ~/.config/quickshell/widgets/components/Lock.qml | grep -o '#[0-9A-Fa-f]\{6\}' | head -3` — expect dark-palette hex values.
+Then: `darkman set light` and repeat — expect light-palette hex values, with no visible disruption to the running bar/widgets (confirm the bar's own process, e.g. `pgrep -f 'quickshell -c widgets'`, is not restarted by either command).
+Then lock the screen (`swaymsg exec 'quickshell ipc -c widgets call lock lock'`) and confirm the currently-symlinked variant is what's shown.
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add modules/home-manager/display/sway/quickshell/default.nix modules/home-manager/darkman.nix
-git commit -m "feat: switch quickshell widgets and lockscreen with darkman"
+git commit -m "feat: switch quickshell lockscreen colors with darkman (bar untouched)"
 ```
 
 ---
