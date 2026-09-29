@@ -12,7 +12,11 @@ Item {
 
     default property alias content: contentItem.data
 
-    readonly property real originX: root.mapToItem(null, 0, 0).x
+    // root.x is panel-local since RevealMask is always a direct child of the
+    // panel content, matching coverLeft/coverRight/panelWidth's coordinate
+    // space. mapToItem() must not be used here: it's a plain invokable call,
+    // so a binding that calls it captures no dependency and never re-evaluates.
+    readonly property real originX: root.x
 
     Item {
         id: contentItem

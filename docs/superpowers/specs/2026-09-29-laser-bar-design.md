@@ -9,7 +9,7 @@ replacement bar built in Quickshell (already used in this repo for other
 desktop widgets — wallpaper, clock/weather, music, calendar, lockscreen —
 via the persistent `quickshell-widgets` systemd service and its
 `shell.qml` scope). The old bar is left in place during the prototype
-phase; it's triggered from a temporary key (`Mod4+z`) rather than bare
+phase; it's triggered from a temporary key (`Insert`) rather than bare
 `Mod4`, so the existing bar-toggle keybinding and the old bar's
 mouse-hover reveal are both left completely untouched while comparing
 the two side by side. The bare-Mod key can be repointed at the new bar
@@ -73,14 +73,17 @@ the existing always-running `quickshell-widgets` service:
   keeps using the existing `@cardBg@`/`@cardBorder@`/`@clockColor@`/
   `@dateColor@` placeholders already defined there.
 - Controlled by IPC, same pattern as the existing `wallpaper` target:
-  `IpcHandler { target: "laserbar"; function show(): void {...}; function hide(): void {...} }`.
+  `IpcHandler { target: "laserbar"; function reveal(): void {...}; function hide(): void {...} }`.
+  (Named `reveal`, not `show` — `show` collides with the `quickshell ipc
+  show` subcommand name and is silently misparsed.)
 - Sway wiring (`modules/home-manager/display/sway/default.nix`): the
   existing `keybindings` attrset (including bare `"${modifier}"`) is
-  left untouched. A new `extraConfig` block adds two raw `bindsym`
-  lines on a temporary key, since home-manager's `keybindings` attrset
-  has no way to express a `--release` variant:
-  - `bindsym ${modifier}+z exec quickshell ipc -c widgets call laserbar show`
-  - `bindsym --release ${modifier}+z exec quickshell ipc -c widgets call laserbar hide`
+  left untouched. A new `extraConfig` block (a sibling of `config`, not
+  nested inside it — home-manager's sway module keeps them separate)
+  adds two raw `bindsym` lines on a temporary key, since the
+  `keybindings` attrset has no way to express a `--release` variant:
+  - `bindsym Insert exec quickshell ipc -c widgets call laserbar reveal`
+  - `bindsym --release Insert exec quickshell ipc -c widgets call laserbar hide`
 
 ## Battery data
 
@@ -165,7 +168,7 @@ established validation pattern). For this feature:
    (or a full `nixos-rebuild switch --flake .#personal` if testing live)
 3. `systemctl --user restart quickshell-widgets`
 4. Manually verify:
-   - Press/hold/release `Mod4+z` shows and retracts the beams within
+   - Press/hold/release `Insert` shows and retracts the beams within
      the 0.1–0.2s budget.
    - Beams meet at the position matching current battery %.
    - The center pill reveals/covers in sync with whichever beam's

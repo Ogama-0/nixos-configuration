@@ -36,117 +36,124 @@ Scope {
         onTriggered: batteryProc.running = true
     }
 
-    PanelWindow {
-        id: panel
+    Variants {
+        model: Quickshell.screens
 
-        anchors {
-            top: true
-            left: true
-            right: true
-        }
-        implicitHeight: 64
-        color: "transparent"
-        focusable: false
-        exclusionMode: ExclusionMode.Ignore
-        mask: Region {}
+        PanelWindow {
+            id: panel
 
-        WlrLayershell.namespace: "laser-bar"
-        WlrLayershell.layer: WlrLayer.Overlay
+            required property var modelData
+            screen: modelData
 
-        Rectangle {
-            id: leftBeam
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            height: 16
-            radius: height / 2
-            width: root.active ? root.batteryFraction * panel.width : 0
-            Behavior on width {
-                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            anchors {
+                top: true
+                left: true
+                right: true
             }
-            color: "@laserColor@"
-        }
+            implicitHeight: 64
+            color: "transparent"
+            focusable: false
+            exclusionMode: ExclusionMode.Ignore
+            mask: Region {}
 
-        Rectangle {
-            id: rightBeam
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            height: 16
-            radius: height / 2
-            width: root.active ? (1 - root.batteryFraction) * panel.width : 0
-            Behavior on width {
-                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-            }
-            color: "@laserColor@"
-        }
-
-        Rectangle {
-            id: flare
-            width: 28
-            height: 28
-            radius: 14
-            anchors.verticalCenter: parent.verticalCenter
-            x: root.batteryFraction * panel.width - width / 2
-            color: "@laserColor@"
-            opacity: root.active ? 1.0 : 0.0
-            Behavior on opacity {
-                NumberAnimation { duration: 150 }
-            }
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: 1.0
-                blurMax: 24
-            }
-        }
-
-        RevealMask {
-            id: clockReveal
-            coverLeft: leftBeam.width
-            coverRight: rightBeam.width
-            panelWidth: panel.width
-            width: 220
-            height: 56
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.verticalCenter: parent.verticalCenter
+            WlrLayershell.namespace: "laser-bar"
+            WlrLayershell.layer: WlrLayer.Overlay
 
             Rectangle {
-                anchors.fill: parent
+                id: leftBeam
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                height: 16
                 radius: height / 2
-                color: "@cardBg@"
-                border.color: "@cardBorder@"
-                border.width: 2
+                width: root.active ? root.batteryFraction * panel.width : 0
+                Behavior on width {
+                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                }
+                color: "@laserColor@"
+            }
 
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 2
+            Rectangle {
+                id: rightBeam
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                height: 16
+                radius: height / 2
+                width: root.active ? (1 - root.batteryFraction) * panel.width : 0
+                Behavior on width {
+                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                }
+                color: "@laserColor@"
+            }
 
-                    Text {
-                        id: clockText
-                        Layout.alignment: Qt.AlignHCenter
-                        color: "@clockColor@"
-                        font.pixelSize: 20
-                        font.weight: Font.DemiBold
-                    }
+            Rectangle {
+                id: flare
+                width: 28
+                height: 28
+                radius: 14
+                anchors.verticalCenter: parent.verticalCenter
+                x: Math.max(0, Math.min(panel.width - width, root.batteryFraction * panel.width - width / 2))
+                color: "@laserColor@"
+                opacity: root.active ? 1.0 : 0.0
+                Behavior on opacity {
+                    NumberAnimation { duration: 150 }
+                }
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    blurEnabled: true
+                    blur: 1.0
+                    blurMax: 24
+                }
+            }
 
-                    Text {
-                        id: dateText
-                        Layout.alignment: Qt.AlignHCenter
-                        color: "@dateColor@"
-                        font.pixelSize: 12
+            RevealMask {
+                id: clockReveal
+                coverLeft: leftBeam.width
+                coverRight: rightBeam.width
+                panelWidth: panel.width
+                width: 220
+                height: 56
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: height / 2
+                    color: "@cardBg@"
+                    border.color: "@cardBorder@"
+                    border.width: 2
+
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 2
+
+                        Text {
+                            id: clockText
+                            Layout.alignment: Qt.AlignHCenter
+                            color: "@clockColor@"
+                            font.pixelSize: 20
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            id: dateText
+                            Layout.alignment: Qt.AlignHCenter
+                            color: "@dateColor@"
+                            font.pixelSize: 12
+                        }
                     }
                 }
             }
-        }
 
-        Timer {
-            interval: 1000
-            running: true
-            repeat: true
-            triggeredOnStart: true
-            onTriggered: {
-                const now = new Date()
-                clockText.text = Qt.formatDateTime(now, "HH:mm:ss")
-                dateText.text = Qt.formatDateTime(now, "dddd d MMMM")
+            Timer {
+                interval: 1000
+                running: true
+                repeat: true
+                triggeredOnStart: true
+                onTriggered: {
+                    const now = new Date()
+                    clockText.text = Qt.formatDateTime(now, "HH:mm:ss")
+                    dateText.text = Qt.formatDateTime(now, "dddd d MMMM")
+                }
             }
         }
     }
