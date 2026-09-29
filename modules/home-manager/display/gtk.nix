@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, lib, config, ... }:
 {
   home.packages = with pkgs; [ dconf ];
 
@@ -6,10 +6,11 @@
     enable = true;
     settings = {
       "org/gnome/desktop/interface" = {
-        color-scheme =
+        color-scheme = lib.mkForce (
           if config.stylix.polarity == "dark" then "prefer-dark"
           else if config.stylix.polarity == "light" then "prefer-light"
-          else "default";
+          else "default"
+        );
       };
     };
   };
