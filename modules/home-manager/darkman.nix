@@ -38,6 +38,7 @@ let
     lng: $LNG
     usegeoclue: false
     EOF
+    ${pkgs.systemd}/bin/systemctl --user restart darkman.service || true
   '';
 in
 {
@@ -49,13 +50,13 @@ in
     enable = true;
     package = pkgs.darkman;
 
-    settings = {
-      # Defaults to Paris; Task 2 overrides this from /etc/timezone at
-      # every home-manager activation.
-      lat = 48.8566;
-      lng = 2.3522;
-      usegeoclue = false;
-    };
+    # Kept empty on purpose: home-manager's own darkman module manages
+    # xdg.configFile."darkman/config.yaml" via
+    # `mkIf (cfg.settings != {}) { source = ...; }`, which would symlink
+    # that path to a read-only Nix store file. darkmanTimezoneSync (below)
+    # needs to write that same path directly on every activation, so
+    # settings must stay `{}` to keep home-manager from ever managing it.
+    settings = { };
 
     darkModeScripts = {
       gtk-theme = ''
