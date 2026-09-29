@@ -76,6 +76,9 @@ in
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/swaync/colors-dark.css" "${config.xdg.configHome}/swaync/colors.css"
         ${pkgs.swaynotificationcenter}/bin/swaync-client --reload-css || true
       '';
+      quickshell-lock-theme = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-dark.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
+      '';
     };
 
     lightModeScripts = {
@@ -95,6 +98,9 @@ in
       swaync = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/swaync/colors-light.css" "${config.xdg.configHome}/swaync/colors.css"
         ${pkgs.swaynotificationcenter}/bin/swaync-client --reload-css || true
+      '';
+      quickshell-lock-theme = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-light.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
       '';
     };
   };
