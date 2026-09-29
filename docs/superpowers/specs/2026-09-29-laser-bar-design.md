@@ -9,8 +9,11 @@ replacement bar built in Quickshell (already used in this repo for other
 desktop widgets — wallpaper, clock/weather, music, calendar, lockscreen —
 via the persistent `quickshell-widgets` systemd service and its
 `shell.qml` scope). The old bar is left in place during the prototype
-phase; sway's default hidden-bar mouse-hover reveal still exposes it,
-so nothing is lost by moving the bare-Mod keybinding over to the new bar.
+phase; it's triggered from a temporary key (`Mod4+z`) rather than bare
+`Mod4`, so the existing bar-toggle keybinding and the old bar's
+mouse-hover reveal are both left completely untouched while comparing
+the two side by side. The bare-Mod key can be repointed at the new bar
+later, once the prototype is validated.
 
 The requested visual: two laser beams grow from the left and right
 screen edges and meet at an x-position determined by battery percentage
@@ -71,10 +74,13 @@ the existing always-running `quickshell-widgets` service:
   `@dateColor@` placeholders already defined there.
 - Controlled by IPC, same pattern as the existing `wallpaper` target:
   `IpcHandler { target: "laserbar"; function show(): void {...}; function hide(): void {...} }`.
-- Sway wiring (`modules/home-manager/display/sway/default.nix`):
-  replace `"${modifier}" = "exec swaymsg bar mode toggle";` with:
-  - `bindsym ${modifier} exec quickshell ipc -c widgets call laserbar show`
-  - `bindsym --release ${modifier} exec quickshell ipc -c widgets call laserbar hide`
+- Sway wiring (`modules/home-manager/display/sway/default.nix`): the
+  existing `keybindings` attrset (including bare `"${modifier}"`) is
+  left untouched. A new `extraConfig` block adds two raw `bindsym`
+  lines on a temporary key, since home-manager's `keybindings` attrset
+  has no way to express a `--release` variant:
+  - `bindsym ${modifier}+z exec quickshell ipc -c widgets call laserbar show`
+  - `bindsym --release ${modifier}+z exec quickshell ipc -c widgets call laserbar hide`
 
 ## Battery data
 
@@ -159,12 +165,12 @@ established validation pattern). For this feature:
    (or a full `nixos-rebuild switch --flake .#personal` if testing live)
 3. `systemctl --user restart quickshell-widgets`
 4. Manually verify:
-   - Press/hold/release `Mod4` shows and retracts the beams within the
-     0.1–0.2s budget.
+   - Press/hold/release `Mod4+z` shows and retracts the beams within
+     the 0.1–0.2s budget.
    - Beams meet at the position matching current battery %.
    - The center pill reveals/covers in sync with whichever beam's
      front passes it first.
    - Toggling `stylix.polarity` between `"dark"`/`"light"` and
      re-switching swaps the laser color between black/white correctly.
-   - Old i3status-rust bar is still reachable via mouse-hover at the
-     screen edge (its own keybinding was removed, not the bar itself).
+   - Old i3status-rust bar's mouse-hover reveal and its bare-`Mod4`
+     toggle keybinding are both unaffected.
