@@ -81,7 +81,7 @@ in
 
           consume-icons.on = " ";
           random-icons = {
-            off = ''<span color="#e93c58"></span> '';
+            off = ''<span color="#${colors.dark.base08}"></span> '';
             on = " ";
           };
           repeat-icons.on = " ";

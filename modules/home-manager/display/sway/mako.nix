@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   colors = import ../../lib/theme-colors.nix;
 in
@@ -9,6 +9,9 @@ in
 
       max-visible = 3;
       default-timeout = 7000;
+
+      font =
+        "${config.stylix.fonts.sansSerif.name} ${toString config.stylix.fonts.sizes.popups}";
 
       background-color = "#${colors.dark.base00}";
       text-color = "#${colors.dark.base05}";

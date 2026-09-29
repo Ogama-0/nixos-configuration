@@ -26,8 +26,9 @@ let
   syncScript = pkgs.writeShellScript "darkman-timezone-sync" ''
     set -eu
     TZ_VALUE=""
-    if [ -r /etc/timezone ]; then
-      TZ_VALUE=$(${coreutils}/bin/cat /etc/timezone)
+    if [ -L /etc/localtime ]; then
+      REALPATH=$(${coreutils}/bin/readlink -f /etc/localtime)
+      TZ_VALUE="''${REALPATH##*/zoneinfo/}"
     fi
     LAT="${fallbackLat}"
     LNG="${fallbackLng}"
@@ -42,7 +43,7 @@ let
   '';
 in
 {
-  home.activation.darkmanTimezoneSync = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.darkmanTimezoneSync = lib.hm.dag.entryAfter [ "linkGeneration" "tofiConfigDefault" "quickshellLockDefault" ] ''
     ${bashExe} ${syncScript}
   '';
 
@@ -65,16 +66,8 @@ in
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -r light
       '';
-      waybar-theme = ''
-        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/waybar/colors-dark.css" "${config.xdg.configHome}/waybar/colors.css"
-        ${pkgs.procps}/bin/pkill -x -SIGUSR2 waybar || true
-      '';
       tofi = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-dark" "${config.xdg.configHome}/tofi/config"
-      '';
-      swaync = ''
-        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/swaync/colors-dark.css" "${config.xdg.configHome}/swaync/colors.css"
-        ${pkgs.swaynotificationcenter}/bin/swaync-client --reload-css || true
       '';
       quickshell-lock-theme = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-dark.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
@@ -88,16 +81,8 @@ in
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -a light
       '';
-      waybar-theme = ''
-        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/waybar/colors-light.css" "${config.xdg.configHome}/waybar/colors.css"
-        ${pkgs.procps}/bin/pkill -x -SIGUSR2 waybar || true
-      '';
       tofi = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-light" "${config.xdg.configHome}/tofi/config"
-      '';
-      swaync = ''
-        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/swaync/colors-light.css" "${config.xdg.configHome}/swaync/colors.css"
-        ${pkgs.swaynotificationcenter}/bin/swaync-client --reload-css || true
       '';
       quickshell-lock-theme = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-light.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"

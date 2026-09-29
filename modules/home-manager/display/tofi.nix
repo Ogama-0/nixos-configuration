@@ -3,6 +3,9 @@ let
   colors = import ../lib/theme-colors.nix;
 
   tofiConfig = c: ''
+    font = ${config.stylix.fonts.monospace.name}
+    font-size = ${toString config.stylix.fonts.sizes.popups}
+
     horizontal = true
     anchor = top
     width = 100%
@@ -54,7 +57,7 @@ in
     "tofi/config-light".text = tofiConfig colors.light;
   };
 
-  home.activation.tofiConfigDefault = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.tofiConfigDefault = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     run ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-dark" "${config.xdg.configHome}/tofi/config"
   '';
 }

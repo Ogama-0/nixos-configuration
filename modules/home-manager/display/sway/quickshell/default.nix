@@ -120,7 +120,7 @@ in
     "quickshell/widgets/components/LaserBar.qml" = themedQmlFile ./components/LaserBar.qml;
   };
 
-  home.activation.quickshellLockDefault = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.quickshellLockDefault = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     run ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-dark.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
   '';
 
