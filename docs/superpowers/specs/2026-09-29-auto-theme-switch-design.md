@@ -55,9 +55,15 @@ hex.
 sunset/sunrise itself from a `lat`/`lng` pair (`usegeoclue = false`, explicit
 coordinates — no location-service dependency).
 
-Coordinates are derived from timezone rather than hand-entered: a small
-static lookup table in the new module, keyed by a `timeZone` string read
-from `cfg` (profile data), e.g.:
+Coordinates track `time.timeZone` automatically rather than being
+hand-entered or duplicated in a second config location. Home-manager is
+built standalone in this flake (not wired as a NixOS module), so it has no
+`osConfig` access to read `time.timeZone` at eval time — so the sync happens
+at activation instead: a home-manager activation script reads `/etc/timezone`
+(the file NixOS writes from `time.timeZone` on every `nixos-rebuild switch`),
+looks it up in a small static lookup table, and (re)writes the resolved
+`lat`/`lng` into darkman's `~/.config/darkman/config.yaml`, overriding the
+module's static default. The lookup table:
 
 ```nix
 {
@@ -67,19 +73,15 @@ from `cfg` (profile data), e.g.:
 }
 ```
 
-`host/profiles.nix`'s `cfg-perso.extra` gains a `timeZone` field matching
-whatever `host/personal/configuration.nix` sets as `time.timeZone` (that
-file currently hardcodes `"Europe/Paris"`, with commented-out alternates for
-travel — `America/Monterrey`, `America/Mazatlan` — which is why the lookup
-table covers those too). Home-manager is built standalone in this flake (not
-wired as a NixOS module), so it has no `osConfig` access to read
-`time.timeZone` directly — hence the duplicated-but-matching value in
-profiles.nix, consistent with how the two files already independently agree
-on this string today.
+(covers `host/personal/configuration.nix`'s current `time.timeZone` value
+plus its two commented-out travel alternates). Practically: changing
+`time.timeZone` in the NixOS config, then running `nixos-rebuild switch`
+followed by `home-manager switch`, is enough to re-sync — no second field to
+remember to update.
 
-If `cfg.timeZone` isn't in the lookup table, fall back to Paris coordinates
-and note it as a known gap (not worth a more general geocoding dependency
-for a personal config).
+If `/etc/timezone`'s value isn't in the lookup table, fall back to Paris
+coordinates and note it as a known gap (not worth a more general geocoding
+dependency for a personal config).
 
 ### 2. Color source
 
