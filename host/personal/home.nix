@@ -16,6 +16,7 @@
     ../../modules/home-manager/zellij
     ../../modules/home-manager/firefox.nix
     ../../modules/home-manager/stylix.nix
+    ../../modules/home-manager/darkman.nix
     ../../modules/home-manager/vim.nix
     ../../modules/home-manager/keyboard.nix
     ../../modules/home-manager/wakapi.nix
