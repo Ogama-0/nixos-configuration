@@ -42,6 +42,8 @@ hex.
   integration. No live switch, no restart-on-theme-change.
 - `oserv` / `epita` / `epita-light` profiles: out of scope — this is a
   desktop (`personal`) concern only.
+- Wallpaper: stays whatever `stylix.image` currently sets. No dark/light
+  wallpaper pair, no `swaymsg` background switching.
 - Changing the default build-time theme: `modules/home-manager/stylix.nix`
   keeps producing the dark theme by default on a fresh
   `nixos-rebuild switch` / `home-manager switch`. darkman only adjusts the
@@ -108,7 +110,6 @@ target below — no hand-copied hex.
 | swaync | Dual-baked CSS; symlink swap + `swaync-client --reload-css` | |
 | tofi | Dual-baked colors file; symlink swap only | tofi launches fresh per invocation (app launcher), so no reload signal is needed — next launch just picks up the new symlink target. |
 | quickshell (bar + lockscreen) | Dual-baked color tokens substituted into QML (as `modules/home-manager/display/sway/quickshell/default.nix` already does for the lockscreen dark/light split); symlink swap + quickshell IPC reload call | If quickshell's live reload doesn't pick up swapped tokens cleanly, fall back to restarting the quickshell daemon (`pkill -x quickshell` + relaunch) — still far cheaper than a full home-manager switch. Exact IPC call to confirm during implementation. |
-| wallpaper | `swaymsg output "*" bg <path> fill` with the matching dark/light image | Currently hardcoded to a single wallpaper in `modules/home-manager/display/sway/default.nix`, independent of `stylix.image` — this introduces the first actual dark/light wallpaper pair. |
 
 ### 4. darkman wiring
 
@@ -126,8 +127,8 @@ following the pattern in Pixilie's `darkman.nix` reference). Imported from
   anything audited above.
 - Manual verification of each darkman script: `darkman set dark` /
   `darkman set light` (or equivalent CLI toggle) and visually confirm
-  waybar, mako, swaync, tofi, quickshell bar/lockscreen, gtk apps, and
-  wallpaper all flip, without restarting the sway session.
+  waybar, mako, swaync, tofi, quickshell bar/lockscreen, and gtk apps all
+  flip, without restarting the sway session.
 - Confirm actual sunset/sunrise-triggered transition once, or trust
   darkman's own scheduling (it's a mature, focused tool) after the manual
   toggle test passes.
