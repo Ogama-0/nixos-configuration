@@ -69,6 +69,9 @@ in
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/waybar/colors-dark.css" "${config.xdg.configHome}/waybar/colors.css"
         ${pkgs.procps}/bin/pkill -x -SIGUSR2 waybar || true
       '';
+      tofi = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-dark" "${config.xdg.configHome}/tofi/config"
+      '';
     };
 
     lightModeScripts = {
@@ -81,6 +84,9 @@ in
       waybar-theme = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/waybar/colors-light.css" "${config.xdg.configHome}/waybar/colors.css"
         ${pkgs.procps}/bin/pkill -x -SIGUSR2 waybar || true
+      '';
+      tofi = ''
+        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-light" "${config.xdg.configHome}/tofi/config"
       '';
     };
   };
