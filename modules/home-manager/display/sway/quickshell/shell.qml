@@ -7,4 +7,5 @@ Scope {
     Music {}
     Calendar {}
     Lock {}
+    LaserBar {}
 }
