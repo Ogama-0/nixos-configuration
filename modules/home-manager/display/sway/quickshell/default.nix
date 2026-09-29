@@ -11,6 +11,8 @@ let
     then ./components/LockDark.qml
     else ./components/LockLight.qml;
 
+  laserColor = if config.stylix.polarity == "light" then "#FFFFFF" else "#000000";
+
   withThemeColors = builtins.replaceStrings
     [
       "@cardBg@"
@@ -22,6 +24,7 @@ let
       "@lockBg@"
       "@systemctlBin@"
       "@lockscreenImage@"
+      "@laserColor@"
     ]
     [
       "#B3${colors.base00}"
@@ -33,6 +36,7 @@ let
       "#FF${colors.base00}"
       "${pkgs.systemd}/bin/systemctl"
       "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png"
+      laserColor
     ];
 
   themedQmlFile = path: {
@@ -76,6 +80,8 @@ in
     "quickshell/widgets/components/Music.qml" = themedQmlFile ./components/Music.qml;
     "quickshell/widgets/components/Calendar.qml" = themedQmlFile ./components/Calendar.qml;
     "quickshell/widgets/components/Lock.qml" = themedQmlFile lockComponent;
+    "quickshell/widgets/components/RevealMask.qml" = themedQmlFile ./components/RevealMask.qml;
+    "quickshell/widgets/components/LaserBar.qml" = themedQmlFile ./components/LaserBar.qml;
   };
 
   systemd.user.services.quickshell-widgets = {
