@@ -62,11 +62,17 @@ in
       gtk-theme = ''
         ${dconfExe} write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
       '';
+      mako = ''
+        ${pkgs.mako}/bin/makoctl mode -r light
+      '';
     };
 
     lightModeScripts = {
       gtk-theme = ''
         ${dconfExe} write /org/gnome/desktop/interface/color-scheme "'prefer-light'"
+      '';
+      mako = ''
+        ${pkgs.mako}/bin/makoctl mode -a light
       '';
     };
   };

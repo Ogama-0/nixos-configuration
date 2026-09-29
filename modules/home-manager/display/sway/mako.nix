@@ -1,5 +1,7 @@
-{ ... }:
-
+{ pkgs, ... }:
+let
+  colors = import ../../lib/theme-colors.nix;
+in
 {
   services.mako = {
     enable = true;
@@ -8,9 +10,9 @@
       max-visible = 3;
       default-timeout = 7000;
 
-      # background-color = "#a2d5c6";
-      # text-color = "#000000";
-      # border-color = "#d72631";
+      background-color = "#${colors.dark.base00}";
+      text-color = "#${colors.dark.base05}";
+      border-color = "#${colors.dark.base0D}";
 
       border-radius = 15;
       border-size = 0;
@@ -22,18 +24,18 @@
 
       "mode=dnd" = { invisible = 1; };
 
-      "mode=normal" = {
-        # background-color = "#a2d5c6";
-        # text-color = "#000000";
+      "mode=light" = {
+        background-color = "#${colors.light.base00}";
+        text-color = "#${colors.light.base05}";
+        border-color = "#${colors.light.base0D}";
       };
+
+      "mode=normal" = { };
       "mode=critical" = {
-        # background-color = "#d72631"; # Rouge vif
-        # text-color = "#ffffff";
+        background-color = "#${colors.dark.base08}";
+        text-color = "#${colors.dark.base00}";
       };
-      "mode=low" = {
-        # background-color = "#f5f5dc"; # Beige clair
-        # text-color = "#333333";
-      };
+      "mode=low" = { };
     };
 
     # rules = [
