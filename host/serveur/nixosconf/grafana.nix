@@ -165,6 +165,10 @@
           name = "wakapi";
           comm = [ "wakapi" ];
         }
+        {
+          name = "qbittorrent";
+          comm = [ "qbittorrent-nox" ];
+        }
       ];
     };
 

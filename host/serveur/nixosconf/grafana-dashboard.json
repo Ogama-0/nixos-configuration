@@ -14,7 +14,7 @@
       "type": "stat",
       "title": "Jellyfin",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 0, "y": 0, "w": 5, "h": 4 },
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -37,7 +37,7 @@
       "type": "stat",
       "title": "Immich",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 5, "y": 0, "w": 5, "h": 4 },
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -60,7 +60,7 @@
       "type": "stat",
       "title": "Samba",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 10, "y": 0, "w": 5, "h": 4 },
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -83,7 +83,7 @@
       "type": "stat",
       "title": "Caddy",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 15, "y": 0, "w": 5, "h": 4 },
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -106,7 +106,7 @@
       "type": "stat",
       "title": "Wakapi",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -125,11 +125,34 @@
       ]
     },
     {
+      "id": 14,
+      "type": "stat",
+      "title": "qBittorrent",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "node_systemd_unit_state{name=\"qbittorrent.service\", state=\"active\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
       "id": 5,
       "type": "logs",
       "title": "Jellyfin logs",
       "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 0, "y": 4, "w": 5, "h": 8 },
+      "gridPos": { "x": 0, "y": 4, "w": 4, "h": 8 },
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
@@ -143,7 +166,7 @@
       "type": "logs",
       "title": "Immich logs",
       "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 5, "y": 4, "w": 5, "h": 8 },
+      "gridPos": { "x": 4, "y": 4, "w": 4, "h": 8 },
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
@@ -157,7 +180,7 @@
       "type": "logs",
       "title": "Samba connections (by share)",
       "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 10, "y": 4, "w": 5, "h": 8 },
+      "gridPos": { "x": 8, "y": 4, "w": 4, "h": 8 },
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
@@ -171,7 +194,7 @@
       "type": "logs",
       "title": "Caddy logs",
       "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 15, "y": 4, "w": 5, "h": 8 },
+      "gridPos": { "x": 12, "y": 4, "w": 4, "h": 8 },
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
@@ -185,7 +208,7 @@
       "type": "logs",
       "title": "Wakapi logs",
       "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 20, "y": 4, "w": 4, "h": 8 },
+      "gridPos": { "x": 16, "y": 4, "w": 4, "h": 8 },
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
@@ -195,11 +218,199 @@
       ]
     },
     {
+      "id": 15,
+      "type": "logs",
+      "title": "qBittorrent logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "x": 20, "y": 4, "w": 4, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{unit=\"qbittorrent.service\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "gauge",
+      "title": "CPU usage",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 12, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 70, "color": "orange" },
+              { "value": 90, "color": "red" }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "gauge",
+      "title": "RAM usage",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 4, "y": 12, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 70, "color": "orange" },
+              { "value": 90, "color": "red" }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "type": "gauge",
+      "title": "Disk usage: /",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 8, "y": 12, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 70, "color": "orange" },
+              { "value": 90, "color": "red" }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "gauge",
+      "title": "Disk usage: SSD (/mnt/ssd)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 12, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 70, "color": "orange" },
+              { "value": 90, "color": "red" }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/mnt/ssd\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/ssd\"}) * 100",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "gauge",
+      "title": "Disk usage: HDD (/mnt/hdd-tmp)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 16, "y": 12, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 70, "color": "orange" },
+              { "value": 90, "color": "red" }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/mnt/hdd-tmp\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/hdd-tmp\"}) * 100",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "gauge",
+      "title": "Disk usage: Backup (/mnt/backup)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 20, "y": 12, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 70, "color": "orange" },
+              { "value": 90, "color": "red" }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/mnt/backup\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/backup\"}) * 100",
+          "refId": "A"
+        }
+      ]
+    },
+    {
       "id": 9,
       "type": "timeseries",
       "title": "CPU usage per service",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
       "fieldConfig": {
         "defaults": { "unit": "percentunit" },
         "overrides": []
@@ -218,7 +429,7 @@
       "type": "timeseries",
       "title": "Memory usage per service",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
       "fieldConfig": {
         "defaults": { "unit": "bytes" },
         "overrides": []
@@ -237,7 +448,7 @@
       "type": "timeseries",
       "title": "Caddy requests by status code",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
+      "gridPos": { "x": 0, "y": 26, "w": 24, "h": 8 },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },

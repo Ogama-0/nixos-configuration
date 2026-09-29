@@ -13,11 +13,11 @@
     ../../modules/nixosconf/jellyfin.nix
     ../../modules/nixosconf/immich.nix
     ../../modules/nixosconf/wakapi.nix
+    ../../modules/nixosconf/qbittorrent.nix
 
     ../../modules/nixosconf/docker.nix
     ../../modules/nixosconf/joplin-server.nix # <- docker
     # ../../modules/nixosconf/crafty.nix        # <- docker
-    # ../../modules/nixosconf/qbittorrent.nix
 
     ./users
     ./nixosconf/network.nix

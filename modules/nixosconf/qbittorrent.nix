@@ -1,4 +1,4 @@
-{ cfg, ... }:
+{ cfg, config, ... }:
 let
   qb_root = "/home/${cfg.user}/.qbittorrent";
   save_path = "${qb_root}/torrent_file";
@@ -6,20 +6,17 @@ let
   torrent_file_path = "${hdd_file_path}/torrents";
   incomplet_file_path = "${hdd_file_path}/logs";
   movie_file_path = "${cfg.path.hdd.app.jellyfin}/FILM";
-in {
+in
+{
   services.qbittorrent = {
     enable = true;
-    openFirewall = true;
+    # openFirewall = true;
   };
 
-  services.nginx.virtualHosts."qbittorrent.${cfg.server.domain}" = {
-    enableACME = true;
-    forceSSL = true;
-
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:8080";
-      proxyWebsockets = true;
-    };
+  services.caddy.virtualHosts."http://qbittorrent.tail.${cfg.server.domain}" = {
+    extraConfig = ''
+      reverse_proxy http://127.0.0.1:${toString config.services.qbittorrent.webuiPort}
+    '';
   };
 
   systemd.tmpfiles.rules = [
