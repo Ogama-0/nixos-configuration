@@ -13,7 +13,7 @@ Scope {
 
     IpcHandler {
         target: "laserbar"
-        function show(): void { root.active = true }
+        function reveal(): void { root.active = true }
         function hide(): void { root.active = false }
     }
 
@@ -57,41 +57,33 @@ Scope {
             id: leftBeam
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            height: 5
+            height: 16
             radius: height / 2
             width: root.active ? root.batteryFraction * panel.width : 0
             Behavior on width {
                 NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
             }
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 1.0; color: "@laserColor@" }
-            }
+            color: "@laserColor@"
         }
 
         Rectangle {
             id: rightBeam
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            height: 5
+            height: 16
             radius: height / 2
             width: root.active ? (1 - root.batteryFraction) * panel.width : 0
             Behavior on width {
                 NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
             }
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: "@laserColor@" }
-                GradientStop { position: 1.0; color: "transparent" }
-            }
+            color: "@laserColor@"
         }
 
         Rectangle {
             id: flare
-            width: 14
-            height: 14
-            radius: 7
+            width: 28
+            height: 28
+            radius: 14
             anchors.verticalCenter: parent.verticalCenter
             x: root.batteryFraction * panel.width - width / 2
             color: "@laserColor@"
