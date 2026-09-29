@@ -20,7 +20,7 @@ let
     text-color = #${c.base05}
     background-color = #${c.base00}
 
-    prompt-text = 
+    prompt-text = ${" "}
     prompt-padding = 30
     prompt-background = #${c.base02}
     prompt-background-corner-radius = 5
