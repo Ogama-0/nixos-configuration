@@ -7,6 +7,7 @@ let
   quickshell = "${upkgs.quickshell}/bin/quickshell";
   pidof = "${pkgs.procps}/bin/pidof";
   pkill = "${pkgs.procps}/bin/pkill";
+  swaymsg = "${pkgs.sway}/bin/swaymsg";
 
   # Same lock command as the "${modifier}+Escape" keybinding in ./default.nix.
   lockWithSwaylock = "${pidof} swaylock || ${swaylock} -C ~/.config/swaylock/config";
@@ -20,12 +21,17 @@ in
 
     timeouts = [
       {
-        timeout = 60; # 1min idle: quick lock, same as the manual shortcut.
+        timeout = 180; # 1min idle: quick lock, same as the manual shortcut.
         command = lockWithSwaylock;
       }
       {
         timeout = 300; # 5min idle: escalate to the quickshell lockscreen.
         command = lockWithQuickshell;
+      }
+      {
+        timeout = 600; # 10min idle: turn off the screens.
+        command = "${swaymsg} \"output * power off\"";
+        resumeCommand = "${swaymsg} \"output * power on\"";
       }
     ];
 
