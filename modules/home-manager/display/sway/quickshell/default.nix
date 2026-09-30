@@ -60,6 +60,10 @@ let
       "@systemctlBin@"
       "@lockscreenImage@"
       "@laserColor@"
+      "@greenColor@"
+      "@redColor@"
+      "@glassBg@"
+      "@glassBorder@"
     ]
     [
       "#B3${colors.base00}"
@@ -72,6 +76,10 @@ let
       "${pkgs.systemd}/bin/systemctl"
       "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png"
       laserColor
+      "#FF${colors.base0B}"
+      "#FF${colors.base08}"
+      "#66${colors.base00}"
+      "#59${colors.base05}"
     ];
 
   themedQmlFile = path: {
@@ -117,6 +125,11 @@ in
     "quickshell/widgets/components/Lock-dark.qml" = lockVariant "dark" ./components/LockDark.qml;
     "quickshell/widgets/components/Lock-light.qml" = lockVariant "light" ./components/LockLight.qml;
     "quickshell/widgets/components/RevealMask.qml" = themedQmlFile ./components/RevealMask.qml;
+    "quickshell/widgets/components/GlassPill.qml" = themedQmlFile ./components/GlassPill.qml;
+    "quickshell/widgets/components/ColorUtils.qml" = themedQmlFile ./components/ColorUtils.qml;
+    "quickshell/widgets/components/BeamSide.qml" = themedQmlFile ./components/BeamSide.qml;
+    "quickshell/widgets/components/CollisionEffects.qml" = themedQmlFile ./components/CollisionEffects.qml;
+    "quickshell/widgets/components/ClockModule.qml" = themedQmlFile ./components/ClockModule.qml;
     "quickshell/widgets/components/LaserBar.qml" = themedQmlFile ./components/LaserBar.qml;
   };
 

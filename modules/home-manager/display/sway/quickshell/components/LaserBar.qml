@@ -1,10 +1,15 @@
 import QtQuick
-import QtQuick.Layouts
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 
+// The laser bar itself: battery-driven beams from each screen edge, a
+// collision payoff where they meet, and whatever bar modules are listed at
+// the bottom of PanelWindow. Beam/collision visuals live in BeamSide.qml
+// and CollisionEffects.qml; each module is self-contained (see
+// ClockModule.qml and, underneath it, GlassPill.qml for the shared
+// template) - adding or removing one is a single block below, nothing
+// elsewhere needs to change.
 Scope {
     id: root
 
@@ -50,110 +55,71 @@ Scope {
                 left: true
                 right: true
             }
-            implicitHeight: 64
+            implicitHeight: 70
             color: "transparent"
             focusable: false
             exclusionMode: ExclusionMode.Ignore
             mask: Region {}
 
+            // Vertical center of the whole bar, pinned near the panel's top
+            // edge rather than the window's own vertical center, so the bar
+            // hugs the very top of the screen.
+            readonly property real beamY: 34
+
+            // Current travel distance of each beam from its screen edge,
+            // shared by the beams, the collision meeting point, and every
+            // module's reveal-mask sync.
+            property real leftExtent: root.active ? root.batteryFraction * width : 0
+            property real rightExtent: root.active ? (1 - root.batteryFraction) * width : 0
+
+            Behavior on leftExtent {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+            Behavior on rightExtent {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+
             WlrLayershell.namespace: "laser-bar"
             WlrLayershell.layer: WlrLayer.Overlay
 
-            Rectangle {
-                id: leftBeam
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                height: 16
-                radius: height / 2
-                width: root.active ? root.batteryFraction * panel.width : 0
-                Behavior on width {
-                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-                }
-                color: "@laserColor@"
-            }
-
-            Rectangle {
-                id: rightBeam
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                height: 16
-                radius: height / 2
-                width: root.active ? (1 - root.batteryFraction) * panel.width : 0
-                Behavior on width {
-                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-                }
-                color: "@laserColor@"
-            }
-
-            Rectangle {
-                id: flare
-                width: 28
-                height: 28
-                radius: 14
-                anchors.verticalCenter: parent.verticalCenter
-                x: Math.max(0, Math.min(panel.width - width, root.batteryFraction * panel.width - width / 2))
-                color: "@laserColor@"
-                opacity: root.active ? 1.0 : 0.0
-                Behavior on opacity {
-                    NumberAnimation { duration: 150 }
-                }
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    blurEnabled: true
-                    blur: 1.0
-                    blurMax: 24
-                }
-            }
-
-            RevealMask {
-                id: clockReveal
-                coverLeft: leftBeam.width
-                coverRight: rightBeam.width
+            BeamSide {
+                side: "left"
+                accentColor: "@greenColor@"
+                active: root.active
+                extent: panel.leftExtent
                 panelWidth: panel.width
-                width: 220
-                height: 56
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: height / 2
-                    color: "@cardBg@"
-                    border.color: "@cardBorder@"
-                    border.width: 2
-
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 2
-
-                        Text {
-                            id: clockText
-                            Layout.alignment: Qt.AlignHCenter
-                            color: "@clockColor@"
-                            font.pixelSize: 20
-                            font.weight: Font.DemiBold
-                        }
-
-                        Text {
-                            id: dateText
-                            Layout.alignment: Qt.AlignHCenter
-                            color: "@dateColor@"
-                            font.pixelSize: 12
-                        }
-                    }
-                }
+                beamY: panel.beamY
             }
 
-            Timer {
-                interval: 1000
-                running: true
-                repeat: true
-                triggeredOnStart: true
-                onTriggered: {
-                    const now = new Date()
-                    clockText.text = Qt.formatDateTime(now, "HH:mm:ss")
-                    dateText.text = Qt.formatDateTime(now, "dddd d MMMM")
-                }
+            BeamSide {
+                side: "right"
+                accentColor: "@redColor@"
+                active: root.active
+                extent: panel.rightExtent
+                panelWidth: panel.width
+                beamY: panel.beamY
+            }
+
+            CollisionEffects {
+                active: root.active
+                meetX: root.batteryFraction * panel.width
+                panelWidth: panel.width
+                beamY: panel.beamY
+            }
+
+            // ── Modules ──────────────────────────────────────────────
+            // Add or remove a module by adding/removing one block here.
+            // Every module needs coverLeft/coverRight/panelWidth so its
+            // GlassPill reveals in sync with the beams; everything else
+            // (size, position, content) is the module's own concern.
+
+            ClockModule {
+                coverLeft: panel.leftExtent
+                coverRight: panel.rightExtent
+                panelWidth: panel.width
+                active: root.active
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: panel.beamY - height / 2
             }
         }
     }

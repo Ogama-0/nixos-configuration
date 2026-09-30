@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
-import "colorUtils.js" as ColorUtils
 
 // The centered time/date bar module: a GlassPill (see GlassPill.qml for the
 // reusable "liquid glass, revealed by the beams" template) holding a
@@ -19,6 +18,10 @@ GlassPill {
 
     contentWidth: 220
     contentHeight: 64
+
+    ColorUtils {
+        id: colorUtils
+    }
 
     ColumnLayout {
         anchors.centerIn: parent
@@ -107,7 +110,7 @@ GlassPill {
                 ctx.lineCap = "round"
                 ctx.globalAlpha = 0.8
 
-                ctx.strokeStyle = ColorUtils.lightenColor("@greenColor@", 0.3)
+                ctx.strokeStyle = colorUtils.lightenColor("@greenColor@", 0.3)
                 ctx.beginPath()
                 for (let x = 0; x <= half; x += 2) {
                     const y = midY + 2.6 * Math.sin(x / 6 + clockWave.wavePhase)
@@ -116,7 +119,7 @@ GlassPill {
                 }
                 ctx.stroke()
 
-                ctx.strokeStyle = ColorUtils.lightenColor("@redColor@", 0.3)
+                ctx.strokeStyle = colorUtils.lightenColor("@redColor@", 0.3)
                 ctx.beginPath()
                 for (let x = half; x <= width; x += 2) {
                     const y = midY + 2.6 * Math.sin(x / 6 + clockWave.wavePhase)

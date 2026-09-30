@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Effects
-import "colorUtils.js" as ColorUtils
 
 // One side of the laser bar: three stacked glow layers (blurred, fading
 // from the accent color at the screen edge to white at the meeting tip), a
@@ -19,6 +18,10 @@ Item {
     required property real beamY
 
     readonly property bool isLeft: side === "left"
+
+    ColorUtils {
+        id: colorUtils
+    }
 
     // Idle "neon hum": a slow, gentle opacity drift while the bar is shown.
     // Left/right run at slightly different speeds so the two sides drift
@@ -115,7 +118,7 @@ Item {
                 const amplitude = 8 + (s % 3) * 4
                 const wavelength = 6 + s * 0.5
 
-                ctx.strokeStyle = ColorUtils.lightenColor(root.accentColor, 0.6)
+                ctx.strokeStyle = colorUtils.lightenColor(root.accentColor, 0.6)
                 ctx.lineWidth = 2.2
                 ctx.lineCap = "round"
                 ctx.lineJoin = "round"

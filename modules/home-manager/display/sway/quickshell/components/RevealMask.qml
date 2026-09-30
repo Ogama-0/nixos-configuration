@@ -12,11 +12,15 @@ Item {
 
     default property alias content: contentItem.data
 
-    // root.x is panel-local since RevealMask is always a direct child of the
-    // panel content, matching coverLeft/coverRight/panelWidth's coordinate
-    // space. mapToItem() must not be used here: it's a plain invokable call,
-    // so a binding that calls it captures no dependency and never re-evaluates.
-    readonly property real originX: root.x
+    // root.x is panel-local since RevealMask is normally a direct child of
+    // the panel content, matching coverLeft/coverRight/panelWidth's
+    // coordinate space. mapToItem() must not be used here: it's a plain
+    // invokable call, so a binding that calls it captures no dependency and
+    // never re-evaluates. A wrapper that positions this RevealMask with some
+    // fixed offset instead (e.g. GlassPill's padding for a blur bleed
+    // margin) can supply the true panel-relative origin here.
+    property real originXOverride: NaN
+    readonly property real originX: isNaN(originXOverride) ? root.x : originXOverride
 
     Item {
         id: contentItem
