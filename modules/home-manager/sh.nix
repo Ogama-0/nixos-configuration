@@ -61,6 +61,13 @@ in
   programs.fish = {
     enable = true;
 
+    # Accept the autosuggestion with ` (falls back to inserting a real
+    # backtick when there is nothing to accept).
+    interactiveShellInit = ''
+      bind \` accept-autosuggestion-or-backtick
+      bind -M insert \` accept-autosuggestion-or-backtick
+    '';
+
     shellAliases = {
       ls = "${lib.getExe pkgs.eza} --color=auto --icons=auto --hyperlink";
       cat = "${lib.getExe pkgs.bat}";
@@ -106,6 +113,14 @@ in
       '';
 
       kijesui = "whoami";
+
+      accept-autosuggestion-or-backtick = ''
+        if commandline --showing-suggestion
+          commandline -f accept-autosuggestion
+        else
+          commandline -i \`
+        end
+      '';
 
       # init-tp = ''
       #   set repository_link $argv[1]
