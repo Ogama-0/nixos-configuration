@@ -63,10 +63,34 @@ PanelWindow {
             outgoingSnapshot.visible = true
             slideContainer.opacity = 0
             slideOutAnim.restart()
+            stuckTransitionGuard.restart()
         })
     }
 
+    // next()/previous() are fired optimistically before we know whether the
+    // player can actually move to another track (e.g. at the end of a
+    // playlist/album, Deezer just no-ops them). When that happens trackKey
+    // never changes, onTrackKeyChanged never fires, and slideContainer is
+    // left stuck at opacity 0 forever even though playback never stopped.
+    // This timer detects that stuck case and reverts the transition.
+    Timer {
+        id: stuckTransitionGuard
+        interval: 500
+        onTriggered: {
+            if (slideContainer.opacity === 1) return
+            slideInAnim.stop()
+            slideContainer.x = 0
+            slideContainer.opacity = 1
+            outgoingSnapshot.visible = false
+            if (root.suppressCoverMorph) {
+                root.suppressCoverMorph = false
+                coverProgressBehavior.enabled = true
+            }
+        }
+    }
+
     onTrackKeyChanged: {
+        stuckTransitionGuard.stop()
         root.livePosition = 0
         root.shufflePalette()
         coverAlignAnim.stop()
