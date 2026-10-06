@@ -4,3 +4,5 @@ result
 .claude/
 .worktrees/
 project/
+__pycache__/
+.pytest_cache/

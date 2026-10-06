@@ -1,0 +1,72 @@
+import datetime
+
+import proxy
+
+PARIS = (48.8566, 2.3522)
+
+
+def test_resolve_timezone_reads_localtime_symlink(tmp_path):
+    zoneinfo = tmp_path / "zoneinfo" / "Europe" / "Paris"
+    zoneinfo.parent.mkdir(parents=True)
+    zoneinfo.write_text("")
+    link = tmp_path / "localtime"
+    link.symlink_to(zoneinfo)
+    assert proxy.resolve_timezone(str(link)) == "Europe/Paris"
+
+
+def test_resolve_timezone_returns_none_when_missing(tmp_path):
+    assert proxy.resolve_timezone(str(tmp_path / "nope")) is None
+
+
+def test_resolve_timezone_returns_none_for_plain_file(tmp_path):
+    plain = tmp_path / "localtime"
+    plain.write_text("not a symlink into zoneinfo")
+    assert proxy.resolve_timezone(str(plain)) is None
+
+
+def test_paris_midsummer_sunrise_is_early_morning_utc():
+    june = datetime.date(2026, 6, 21)
+    sunrise = proxy.sun_event_utc(PARIS[0], PARIS[1], june, rising=True)
+    # Paris sunrise on the solstice is 03:47 UTC; the almanac algorithm is
+    # accurate to a couple of minutes, so assert a generous window rather
+    # than an exact value.
+    assert 3.5 < sunrise < 4.2
+
+
+def test_paris_midsummer_sunset_is_late_evening_utc():
+    june = datetime.date(2026, 6, 21)
+    sunset = proxy.sun_event_utc(PARIS[0], PARIS[1], june, rising=False)
+    assert 19.6 < sunset < 20.3
+
+
+def test_paris_midwinter_sunrise_is_much_later_than_midsummer():
+    june = datetime.date(2026, 6, 21)
+    december = datetime.date(2026, 12, 21)
+    summer = proxy.sun_event_utc(PARIS[0], PARIS[1], june, rising=True)
+    winter = proxy.sun_event_utc(PARIS[0], PARIS[1], december, rising=True)
+    assert winter > summer + 2.5
+
+
+def test_pick_theme_is_light_at_local_noon():
+    noon = datetime.datetime(2026, 6, 21, 12, 0, tzinfo=datetime.timezone.utc)
+    assert proxy.pick_theme(PARIS[0], PARIS[1], noon) == "light"
+
+
+def test_pick_theme_is_dark_at_midnight():
+    midnight = datetime.datetime(2026, 6, 21, 0, 30, tzinfo=datetime.timezone.utc)
+    assert proxy.pick_theme(PARIS[0], PARIS[1], midnight) == "dark"
+
+
+def test_pick_theme_is_dark_just_after_sunset():
+    sunset = proxy.sun_event_utc(PARIS[0], PARIS[1], datetime.date(2026, 6, 21), rising=False)
+    just_after = datetime.datetime(2026, 6, 21, tzinfo=datetime.timezone.utc) + datetime.timedelta(
+        hours=sunset + 0.25
+    )
+    assert proxy.pick_theme(PARIS[0], PARIS[1], just_after) == "dark"
+
+
+def test_pick_theme_falls_back_to_dark_in_polar_night():
+    # Longyearbyen in December: the sun never rises, so the algorithm has no
+    # solution. The greeter must still get a usable answer.
+    midwinter = datetime.datetime(2026, 12, 21, 12, 0, tzinfo=datetime.timezone.utc)
+    assert proxy.pick_theme(78.22, 15.63, midwinter) == "dark"
