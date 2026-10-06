@@ -34,7 +34,16 @@ Scope {
         onAuthenticated: session.startSession()
 
         onFailedChanged: {
-            if (session.failed) root.showFailure = true
+            if (!session.failed) return
+            // Clear currentText BEFORE raising the flag. The field's own
+            // handler also blanks itself, and that write would otherwise fire
+            // onCurrentTextChanged -> showFailure = false and wipe the
+            // rejection out of the UI before it was ever drawn. Clearing
+            // first means the field's write is a no-op change that emits
+            // nothing. LockLight.qml orders it the same way, for the same
+            // reason.
+            root.currentText = ""
+            root.showFailure = true
         }
     }
 

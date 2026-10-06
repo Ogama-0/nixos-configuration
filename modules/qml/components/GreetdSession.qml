@@ -62,6 +62,20 @@ Item {
             }
         }
 
+        onExited: {
+            // Exiting while idle is normal - greetd kills the greeter once
+            // start_session succeeds. Exiting mid-authentication is not, and
+            // would otherwise leave busy stuck true, disabling the password
+            // field for good with no way back. The agreety fallback does not
+            // cover this: quickshell itself is still running fine.
+            // send() restarts the process on the next attempt.
+            if (!session.busy) return
+            session.pendingPassword = ""
+            session.busy = false
+            session.errorText = "login helper stopped"
+            session.failed = true
+        }
+
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: line => {
