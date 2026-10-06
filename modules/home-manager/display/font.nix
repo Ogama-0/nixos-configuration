@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lpkgs, ... }:
 
 {
   home.packages = with pkgs; [
@@ -11,6 +11,8 @@
     merriweather
     inter
     # monocraft
+    lpkgs.corpta-font
+    lpkgs.orbitron-font
   ];
 
   fonts.fontconfig = {

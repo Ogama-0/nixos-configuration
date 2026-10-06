@@ -64,6 +64,7 @@ let
       "@redColor@"
       "@glassBg@"
       "@glassBorder@"
+      "@corptaFontPath@"
     ]
     [
       "#B3${colors.base00}"
@@ -80,6 +81,7 @@ let
       "#FF${colors.base08}"
       "#66${colors.base00}"
       "#59${colors.base05}"
+      "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf"
     ];
 
   themedQmlFile = path: {
