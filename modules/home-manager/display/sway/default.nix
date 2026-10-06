@@ -21,7 +21,7 @@ in
     ./barbar.nix
     ./mako.nix
     ./quickshell
-    ./idle.nix
+    # ./idle.nix
     ../tofi.nix
     ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix
   ];
