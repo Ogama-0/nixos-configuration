@@ -5,13 +5,29 @@ Quickshell greeter.
 Two unrelated-looking jobs live in one script on purpose: the greeter needs
 exactly one extra executable on the system, and both jobs are a handful of
 stdlib calls. See docs/superpowers/specs/2026-10-06-quickshell-greeter-design.md
+
+The bridge exists because greetd frames every message with a native-endian
+u32 length prefix. Quickshell's Socket is text-oriented, and writing that
+prefix from QML only works while the payload stays under 128 bytes -- above
+that the length byte is no longer representable as a single UTF-8 byte and
+authentication breaks silently. So QML speaks newline-delimited JSON to this
+script over a pipe, and this script owns the framing.
 """
 
+import argparse
 import datetime
+import json
 import math
 import os
+import socket
+import struct
+import sys
+import threading
 
 ZENITH_OFFICIAL = 90.833
+
+
+# --- variant selection ------------------------------------------------------
 
 
 def resolve_timezone(localtime_path="/etc/localtime"):
@@ -99,3 +115,191 @@ def pick_theme(lat, lng, now_utc):
         return "light" if sunrise <= now_hours < sunset else "dark"
     # Sunset before sunrise in UTC terms: daylight spans the UTC midnight.
     return "light" if (now_hours >= sunrise or now_hours < sunset) else "dark"
+
+
+def coordinates_for_host(table, localtime_path="/etc/localtime"):
+    """Pick lat/lng for this machine from a {coords, fallback} table.
+
+    The table comes from modules/lib/timezone-coords.nix, the same file
+    darkman reads, so the greeter and the desktop agree on where "here" is.
+    """
+    timezone = resolve_timezone(localtime_path)
+    entry = table.get("coords", {}).get(timezone) if timezone else None
+    if entry is None:
+        entry = table["fallback"]
+    return float(entry["lat"]), float(entry["lng"])
+
+
+# --- greetd IPC bridge ------------------------------------------------------
+
+
+def send_message(sock, obj):
+    """Write one greetd frame: native-endian u32 length, then JSON."""
+    payload = json.dumps(obj).encode("utf-8")
+    sock.sendall(struct.pack("=I", len(payload)) + payload)
+
+
+def _recv_exactly(sock, count):
+    buffer = b""
+    while len(buffer) < count:
+        chunk = sock.recv(count - len(buffer))
+        if not chunk:
+            return None
+        buffer += chunk
+    return buffer
+
+
+def recv_message(sock):
+    """Read one greetd frame, or None if the peer closed."""
+    header = _recv_exactly(sock, 4)
+    if header is None:
+        return None
+    (length,) = struct.unpack("=I", header)
+    payload = _recv_exactly(sock, length)
+    if payload is None:
+        return None
+    return json.loads(payload.decode("utf-8"))
+
+
+def run_bridge(sock, stdin, stdout):
+    """Pump newline-delimited JSON from stdin to greetd and back to stdout.
+
+    Tracks whether a session is pending so a retry after a failed password
+    cancels first; greetd rejects create_session while one is open, and the
+    QML has no way to know that.
+    """
+    session_pending = False
+
+    def emit(obj):
+        stdout.write(json.dumps(obj) + "\n")
+        stdout.flush()
+
+    for line in stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            request = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        if request.get("type") == "create_session":
+            if not request.get("username"):
+                emit(
+                    {
+                        "type": "error",
+                        "error_type": "auth_error",
+                        "description": "username is empty",
+                    }
+                )
+                continue
+            if session_pending:
+                send_message(sock, {"type": "cancel_session"})
+                recv_message(sock)
+                session_pending = False
+
+        send_message(sock, request)
+        response = recv_message(sock)
+        if response is None:
+            emit(
+                {
+                    "type": "error",
+                    "error_type": "error",
+                    "description": "greetd closed the connection",
+                }
+            )
+            return
+
+        kind = request.get("type")
+        if kind == "create_session":
+            session_pending = True
+        elif kind in ("cancel_session", "start_session"):
+            session_pending = False
+        elif response.get("type") == "success":
+            session_pending = False
+
+        emit(response)
+
+
+class _MockGreetd:
+    """An in-process greetd accepting one password, for visual QML work."""
+
+    def __init__(self, password):
+        self.password = password
+        self.server, self.client = socket.socketpair()
+        self.thread = threading.Thread(target=self._serve, daemon=True)
+        self.thread.start()
+
+    def _serve(self):
+        while True:
+            request = recv_message(self.server)
+            if request is None:
+                return
+            kind = request.get("type")
+            if kind == "create_session":
+                send_message(
+                    self.server,
+                    {
+                        "type": "auth_message",
+                        "auth_message_type": "secret",
+                        "auth_message": "Password: ",
+                    },
+                )
+            elif kind == "post_auth_message_response":
+                if request.get("response") == self.password:
+                    send_message(self.server, {"type": "success"})
+                else:
+                    send_message(
+                        self.server,
+                        {
+                            "type": "error",
+                            "error_type": "auth_error",
+                            "description": "authentication failed",
+                        },
+                    )
+            else:
+                send_message(self.server, {"type": "success"})
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="greetd bridge and theme picker")
+    parser.add_argument(
+        "--theme",
+        action="store_true",
+        help="print 'dark' or 'light' for the current time and exit",
+    )
+    parser.add_argument(
+        "--coords",
+        help='JSON {"coords": {"<tz>": {"lat": .., "lng": ..}}, "fallback": {..}}',
+    )
+    parser.add_argument(
+        "--mock",
+        metavar="PASSWORD",
+        help="bridge against an in-process fake greetd accepting PASSWORD",
+    )
+    args = parser.parse_args(argv)
+
+    if args.theme:
+        if not args.coords:
+            print("--theme requires --coords", file=sys.stderr)
+            return 1
+        lat, lng = coordinates_for_host(json.loads(args.coords))
+        print(pick_theme(lat, lng, datetime.datetime.now(datetime.timezone.utc)))
+        return 0
+
+    if args.mock:
+        run_bridge(_MockGreetd(args.mock).client, sys.stdin, sys.stdout)
+        return 0
+
+    sock_path = os.environ.get("GREETD_SOCK")
+    if not sock_path:
+        print("GREETD_SOCK is not set", file=sys.stderr)
+        return 1
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        sock.connect(sock_path)
+        run_bridge(sock, sys.stdin, sys.stdout)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
