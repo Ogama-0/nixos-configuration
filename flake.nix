@@ -76,6 +76,7 @@
           inherit pkgs;
           specialArgs = {
             cfg = cfg-perso;
+            inherit lpkgs upkgs;
           };
           modules = [ ./host/personal/configuration.nix ];
         };
