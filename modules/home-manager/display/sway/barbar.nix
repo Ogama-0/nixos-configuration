@@ -36,6 +36,37 @@
             }
           ];
         }
+        {
+          # Toggle swayidle (lock/screen-off timers) on/off from the bar.
+          block = "custom";
+          command = ''
+            if systemctl --user -q is-active swayidle; then
+              echo "{ \"text\": \"idle on\" }"
+            else
+              echo "{ \"text\": \"idle off\", \"state\": \"Warning\" }"
+            fi
+          '';
+          json = true;
+          interval = "once";
+          click = [
+            {
+              button = "left";
+              # i3status-rust/swaybar fires a single click's cmd twice in
+              # quick succession, which races the toggle with itself (stop,
+              # then start again) and leaves swayidle back on. Debounce by
+              # ignoring a second firing within 500ms of the last one.
+              cmd = ''
+                debounce=/tmp/swayidle-toggle-$USER.debounce
+                now=$(date +%s%N)
+                last=$(cat "$debounce" 2>/dev/null || echo 0)
+                [ $(( (now - last) / 1000000 )) -lt 500 ] && exit 0
+                echo "$now" > "$debounce"
+                systemctl --user -q is-active swayidle && systemctl --user stop swayidle || systemctl --user start swayidle
+              '';
+              update = true;
+            }
+          ];
+        }
         { block = "sound"; }
         {
           block = "music";
