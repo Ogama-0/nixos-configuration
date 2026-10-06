@@ -499,10 +499,23 @@ Scope {
                             selectionColor: "transparent"
                             selectedTextColor: "transparent"
                             cursorVisible: false
+                            // Qt's TextInput forces cursorVisible back to
+                            // true internally on every focus-in
+                            // (ItemActiveFocusHasChanged), silently breaking
+                            // the plain binding above - reassert it every
+                            // time that happens instead.
+                            onCursorVisibleChanged: if (cursorVisible) cursorVisible = false
                             font.pixelSize: 18
                             echoMode: TextInput.Password
                             enabled: !root.unlockInProgress
                             focus: true
+
+                            // Hides the I-beam mouse cursor over the field -
+                            // HoverHandler tracks hover without consuming
+                            // press events, unlike a MouseArea.
+                            HoverHandler {
+                                cursorShape: Qt.ArrowCursor
+                            }
 
                             onTextChanged: root.currentText = text
                             onAccepted: root.tryUnlock()
@@ -514,6 +527,21 @@ Scope {
                                         passwordField.text = ""
                                         passwordField.forceActiveFocus()
                                     }
+                                }
+                            }
+
+                            // Clears the failed password instead of leaving
+                            // it sitting in the field. Deliberately local to
+                            // passwordField's own scope, not wired from
+                            // PamContext up at the top of the file -
+                            // reaching this id from that far outside the
+                            // GlassPanel it's declared in throws "passwordField
+                            // is not defined" at runtime (confirmed via
+                            // quickshell's logs).
+                            Connections {
+                                target: root
+                                function onShowFailureChanged() {
+                                    if (root.showFailure) passwordField.text = ""
                                 }
                             }
                         }
@@ -583,6 +611,25 @@ Scope {
                 target: root
                 function onShowFailureChanged() {
                     if (root.showFailure) shakeAnim.restart()
+                }
+            }
+
+            // passwordField only lives inside this surface's scope, not at
+            // the top-level Scope PamContext runs in (per-screen
+            // WlSessionLockSurface is its own id scope - referencing
+            // passwordField directly from PamContext.onCompleted throws a
+            // ReferenceError and aborts that handler, which is also why
+            // unlockInProgress could get stuck true). Watching
+            // unlockInProgress drop back to false here - from the right
+            // scope, and after the field is actually re-enabled - clears
+            // the failed password and hands focus back for a retry.
+            Connections {
+                target: root
+                function onUnlockInProgressChanged() {
+                    if (!root.unlockInProgress && root.showFailure) {
+                        passwordField.text = ""
+                        passwordField.forceActiveFocus()
+                    }
                 }
             }
 
