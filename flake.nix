@@ -50,6 +50,7 @@
         librepods = self.packages.${system}.librepods;
         corpta-font = self.packages.${system}.corpta-font;
         orbitron-font = self.packages.${system}.orbitron-font;
+        greetd-proxy = self.packages.${system}.greetd-proxy;
         # free-claude-code = self.packages.${system}.free-claude-code;
       };
       upkgs = {
@@ -66,6 +67,7 @@
         librepods = pkgs.callPackage ./pkgs/librepods.nix { };
         corpta-font = pkgs.callPackage ./pkgs/corpta-font.nix { };
         orbitron-font = pkgs.callPackage ./pkgs/orbitron-font.nix { };
+        greetd-proxy = pkgs.callPackage ./pkgs/greetd-proxy.nix { };
         # free-claude-code = pkgs.callPackage ./pkgs/freeclaudecode.nix { };
       };
 

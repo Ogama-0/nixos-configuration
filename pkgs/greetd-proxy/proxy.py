@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """stdio <-> greetd IPC bridge and dark/light variant picker for the
 Quickshell greeter.
 
