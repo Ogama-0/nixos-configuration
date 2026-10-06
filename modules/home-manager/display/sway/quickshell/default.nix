@@ -12,85 +12,31 @@ let
   # LaserBar — those are the in-progress bar and are out of scope.
   lockThemeColors = import ../../../../lib/theme-colors.nix;
 
-  withLockThemeColors = c: laserColorVariant: image: builtins.replaceStrings
-    [
-      "@cardBg@"
-      "@cardBorder@"
-      "@clockColor@"
-      "@dateColor@"
-      "@dividerColor@"
-      "@tempColor@"
-      "@lockBg@"
-      "@systemctlBin@"
-      "@lockscreenImage@"
-      "@laserColor@"
-      "@greenColor@"
-      "@redColor@"
-    ]
-    [
-      "#B3${c.base00}"
-      "#33${c.base05}"
-      "#FF${c.base05}"
-      "#CC${c.base04}"
-      "#22${c.base03}"
-      "#FF${c.base0D}"
-      "#FF${c.base00}"
-      "${pkgs.systemd}/bin/systemctl"
-      image
-      laserColorVariant
-      "#FF${c.base0B}"
-      "#FF${c.base08}"
-    ];
+  qmlTheme = import ../../../../lib/qml-theme.nix;
+
+  systemctlBin = "${pkgs.systemd}/bin/systemctl";
+  corptaFontPath = "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf";
+
+  barTheme = qmlTheme {
+    inherit colors laserColor systemctlBin corptaFontPath;
+    lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
+  };
+
+  themedQmlFile = path: {
+    text = barTheme (builtins.readFile path);
+  };
 
   # Each variant gets its own lockscreen artwork: the dark variant uses the
   # Arcane/Jinx piece (see LockDark.qml), the light variant keeps the
   # original Nausicaa/snow treatment (see LockLight.qml) - they're
   # deliberately different designs, not the same skin recolored.
   lockVariant = variant: lockComponent: image: {
-    text = withLockThemeColors lockThemeColors.${variant}
-      (if variant == "light" then "#FFFFFF" else "#000000")
-      image
-      (builtins.readFile lockComponent);
-  };
-
-  withThemeColors = builtins.replaceStrings
-    [
-      "@cardBg@"
-      "@cardBorder@"
-      "@clockColor@"
-      "@dateColor@"
-      "@dividerColor@"
-      "@tempColor@"
-      "@lockBg@"
-      "@systemctlBin@"
-      "@lockscreenImage@"
-      "@laserColor@"
-      "@greenColor@"
-      "@redColor@"
-      "@glassBg@"
-      "@glassBorder@"
-      "@corptaFontPath@"
-    ]
-    [
-      "#B3${colors.base00}"
-      "#33${colors.base05}"
-      "#FF${colors.base05}"
-      "#CC${colors.base04}"
-      "#22${colors.base03}"
-      "#FF${colors.base0D}"
-      "#FF${colors.base00}"
-      "${pkgs.systemd}/bin/systemctl"
-      "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png"
-      laserColor
-      "#FF${colors.base0B}"
-      "#FF${colors.base08}"
-      "#66${colors.base00}"
-      "#59${colors.base05}"
-      "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf"
-    ];
-
-  themedQmlFile = path: {
-    text = withThemeColors (builtins.readFile path);
+    text = qmlTheme {
+      inherit systemctlBin corptaFontPath;
+      colors = lockThemeColors.${variant};
+      laserColor = if variant == "light" then "#FFFFFF" else "#000000";
+      lockscreenImage = image;
+    } (builtins.readFile lockComponent);
   };
 in
 {
