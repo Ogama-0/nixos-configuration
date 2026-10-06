@@ -10,7 +10,7 @@ let
   # config.lib.stylix.colors, and scoped to just the lock component. Do not
   # extend this to shell.qml/Wallpaper/Clock/Music/Calendar/RevealMask/
   # LaserBar — those are the in-progress bar and are out of scope.
-  lockThemeColors = import ../../../lib/theme-colors.nix;
+  lockThemeColors = import ../../../../lib/theme-colors.nix;
 
   withLockThemeColors = c: laserColorVariant: image: builtins.replaceStrings
     [

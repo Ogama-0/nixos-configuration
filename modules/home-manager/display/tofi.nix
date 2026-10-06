@@ -1,6 +1,6 @@
 { lib, pkgs, config, ... }:
 let
-  colors = import ../lib/theme-colors.nix;
+  colors = import ../../lib/theme-colors.nix;
 
   tofiConfig = c: ''
     font = ${config.stylix.fonts.monospace.name}

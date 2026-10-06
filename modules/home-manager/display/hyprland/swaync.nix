@@ -1,7 +1,7 @@
 { pkgs, config, lib, ... }:
 let
   script_path = ../../../../scripts/swaync;
-  colors = import ../../lib/theme-colors.nix;
+  colors = import ../../../lib/theme-colors.nix;
 
   colorDefs = c: ''
     @define-color base00 #${c.base00};

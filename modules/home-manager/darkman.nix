@@ -5,17 +5,12 @@ let
   bashExe = "${pkgs.bash}/bin/bash";
   coreutils = pkgs.coreutils;
 
-  # Mirrors host/personal/configuration.nix's time.timeZone and its two
-  # commented-out travel alternates.
-  timezoneCoords = {
-    "Europe/Paris" = { lat = "48.8566"; lng = "2.3522"; };
-    "America/Monterrey" = { lat = "25.6866"; lng = "-100.3161"; };
-    "America/Mazatlan" = { lat = "23.2494"; lng = "-106.4111"; };
-  };
-
-  # Paris is the fallback for an unrecognized/missing timezone.
-  fallbackLat = "48.8566";
-  fallbackLng = "2.3522";
+  # Shared with the greeter (pkgs/greetd-proxy), which has to make the same
+  # sunrise/sunset decision before any user session exists.
+  tzTable = import ../lib/timezone-coords.nix;
+  timezoneCoords = tzTable.coords;
+  fallbackLat = tzTable.fallback.lat;
+  fallbackLng = tzTable.fallback.lng;
 
   timezoneCases = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (tz: c: ''
