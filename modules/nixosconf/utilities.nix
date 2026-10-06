@@ -6,6 +6,11 @@
     options = "--delete-older-than 30d";
   };
 
+  # Hardlink identical files in the store. `auto-optimise-store` covers newly
+  # built paths, the timer catches everything that predates it.
+  nix.settings.auto-optimise-store = true;
+  nix.optimise.automatic = true;
+
   services.power-profiles-daemon.enable = true;
   services.upower = {
     enable = true;
