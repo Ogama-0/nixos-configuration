@@ -73,10 +73,10 @@ Scope {
             property real rightExtent: root.active ? (1 - root.batteryFraction) * width : 0
 
             Behavior on leftExtent {
-                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: 90; easing.type: Easing.OutCubic }
             }
             Behavior on rightExtent {
-                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: 90; easing.type: Easing.OutCubic }
             }
 
             WlrLayershell.namespace: "laser-bar"
@@ -110,8 +110,9 @@ Scope {
             // ── Modules ──────────────────────────────────────────────
             // Add or remove a module by adding/removing one block here.
             // Every module needs coverLeft/coverRight/panelWidth so its
-            // GlassPill reveals in sync with the beams; everything else
-            // (size, position, content) is the module's own concern.
+            // GlassPill/RevealMask reveals in sync with the beams;
+            // everything else (size, position, content) is the module's
+            // own concern.
 
             ClockModule {
                 coverLeft: panel.leftExtent

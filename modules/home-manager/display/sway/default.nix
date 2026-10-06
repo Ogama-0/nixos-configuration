@@ -135,7 +135,7 @@ in
     };
 
     extraConfig = ''
-      bindsym Insert exec quickshell ipc -c widgets call laserbar reveal
+      bindsym --no-repeat Insert exec quickshell ipc -c widgets call laserbar reveal
       bindsym --release Insert exec quickshell ipc -c widgets call laserbar hide
     '';
   };
