@@ -12,7 +12,7 @@ let
   # LaserBar — those are the in-progress bar and are out of scope.
   lockThemeColors = import ../../../lib/theme-colors.nix;
 
-  withLockThemeColors = c: laserColorVariant: builtins.replaceStrings
+  withLockThemeColors = c: laserColorVariant: image: builtins.replaceStrings
     [
       "@cardBg@"
       "@cardBorder@"
@@ -36,15 +36,20 @@ let
       "#FF${c.base0D}"
       "#FF${c.base00}"
       "${pkgs.systemd}/bin/systemctl"
-      "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png"
+      image
       laserColorVariant
       "#FF${c.base0B}"
       "#FF${c.base08}"
     ];
 
-  lockVariant = variant: lockComponent: {
+  # Each variant gets its own lockscreen artwork: the dark variant uses the
+  # Arcane/Jinx piece (see LockDark.qml), the light variant keeps the
+  # original Nausicaa/snow treatment (see LockLight.qml) - they're
+  # deliberately different designs, not the same skin recolored.
+  lockVariant = variant: lockComponent: image: {
     text = withLockThemeColors lockThemeColors.${variant}
       (if variant == "light" then "#FFFFFF" else "#000000")
+      image
       (builtins.readFile lockComponent);
   };
 
@@ -124,8 +129,10 @@ in
     "quickshell/widgets/components/Clock.qml" = themedQmlFile ./components/Clock.qml;
     "quickshell/widgets/components/Music.qml" = themedQmlFile ./components/Music.qml;
     "quickshell/widgets/components/Calendar.qml" = themedQmlFile ./components/Calendar.qml;
-    "quickshell/widgets/components/Lock-dark.qml" = lockVariant "dark" ./components/LockDark.qml;
-    "quickshell/widgets/components/Lock-light.qml" = lockVariant "light" ./components/LockLight.qml;
+    "quickshell/widgets/components/Lock-dark.qml" = lockVariant "dark" ./components/LockDark.qml
+      "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/dark-lockscreen-arcane-jinx.jpeg";
+    "quickshell/widgets/components/Lock-light.qml" = lockVariant "light" ./components/LockLight.qml
+      "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
     "quickshell/widgets/components/RevealMask.qml" = themedQmlFile ./components/RevealMask.qml;
     "quickshell/widgets/components/GlassPill.qml" = themedQmlFile ./components/GlassPill.qml;
     "quickshell/widgets/components/ColorUtils.qml" = themedQmlFile ./components/ColorUtils.qml;

@@ -72,7 +72,7 @@ in
         "${modifier}+${right}" = "focus right";
         "${modifier}+${up}" = "focus up";
         "${modifier}+${down}" = "focus down";
-        "${modifier}+Escape" = "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
+        "${modifier}+Escape" = "exec quickshell ipc -c widgets call lock lock";
         "${modifier}+Shift+Escape" = "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
         "${modifier}" = "exec swaymsg bar mode toggle";
         "${modifier}+Shift+z" = "exec makoctl dismiss";
