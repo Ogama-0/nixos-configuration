@@ -6,6 +6,13 @@
 }:
 {
 
+  # mpv has no built-in MPRIS support; the mpris script exposes one so
+  # playerctl (and swayidle's idle inhibitor) can see when it's playing.
+  programs.mpv = {
+    enable = true;
+    scripts = [ pkgs.mpvScripts.mpris ];
+  };
+
   home.packages = with pkgs; [
 
     # Main pkgs
@@ -36,7 +43,6 @@
 
     lpkgs.librepods
     kooha # screen recorder rust
-    mpv # View video files
     imv # ''
     wdisplays # display manager
     pavucontrol # audio managment
