@@ -83,9 +83,11 @@ in
     pkgs.inter
   ];
 
+  # No `vt` option: current nixpkgs fixes greetd to VT1 and errors if it is
+  # set. That is what this design wanted anyway - Ctrl+Alt+F2 stays a plain
+  # getty, which is the last-resort way back in if the greeter breaks.
   services.greetd = {
     enable = true;
-    vt = 1;
     settings.default_session = {
       command = "${swayBin} -c /etc/greeter/sway.conf";
       user = "greeter";

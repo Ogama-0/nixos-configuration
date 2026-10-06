@@ -19,6 +19,7 @@
     ../../modules/nixosconf/tailscale.nix
     ../../modules/nixosconf/samba-cli.nix
     ../../modules/nixosconf/gtklock
+    ../../modules/nixosconf/greetd.nix
     ../../modules/nixosconf/vm.nix
     ../../modules/nixosconf/localsend.nix
 
