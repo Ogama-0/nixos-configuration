@@ -54,13 +54,9 @@ in {
   ];
   networking.firewall.allowedTCPPorts = [ port ];
 
-  services.nginx.virtualHosts."${subdomain}.tail.${cfg.server.domain}" = {
-    enableACME = false;
-    forceSSL = false;
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:${toString port}";
-      proxyWebsockets = true;
-      recommendedProxySettings = true;
-    };
+  services.caddy.virtualHosts."http://${subdomain}.tail.${cfg.server.domain}" = {
+    extraConfig = ''
+      reverse_proxy http://127.0.0.1:${toString port}
+    '';
   };
 }

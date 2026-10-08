@@ -38,6 +38,12 @@ in
       reverse_proxy http://127.0.0.1:8096
     '';
   };
+  # to bypass ipv6 limitation at least for device in tailnet
+  services.caddy.virtualHosts."http://jellyfin.tail.${cfg.server.domain}" = {
+    extraConfig = ''
+      reverse_proxy http://127.0.0.1:8096
+    '';
+  };
 
   # services.nginx.virtualHosts."jellyfin.${cfg.server.domain}" = {
   #   enableACME = true;

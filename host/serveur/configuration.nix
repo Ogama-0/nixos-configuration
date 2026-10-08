@@ -16,7 +16,7 @@
     ../../modules/nixosconf/qbittorrent.nix
 
     ../../modules/nixosconf/docker.nix
-    ../../modules/nixosconf/joplin-server.nix # <- docker
+    # ../../modules/nixosconf/joplin-server.nix # <- docker
     # ../../modules/nixosconf/crafty.nix        # <- docker
 
     ./users
