@@ -21,10 +21,46 @@ Scope {
     property string currentText: ""
     property bool showFailure: false
 
-    // 0 = username, 1 = password. Both fields are reachable with Up/Down, and
-    // Enter advances from one to the other, so the whole screen is usable
-    // without ever touching the mouse.
+    // The focus ring: 0 username, 1 password, 2-4 the power controls. Tab
+    // walks it forwards, Shift+Tab backwards, both wrapping, and Up/Down do
+    // the same - a greeter runs before any assistive setup exists, so every
+    // control has to be reachable without a mouse. Enter still advances from
+    // username to password, which is the path through this screen people
+    // actually take.
     property int focusedField: 0
+    readonly property int focusSlots: 5
+
+    function focusSlot(index) {
+        const slot = ((index % root.focusSlots) + root.focusSlots) % root.focusSlots
+        root.focusedField = slot
+        if (slot === 0) usernameField.forceActiveFocus()
+        else if (slot === 1) passwordField.forceActiveFocus()
+        // A plain Item does not keep active focus across a key handler, so
+        // while the ring points at a power control, `content` holds focus and
+        // activates it on the control's behalf.
+        else content.forceActiveFocus()
+    }
+
+    // Shared by every key handler so the ring behaves the same wherever focus
+    // happens to be. Returns true when it consumed the event.
+    function ringKey(event) {
+        // Shift+Tab arrives as Key_Backtab on some paths and as Key_Tab with
+        // the Shift modifier on others - Qt's Wayland plugin sends the latter.
+        if (event.key === Qt.Key_Backtab || event.key === Qt.Key_Up) {
+            root.focusSlot(root.focusedField - 1)
+            return true
+        }
+        if (event.key === Qt.Key_Tab) {
+            const back = (event.modifiers & Qt.ShiftModifier) !== 0
+            root.focusSlot(root.focusedField + (back ? -1 : 1))
+            return true
+        }
+        if (event.key === Qt.Key_Down) {
+            root.focusSlot(root.focusedField + 1)
+            return true
+        }
+        return false
+    }
 
     onCurrentTextChanged: root.showFailure = false
 
@@ -163,8 +199,7 @@ Scope {
 
         function submitUsername() {
             if (usernameField.text.trim() === "") return
-            root.focusedField = 1
-            passwordField.forceActiveFocus()
+            root.focusSlot(1)
         }
 
         function submitPassword() {
@@ -188,10 +223,22 @@ Scope {
             }
 
             Keys.onPressed: event => {
-                if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
-                    root.focusedField = root.focusedField === 0 ? 1 : 0
-                    if (root.focusedField === 0) usernameField.forceActiveFocus()
-                    else passwordField.forceActiveFocus()
+                if (root.ringKey(event)) {
+                    event.accepted = true
+                    return
+                }
+                if (root.focusedField < 2) return
+
+                if (event.key === Qt.Key_Return
+                    || event.key === Qt.Key_Enter
+                    || event.key === Qt.Key_Space) {
+                    powerControls.itemAt(root.focusedField - 2).fire()
+                    event.accepted = true
+                    return
+                }
+                // A way back to typing without cycling the whole ring.
+                if (event.key === Qt.Key_Escape) {
+                    root.focusSlot(1)
                     event.accepted = true
                 }
             }
@@ -262,6 +309,7 @@ Scope {
                     text: Qt.formatDateTime(root.currentTime, "HH:mm")
                     color: "#FFFFFFFF"
                     font.pixelSize: 124
+                    font.family: "Nunito"
                     font.weight: Font.Light
                     font.letterSpacing: -2
 
@@ -279,7 +327,8 @@ Scope {
                     text: Qt.formatDateTime(root.currentTime, "dddd · d MMMM").toUpperCase()
                     color: "#E6FFFFFF"
                     font.pixelSize: 19
-                    font.weight: Font.Medium
+                    font.family: "Nunito"
+                    font.weight: Font.Bold
                     font.letterSpacing: 3
 
                     layer.enabled: true
@@ -317,7 +366,8 @@ Scope {
                         text: root.tempText
                         color: "#FFFFFFFF"
                         font.pixelSize: 15
-                        font.weight: Font.Medium
+                        font.family: "Nunito"
+                        font.weight: Font.Bold
                     }
                 }
             }
@@ -356,37 +406,43 @@ Scope {
                         text: "ogama"
                         color: "#FFFFFFFF"
                         font.pixelSize: 16
+                        font.family: "Nunito"
+                        font.bold: true
 
-                        // A frosted band laid over the text rather than an
-                        // inversion: the glyphs keep their color and a
-                        // translucent pane sits on top, which is the language
-                        // the rest of this variant is built in.
-                        selectionColor: "@glassBg@"
-                        selectedTextColor: "#FFFFFFFF"
+                        // Selection recolors the glyphs and draws nothing
+                        // behind them. Mint rather than the palette's red:
+                        // red already means rejection on this surface, and a
+                        // selected username is not an error.
+                        selectionColor: "transparent"
+                        selectedTextColor: "@greenColor@"
+
+                        cursorVisible: false
+                        // Qt's TextInput forces cursorVisible back to true
+                        // internally on every focus-in
+                        // (ItemActiveFocusHasChanged), silently breaking the
+                        // plain binding above - reassert it every time that
+                        // happens instead. Same treatment as passwordField.
+                        onCursorVisibleChanged: if (cursorVisible) cursorVisible = false
 
                         enabled: !session.busy
                         onAccepted: surface.submitUsername()
                         onActiveFocusChanged: if (activeFocus) root.focusedField = 0
 
+                        // Qt's own tab chain would move focus out from under
+                        // the ring and leave focusedField stale, so the ring
+                        // owns Tab outright.
+                        activeFocusOnTab: false
+
                         Keys.onPressed: event => {
                             if (event.key === Qt.Key_A && (event.modifiers & Qt.ControlModifier)) {
                                 usernameField.selectAll()
                                 event.accepted = true
+                                return
                             }
+                            if (root.ringKey(event)) event.accepted = true
                         }
 
                         HoverHandler { cursorShape: Qt.ArrowCursor }
-                    }
-
-                    // Hairline underline marking which field has focus.
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: usernameField.bottom
-                        anchors.topMargin: 5
-                        height: 1
-                        color: "@tempColor@"
-                        visible: root.focusedField === 0
                     }
                 }
             }
@@ -434,6 +490,8 @@ Scope {
                             // time that happens instead.
                             onCursorVisibleChanged: if (cursorVisible) cursorVisible = false
                             font.pixelSize: 18
+                            font.family: "Nunito"
+                            font.bold: true
                             echoMode: TextInput.Password
                             enabled: !session.busy
 
@@ -448,11 +506,15 @@ Scope {
                             onAccepted: surface.submitPassword()
                             onActiveFocusChanged: if (activeFocus) root.focusedField = 1
 
+                            activeFocusOnTab: false
+
                             Keys.onPressed: event => {
                                 if (event.key === Qt.Key_A && (event.modifiers & Qt.ControlModifier)) {
                                     passwordField.selectAll()
                                     event.accepted = true
+                                    return
                                 }
+                                if (root.ringKey(event)) event.accepted = true
                             }
 
                             // Clears the rejected password and hands focus
@@ -466,8 +528,7 @@ Scope {
                                 function onFailedChanged() {
                                     if (!session.failed) return
                                     passwordField.text = ""
-                                    root.focusedField = 1
-                                    passwordField.forceActiveFocus()
+                                    root.focusSlot(1)
                                 }
                             }
                         }
@@ -487,12 +548,14 @@ Scope {
                                     width: 9
                                     height: 9
                                     radius: 4.5
-                                    color: "#FFFFFFFF"
-                                    // Dims under the frosted selection band
-                                    // when the field is fully selected: the
-                                    // field renders no glyphs, so a normal
-                                    // selection rectangle would have nothing
-                                    // to highlight.
+                                    // Every dot turns mint when the field is
+                                    // fully selected, matching the username's
+                                    // glyphs: the field renders none of its
+                                    // own, so this recolor is the whole
+                                    // selection signal.
+                                    color: passwordField.selectedText.length > 0
+                                        ? "@greenColor@"
+                                        : "#FFFFFFFF"
                                     opacity: 0
                                     y: -12
                                     rotation: (Math.random() - 0.5) * 50
@@ -516,18 +579,6 @@ Scope {
                                 }
                             }
                         }
-
-                        // The frosted selection band itself, behind the dots.
-                        Rectangle {
-                            anchors.fill: dotRow
-                            anchors.margins: -5
-                            radius: 2
-                            color: "@glassBg@"
-                            border.width: 1
-                            border.color: "@glassBorder@"
-                            visible: passwordField.selectedText.length > 0
-                            z: -1
-                        }
                     }
 
                     Text {
@@ -535,6 +586,8 @@ Scope {
                         text: "…"
                         color: "#CCFFFFFF"
                         font.pixelSize: 18
+                        font.family: "Nunito"
+                        font.bold: true
                     }
                 }
             }
@@ -566,6 +619,8 @@ Scope {
                 text: "Incorrect password"
                 color: "#FFE0A0A0"
                 font.pixelSize: 13
+                font.family: "Nunito"
+                font.bold: true
 
                 layer.enabled: true
                 layer.effect: MultiEffect {
@@ -585,6 +640,8 @@ Scope {
                 anchors.margins: 32
 
                 Repeater {
+                    id: powerControls
+
                     model: [
                         { label: "suspend", arg: "suspend" },
                         { label: "restart", arg: "reboot" },
@@ -592,11 +649,40 @@ Scope {
                     ]
 
                     delegate: Text {
+                        id: control
+
+                        required property int index
                         required property var modelData
 
+                        // Hover and the keyboard ring are one state: a single
+                        // highlight with two ways into it, rather than a mouse
+                        // treatment and a separate focus ring.
+                        readonly property bool energized: root.focusedField === 2 + control.index
+                            || powerArea.containsMouse
+                        property bool firing: false
+
                         text: modelData.label
-                        color: powerArea.containsMouse ? "@tempColor@" : "#CCFFFFFF"
+                        color: control.firing || control.energized ? "@tempColor@" : "#CCFFFFFF"
                         font.pixelSize: 14
+                        font.family: "Nunito"
+                        font.bold: true
+
+                        Behavior on color { ColorAnimation { duration: 130 } }
+
+                        // The brief hold before the machine goes down is the
+                        // only acknowledgement there is room for: the screen
+                        // is about to disappear.
+                        function fire() {
+                            if (control.firing) return
+                            control.firing = true
+                            fireDelay.start()
+                        }
+
+                        Timer {
+                            id: fireDelay
+                            interval: 160
+                            onTriggered: powerProc.running = true
+                        }
 
                         Process {
                             id: powerProc
@@ -607,7 +693,11 @@ Scope {
                             id: powerArea
                             anchors.fill: parent
                             hoverEnabled: true
-                            onClicked: powerProc.running = true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.focusSlot(2 + control.index)
+                                control.fire()
+                            }
                         }
                     }
                 }

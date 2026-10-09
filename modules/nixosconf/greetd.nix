@@ -80,6 +80,7 @@ in
   fonts.packages = [
     lpkgs.corpta-font
     lpkgs.orbitron-font
+    pkgs.nunito
     pkgs.inter
   ];
 
