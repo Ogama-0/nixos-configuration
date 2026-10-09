@@ -45,8 +45,11 @@ PanelWindow {
         id: statusModel
     }
 
-    // 0 = square, 1 = summary pill, 2 = full panel.
-    property int stage: 2
+    // 0 = square, 1 = summary pill, 2 = full panel. Driven by the hover
+    // handlers below: the square opens the pill, the pill opens the panel.
+    // Two deliberate steps, so the panel never springs open just because the
+    // cursor crossed the corner on its way somewhere else.
+    property int stage: 0
 
     readonly property int sq: 22
     readonly property int pillW: 186
@@ -75,6 +78,28 @@ PanelWindow {
         color: win.stage === 0 ? "transparent" : "@panelBg@"
         border.color: win.stage === 0 ? "transparent" : "@panelBorder@"
         border.width: 1
+
+        // The detail fades in while the height is still growing, so without
+        // clipping the rows would spill outside the pill mid-transition.
+        // Clipping turns that into a reveal instead.
+        clip: true
+
+        Behavior on width {
+            NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+        }
+        Behavior on height {
+            NumberAnimation { duration: 210; easing.type: Easing.OutCubic }
+        }
+        Behavior on radius {
+            NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+        }
+
+        // Whole-widget hover: leaving by any edge collapses all the way back
+        // to the square.
+        HoverHandler {
+            id: shellHover
+            onHoveredChanged: if (!hovered) win.stage = 0
+        }
 
         Row {
             anchors.fill: parent
@@ -107,6 +132,10 @@ PanelWindow {
                     Math.max(1, statusModel.services.length)
                 readonly property real bandH:
                     (height - topInset - bottomInset) / count
+
+                HoverHandler {
+                    onHoveredChanged: if (hovered && win.stage === 0) win.stage = 1
+                }
 
                 Column {
                     id: spineColumn
@@ -164,6 +193,10 @@ PanelWindow {
                 visible: win.stage !== 0
                 spacing: 0
 
+                HoverHandler {
+                    onHoveredChanged: if (hovered && win.stage === 1) win.stage = 2
+                }
+
                 // Verdict line. Stays mounted in stage 2 as the header, which
                 // is what makes the pill and the panel feel like one object
                 // rather than a swap.
@@ -194,7 +227,11 @@ PanelWindow {
                 Column {
                     id: rowsColumn
                     width: parent.width
-                    visible: win.stage === 2
+                    visible: opacity > 0
+                    opacity: win.stage === 2 ? 1 : 0
+                    Behavior on opacity {
+                        NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+                    }
                     spacing: 0
                     topPadding: 10
 
@@ -276,7 +313,11 @@ PanelWindow {
                 Item {
                     width: parent.width
                     height: 27
-                    visible: win.stage === 2
+                    visible: opacity > 0
+                    opacity: win.stage === 2 ? 1 : 0
+                    Behavior on opacity {
+                        NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+                    }
 
                     Rectangle {
                         anchors.top: parent.top
