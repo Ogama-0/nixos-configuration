@@ -18,10 +18,20 @@ let
     downColor = if isLight then "#FFDA103F" else "#FFE93C58";
   };
 
-  # Built from cfg.server.domain so the tailnet hostnames are never hardcoded
-  # in QML. cfg-perso embeds the server profile under .server (host/profiles.nix).
-  statusApiUrl = "http://status.tail.${cfg.server.domain}/api/v1/endpoints/statuses";
-  metricsApiUrl = "http://metrics.tail.${cfg.server.domain}/api/v1/query";
+  # Built from the profile so the tailnet hostnames are never hardcoded in QML.
+  #
+  # The doubled `.server.server` is not a typo. host/profiles.nix builds every
+  # profile as `base // (extra base)`, and base sets `server.domain`. cfg-perso's
+  # extra then sets `server = cfg-server`, which *replaces* that whole attrset
+  # rather than merging into it - so from the personal profile the domain lives
+  # at cfg.server.server.domain, one level deeper than the server-side modules'
+  # cfg.server.domain (where cfg is already cfg-server and base's value is
+  # intact). Every other consumer in the repo is server-only, so this module is
+  # the first to hit it.
+  serverDomain = cfg.server.server.domain;
+
+  statusApiUrl = "http://status.tail.${serverDomain}/api/v1/endpoints/statuses";
+  metricsApiUrl = "http://metrics.tail.${serverDomain}/api/v1/query";
 
   # Lockscreen-only theming — reuses the same @token@ substitution the file
   # already uses for the bar, but keyed off the shared palette instead of
