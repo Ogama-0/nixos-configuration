@@ -73,7 +73,11 @@ builtins.replaceStrings
     degradedColor
     downColor
     "#FF${colors.base03}"
-    "#B3${colors.base00}"
+    # Deliberately more opaque than @cardBg@'s #B3. The clock/calendar cards
+    # sit on WlrLayer.Background, so 70% only ever has wallpaper behind it.
+    # The status panel is on WlrLayer.Top and floats over arbitrary
+    # application windows, where 70% leaves dense 11px text unreadable.
+    "#ED${colors.base00}"
     "#33${colors.base05}"
     "#FF${colors.base05}"
     "#FF${colors.base04}"
