@@ -21,10 +21,45 @@ Scope {
     property string currentText: ""
     property bool showFailure: false
 
-    // 0 = username, 1 = password. Both fields are reachable with Up/Down, and
-    // Enter advances from one to the other, so the whole screen is usable
-    // without ever touching the mouse.
+    // The focus ring: 0 username, 1 password, 2-4 the power controls. Tab
+    // walks it forwards, Shift+Tab backwards, both wrapping, and Up/Down do
+    // the same - a greeter runs before any assistive setup exists, so every
+    // control has to be reachable without a mouse. Enter still advances from
+    // username to password, which is the path through this screen people
+    // actually take.
     property int focusedField: 0
+    readonly property int focusSlots: 5
+
+    function focusSlot(index) {
+        const slot = ((index % root.focusSlots) + root.focusSlots) % root.focusSlots
+        root.focusedField = slot
+        if (slot === 0) usernameField.forceActiveFocus()
+        else if (slot === 1) passwordField.forceActiveFocus()
+        else content.forceActiveFocus()
+    }
+
+    // Shared by every key handler on the surface so the ring behaves the same
+    // wherever focus happens to be. Returns true when it consumed the event.
+    function ringKey(event) {
+        // Shift+Tab arrives as Key_Backtab on some paths and as Key_Tab with
+        // the Shift modifier on others - Qt's Wayland plugin sends the latter
+        // here - so both spellings have to mean backwards, or Shift+Tab walks
+        // the ring the wrong way.
+        if (event.key === Qt.Key_Backtab || event.key === Qt.Key_Up) {
+            root.focusSlot(root.focusedField - 1)
+            return true
+        }
+        if (event.key === Qt.Key_Tab) {
+            const back = (event.modifiers & Qt.ShiftModifier) !== 0
+            root.focusSlot(root.focusedField + (back ? -1 : 1))
+            return true
+        }
+        if (event.key === Qt.Key_Down) {
+            root.focusSlot(root.focusedField + 1)
+            return true
+        }
+        return false
+    }
 
     // Source palette, pulled straight from the artwork rather than a
     // generic neon-green/near-black default - magenta is Jinx's color,
@@ -159,6 +194,66 @@ Scope {
         }
     }
 
+    // One current-sweep along the lower inside edge of a panel, fired when
+    // that panel wakes up. Shared by the two fields and the three power
+    // controls so everything on the surface energizes the same way, and so
+    // the timing only has to be tuned in one place. Sits inside the stroke
+    // rather than on it: the 3px border would hide a bar drawn on the edge.
+    component EdgeSurge: Item {
+        id: surgeRoot
+
+        property color accent: root.accentCyan
+
+        // The panel's chamfer. Clipping is rectangular, so the clip is pulled
+        // in off the right edge by this much: otherwise the tail of the bar is
+        // drawn in the triangle outside the cut corner, past the stroke, and
+        // reads as a stray mark flicking off the end. Holding the bar back
+        // instead would be the obvious fix and the wrong one - it has to keep
+        // leaving at full speed, or the sweep feels like it is dragging.
+        property real inset: 0
+
+        anchors.fill: parent
+        anchors.rightMargin: surgeRoot.inset
+        clip: true
+
+        function run() {
+            // Before the panel has been sized there is nothing to sweep
+            // across, and running anyway animates x from 0 to 0 - which parks
+            // the bar at the left edge of the panel for good, because the
+            // animation writes x imperatively and nothing moves it again.
+            if (surgeRoot.width <= 0) return
+            surgeAnim.restart()
+        }
+
+        Rectangle {
+            id: surgeBar
+            // The bar exists only while it is travelling. Belt and braces
+            // against it ever being left visible at rest.
+            visible: surgeAnim.running
+            width: Math.round(surgeRoot.width * 0.45)
+            height: 2
+            y: surgeRoot.height - 7
+            x: -width
+            // Bright, but still the panel's own color. Lightened much past
+            // this it washes out to white and stops reading as that accent.
+            color: Qt.lighter(surgeRoot.accent, 1.2)
+            opacity: 0.9
+            // The placards sit at a slight angle, so an unsmoothed 2px bar
+            // stair-steps along its length.
+            antialiasing: true
+        }
+
+        NumberAnimation {
+            id: surgeAnim
+            target: surgeBar
+            property: "x"
+            from: -surgeBar.width
+            to: surgeRoot.width
+            duration: 420
+            easing.type: Easing.OutCubic
+        }
+    }
+
     // A greeter is not locking an existing session, so this is an ordinary
     // fullscreen layer-shell panel rather than a WlSessionLockSurface. It
     // takes exclusive keyboard focus because typing is the whole point.
@@ -198,11 +293,28 @@ Scope {
                 usernameField.forceActiveFocus()
             }
 
+            // Every key that is not typing goes through here. The power
+            // controls hold no focus of their own - a plain Item does not keep
+            // active focus across a key handler - so while the ring points at
+            // one, `content` is the focused item and activates it on its
+            // behalf.
             Keys.onPressed: event => {
-                if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
-                    root.focusedField = root.focusedField === 0 ? 1 : 0
-                    if (root.focusedField === 0) usernameField.forceActiveFocus()
-                    else passwordField.forceActiveFocus()
+                if (root.ringKey(event)) {
+                    event.accepted = true
+                    return
+                }
+                if (root.focusedField < 2) return
+
+                if (event.key === Qt.Key_Return
+                    || event.key === Qt.Key_Enter
+                    || event.key === Qt.Key_Space) {
+                    powerControls.itemAt(root.focusedField - 2).fire()
+                    event.accepted = true
+                    return
+                }
+                // A way back to typing without cycling the whole ring.
+                if (event.key === Qt.Key_Escape) {
+                    root.focusSlot(1)
                     event.accepted = true
                 }
             }
@@ -288,12 +400,26 @@ Scope {
                 fill: "#E60C2426"
                 cut: 12
 
-                anchors.left: parent.left
-                anchors.bottom: passPanel.top
-                anchors.leftMargin: Math.round(parent.width * 0.09) + 14
-                anchors.bottomMargin: 18
-                width: 300
-                height: 50
+                // Taking focus is the field waking up, so it gets the same
+                // sweep the power controls get.
+                readonly property bool lit: root.focusedField === 0
+                onLitChanged: if (userPanel.lit) userSurge.run()
+
+                EdgeSurge {
+                    id: userSurge
+                    accent: userPanel.accentColor
+                    inset: userPanel.cut
+                }
+
+                // Placed from a rectangle picked against the real 1920x1080
+                // render and stored as a fraction of the surface, the same way
+                // the power controls are. Positioned by centre so a size
+                // change grows the panel both ways instead of walking it
+                // across the frame.
+                x: Math.round(parent.width * 0.3521 - width / 2)
+                y: Math.round(parent.height * 0.7995 - height / 2)
+                width: 268
+                height: 49
                 rotation: -0.6
                 opacity: root.focusedField === 0 ? 1.0 : 0.35
 
@@ -316,43 +442,47 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "ogama"
                             color: root.paperWhite
-                            font.family: "Inter"
-                            font.pixelSize: 16
+                            font.family: "Orbitron"
+                            font.pixelSize: 15
+                            font.bold: true
+                            font.letterSpacing: 0.5
 
-                            // Selection as a hard-edged stencil block, not a
-                            // rounded highlight: the glyphs knock out of the
-                            // accent, matching the angular panels this design
-                            // is built from.
-                            selectionColor: root.accentMagenta
-                            selectedTextColor: "#1C1E26"
+                            // Selection recolors the glyphs and nothing else
+                            // - no highlight block behind them, matching the
+                            // password dots, which signal the same way.
+                            selectionColor: "transparent"
+                            selectedTextColor: root.accentMagenta
+
+                            cursorVisible: false
+                            // Qt's TextInput forces cursorVisible back to true
+                            // internally on every focus-in
+                            // (ItemActiveFocusHasChanged), silently breaking
+                            // the plain binding above - reassert it every time
+                            // that happens instead. Same treatment as
+                            // passwordField below.
+                            onCursorVisibleChanged: if (cursorVisible) cursorVisible = false
 
                             enabled: !session.busy
                             onAccepted: surface.submitUsername()
                             onActiveFocusChanged: if (activeFocus) root.focusedField = 0
 
+                            // Qt's own tab chain would move focus out from
+                            // under the ring and leave focusedField stale, so
+                            // the ring owns Tab outright.
+                            activeFocusOnTab: false
+
                             Keys.onPressed: event => {
                                 if (event.key === Qt.Key_A && (event.modifiers & Qt.ControlModifier)) {
                                     usernameField.selectAll()
                                     event.accepted = true
+                                    return
                                 }
+                                if (root.ringKey(event)) event.accepted = true
                             }
 
                             HoverHandler { cursorShape: Qt.ArrowCursor }
                         }
                     }
-                }
-
-                // 2px tick marking which field has focus.
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.leftMargin: 10
-                    anchors.topMargin: 10
-                    anchors.bottomMargin: 10
-                    width: 2
-                    color: root.accentCyan
-                    visible: root.focusedField === 0
                 }
             }
 
@@ -365,12 +495,27 @@ Scope {
                 fill: root.showFailure ? "#E6241206" : "#E6240420"
                 cut: 16
 
-                anchors.left: parent.left
-                anchors.bottom: parent.bottom
-                anchors.leftMargin: Math.round(parent.width * 0.09)
-                anchors.bottomMargin: Math.round(parent.height * 0.09)
-                width: 340
-                height: 58
+                readonly property bool lit: root.focusedField === 1
+                onLitChanged: if (passPanel.lit) passSurge.run()
+
+                EdgeSurge {
+                    id: passSurge
+                    accent: passPanel.accentColor
+                    inset: passPanel.cut
+                }
+
+                // The rejection shake animates this, not x: writing x
+                // directly would destroy the binding below on the first
+                // failure, and while this panel was anchored the anchor simply
+                // overrode x and the shake never moved anything.
+                property real shakeOffset: 0
+
+                x: Math.round(parent.width * 0.2776 - width / 2) + passPanel.shakeOffset
+                y: Math.round(parent.height * 0.8597 - height / 2)
+                // Matched to the username panel rather than restated, so the
+                // two stay the same size if either is ever resized.
+                width: userPanel.width
+                height: userPanel.height
                 rotation: -1.3
                 opacity: root.focusedField === 1 ? 1.0 : 0.35
 
@@ -424,11 +569,15 @@ Scope {
                             onAccepted: surface.submitPassword()
                             onActiveFocusChanged: if (activeFocus) root.focusedField = 1
 
+                            activeFocusOnTab: false
+
                             Keys.onPressed: event => {
                                 if (event.key === Qt.Key_A && (event.modifiers & Qt.ControlModifier)) {
                                     passwordField.selectAll()
                                     event.accepted = true
+                                    return
                                 }
+                                if (root.ringKey(event)) event.accepted = true
                             }
 
                             // Clears the rejected password and hands focus
@@ -454,20 +603,21 @@ Scope {
                             id: dotRow
                             anchors.left: parent.left
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 9
+                            spacing: 7
 
                             Repeater {
                                 model: root.currentText.length
 
                                 delegate: Rectangle {
                                     id: dot
-                                    width: 9
-                                    height: 9
-                                    radius: 4.5
+                                    width: 7
+                                    height: 7
+                                    radius: 3.5
                                     // All dots go magenta when the field is
-                                    // fully selected: the field renders no
-                                    // glyphs, so a normal selection rectangle
-                                    // would have nothing to highlight.
+                                    // fully selected, instead of alternating
+                                    // magenta/cyan. The field renders no
+                                    // glyphs, so this recolor is the whole
+                                    // selection signal.
                                     color: passwordField.selectedText.length > 0
                                         ? root.accentMagenta
                                         : (index % 2 === 0 ? root.accentMagenta : root.accentCyan)
@@ -499,18 +649,6 @@ Scope {
                                 }
                             }
                         }
-
-                        // Selection rule under the dots - the second half of
-                        // the "everything is selected" signal.
-                        Rectangle {
-                            anchors.left: dotRow.left
-                            anchors.right: dotRow.right
-                            anchors.top: dotRow.bottom
-                            anchors.topMargin: 4
-                            height: 2
-                            color: root.accentCyan
-                            visible: passwordField.selectedText.length > 0
-                        }
                     }
 
                     Text {
@@ -522,16 +660,13 @@ Scope {
                 }
             }
 
-            property real passPanelBaseX: 0
-
             SequentialAnimation {
                 id: shakeAnim
                 loops: 1
-                ScriptAction { script: content.passPanelBaseX = passPanel.x }
-                NumberAnimation { target: passPanel; property: "x"; to: content.passPanelBaseX - 10; duration: 45 }
-                NumberAnimation { target: passPanel; property: "x"; to: content.passPanelBaseX + 10; duration: 45 }
-                NumberAnimation { target: passPanel; property: "x"; to: content.passPanelBaseX - 6; duration: 45 }
-                NumberAnimation { target: passPanel; property: "x"; to: content.passPanelBaseX; duration: 45 }
+                NumberAnimation { target: passPanel; property: "shakeOffset"; to: -10; duration: 45 }
+                NumberAnimation { target: passPanel; property: "shakeOffset"; to: 10; duration: 45 }
+                NumberAnimation { target: passPanel; property: "shakeOffset"; to: -6; duration: 45 }
+                NumberAnimation { target: passPanel; property: "shakeOffset"; to: 0; duration: 45 }
             }
 
             Connections {
@@ -563,40 +698,136 @@ Scope {
 
             // ── Power controls, opposite corner from the tags so they read
             // as machine-level actions rather than part of the login form.
-            Row {
-                spacing: 20
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.rightMargin: Math.round(parent.width * 0.04)
-                anchors.bottomMargin: Math.round(parent.height * 0.09)
+            // Each control carries the color of what it costs you: cyan for
+            // the reversible one, magenta for the disruptive one, and amber -
+            // the same amber as ACCESS DENIED - for the one you do not undo.
+            // At rest the row is three quiet labels and nothing else, so it
+            // never competes with the artwork; the chip only exists while a
+            // control is live under the pointer or the focus ring.
+            // Placed along the dark blade sweeping down the right of the
+            // artwork rather than set in a level row: the three controls
+            // cascade with it, so they sit in the frame instead of on top of
+            // it. The centres were picked against the real 1920x1080 render
+            // and stored as fractions of the surface. The drop between them is
+            // kept equal while the horizontal step follows the blade, which
+            // falls away faster lower down. The chips stay level; at the
+            // blade's ~48 degrees, rotated labels stop being readable.
+            Item {
+                anchors.fill: parent
 
                 Repeater {
+                    id: powerControls
+
                     model: [
-                        { label: "suspend", arg: "suspend" },
-                        { label: "restart", arg: "reboot" },
-                        { label: "shut down", arg: "poweroff" }
+                        { label: "suspend", arg: "suspend", accent: root.accentCyan,
+                          cx: 0.8928, cy: 0.8130 },
+                        { label: "restart", arg: "reboot", accent: root.accentMagenta,
+                          cx: 0.9104, cy: 0.8454 },
+                        { label: "shut down", arg: "poweroff", accent: root.accentAmber,
+                          cx: 0.9259, cy: 0.8778 }
                     ]
 
-                    delegate: Text {
+                    delegate: Item {
+                        id: chip
+
+                        required property int index
                         required property var modelData
 
-                        text: modelData.label
-                        color: powerArea.containsMouse
-                            ? root.accentAmber
-                            : root.withAlpha(root.smokeLavender, 0.65)
-                        font.family: "Inter"
-                        font.pixelSize: 14
+                        // Hover and the keyboard ring are deliberately one
+                        // state: a single highlight with two ways into it,
+                        // rather than a mouse treatment and a separate focus
+                        // ring.
+                        readonly property bool energized: root.focusedField === 2 + chip.index
+                            || powerArea.containsMouse
+                        property bool firing: false
+
+                        implicitWidth: powerLabel.implicitWidth + 30
+                        implicitHeight: 30
+
+                        // Positioned by centre so a longer label grows both
+                        // ways and stays on the blade instead of drifting off
+                        // the end of it.
+                        x: Math.round(parent.width * modelData.cx - width / 2)
+                        y: Math.round(parent.height * modelData.cy - height / 2)
+
+                        scale: powerArea.pressed || chip.firing ? 0.95 : 1.0
+                        Behavior on scale {
+                            NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
+                        }
+
+                        // The brief hold before the machine goes down is the
+                        // only acknowledgement there is room for: the screen
+                        // is about to disappear, so the confirmation has to
+                        // land before the action, not after it.
+                        function fire() {
+                            if (chip.firing) return
+                            chip.firing = true
+                            fireDelay.start()
+                        }
+
+                        Timer {
+                            id: fireDelay
+                            interval: 160
+                            onTriggered: powerProc.running = true
+                        }
 
                         Process {
                             id: powerProc
                             command: [ "@systemctlBin@", modelData.arg ]
                         }
 
+                        TagPanel {
+                            anchors.fill: parent
+                            cut: 8
+                            accentColor: modelData.accent
+                            fill: root.withAlpha(modelData.accent, 0.12)
+                            opacity: chip.energized ? 1 : 0
+
+                            Behavior on opacity {
+                                NumberAnimation { duration: 130; easing.type: Easing.OutQuad }
+                            }
+
+                            EdgeSurge {
+                                id: chipSurge
+                                accent: modelData.accent
+                                inset: 8
+                            }
+                        }
+
+                        onEnergizedChanged: if (chip.energized) chipSurge.run()
+
+                        Text {
+                            id: powerLabel
+                            anchors.centerIn: parent
+
+                            text: modelData.label
+                            color: chip.firing
+                                ? root.paperWhite
+                                : chip.energized
+                                    ? modelData.accent
+                                    : root.withAlpha(root.smokeLavender, 0.65)
+                            font.family: "Orbitron"
+                            font.pixelSize: 12
+                            font.bold: true
+                            // Opening the tracking as it lights up gives the
+                            // label somewhere to go that is not just brighter.
+                            font.letterSpacing: chip.energized ? 1.8 : 1.2
+
+                            Behavior on color { ColorAnimation { duration: 130 } }
+                            Behavior on font.letterSpacing {
+                                NumberAnimation { duration: 160; easing.type: Easing.OutQuad }
+                            }
+                        }
+
                         MouseArea {
                             id: powerArea
                             anchors.fill: parent
                             hoverEnabled: true
-                            onClicked: powerProc.running = true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.focusSlot(2 + chip.index)
+                                chip.fire()
+                            }
                         }
                     }
                 }
