@@ -10,6 +10,14 @@ Canvas {
 
     // Array of { success: bool, ms: real }, oldest first.
     property var history: []
+
+    // Gatus keeps 50 results per endpoint. Drawn across 46px that is 0.94px
+    // per point, which merges adjacent 2.8px failure ticks into one block and
+    // makes a single failure read as several. The most recent slice is also
+    // the part worth seeing.
+    readonly property int maxPoints: 16
+    readonly property var points: history.length > maxPoints
+        ? history.slice(history.length - maxPoints) : history
     property color lineColor: "@upColor@"
     property color failColor: "@downColor@"
 
@@ -29,9 +37,9 @@ Canvas {
     readonly property real msFloor: 12
     readonly property real msCeiling: {
         let peak = 0
-        for (let i = 0; i < history.length; i++) {
-            if (history[i].success && history[i].ms > peak)
-                peak = history[i].ms
+        for (let i = 0; i < points.length; i++) {
+            if (points[i].success && points[i].ms > peak)
+                peak = points[i].ms
         }
         return Math.max(msFloor, peak * 1.15)
     }
@@ -40,7 +48,7 @@ Canvas {
     implicitHeight: 13
     renderStrategy: Canvas.Immediate
 
-    onHistoryChanged: requestPaint()
+    onPointsChanged: requestPaint()
     onLineColorChanged: requestPaint()
     onMsCeilingChanged: requestPaint()
 
@@ -48,7 +56,7 @@ Canvas {
         const ctx = getContext("2d")
         ctx.reset()
 
-        const n = history.length
+        const n = points.length
         if (n === 0)
             return
 
@@ -58,7 +66,7 @@ Canvas {
         ctx.fillStyle = root.failColor
         ctx.globalAlpha = 0.45
         for (let i = 0; i < n; i++) {
-            if (history[i].success)
+            if (points[i].success)
                 continue
             ctx.fillRect(Math.max(0, i * step - 1.4), 0, 2.8, height)
         }
@@ -74,10 +82,10 @@ Canvas {
         ctx.beginPath()
 
         for (let i = 0; i < n; i++) {
-            const norm = Math.min(1, Math.max(0, history[i].ms / root.msCeiling))
+            const norm = Math.min(1, Math.max(0, points[i].ms / root.msCeiling))
             // A failure pins to the top of the band rather than to a latency
             // of zero, which would otherwise read as "instant".
-            const y = history[i].success ? height - 2 - norm * (height - 5) : 1.5
+            const y = points[i].success ? height - 2 - norm * (height - 5) : 1.5
             if (i === 0)
                 ctx.moveTo(0, y)
             else

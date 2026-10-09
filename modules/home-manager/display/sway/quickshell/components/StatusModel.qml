@@ -82,6 +82,17 @@ Item {
         return result.success ? "up" : "degraded"
     }
 
+    // Every service here idles below 1% CPU, so whole-percent rounding prints
+    // "cpu 0%" across the board and tells you nothing. One decimal under 1%
+    // keeps the column narrow while still showing which service is busy.
+    function formatPercent(pct) {
+        if (pct <= 0)
+            return "0%"
+        if (pct < 1)
+            return pct.toFixed(1) + "%"
+        return Math.round(pct) + "%"
+    }
+
     function formatBytes(bytes) {
         if (!(bytes > 0))
             return ""
@@ -201,20 +212,30 @@ Item {
 
     // ---------------- Prometheus poller ----------------
 
-    // One instant query for everything. rate() and arithmetic both drop
-    // __name__, so the computed series are re-tagged with label_replace - that
-    // way every series in the union self-identifies and the response can be
-    // demultiplexed by metric name alone.
+    // One instant query for everything, with every series carrying an explicit
+    // `slot` label that says which value it is.
     //
-    // The [1m] window needs at least two samples: the process job is scraped
-    // every 15s server-side specifically so this works. Do not widen it
-    // assuming the host's global 1m scrape_interval applies here.
+    // The tag is not cosmetic. PromQL's `or` matches series by their label
+    // signature *excluding __name__*, so two computed series that reduce to
+    // the same remaining labels collide and the right-hand one is silently
+    // dropped - node_load1 and a bare host-memory ratio both reduce to
+    // {instance, job}, and the memory value vanished from the response with
+    // no error. Tagging makes the discriminator explicit instead of depending
+    // on which labels a metric happens to carry.
+    //
+    // CPU is summed by groupname because process-exporter splits
+    // cpu_seconds_total by mode (user/system); without the sum each service
+    // yields two series and only one of them survives into the display.
+    //
+    // The [1m] rate window needs at least two samples: the process job is
+    // scraped every 15s server-side specifically so this works. Do not widen
+    // it assuming the host's global 1m scrape_interval applies here.
     readonly property string promQuery:
-        'label_replace(rate(namedprocess_namegroup_cpu_seconds_total[1m]),"__name__","svc_cpu","","")'
-        + ' or namedprocess_namegroup_memory_bytes{memtype="resident"}'
-        + ' or node_load1'
-        + ' or label_replace(1-(node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes),"__name__","host_mem","","")'
-        + ' or label_replace(1-(node_filesystem_avail_bytes{mountpoint="/"}/node_filesystem_size_bytes{mountpoint="/"}),"__name__","host_disk","","")'
+        'label_replace(sum by (groupname) (rate(namedprocess_namegroup_cpu_seconds_total[1m])),"slot","cpu","","")'
+        + ' or label_replace(sum by (groupname) (namedprocess_namegroup_memory_bytes{memtype="resident"}),"slot","ram","","")'
+        + ' or label_replace(node_load1,"slot","load","","")'
+        + ' or label_replace(1-(node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes),"slot","mem","","")'
+        + ' or label_replace(1-(node_filesystem_avail_bytes{mountpoint="/"}/node_filesystem_size_bytes{mountpoint="/"}),"slot","disk","","")'
 
     Process {
         id: metricsProc
@@ -256,25 +277,25 @@ Item {
 
         for (let i = 0; i < rows.length; i++) {
             const metric = rows[i].metric || {}
-            const name = metric.__name__ || ""
+            const slot = metric.slot || ""
             const value = parseFloat((rows[i].value || [])[1])
             if (isNaN(value))
                 continue
 
-            if (name === "node_load1") {
+            if (slot === "load") {
                 root.hostLoad = value.toFixed(2)
-            } else if (name === "host_mem") {
+            } else if (slot === "mem") {
                 root.hostRam = Math.round(value * 100) + "%"
-            } else if (name === "host_disk") {
+            } else if (slot === "disk") {
                 root.hostDisk = Math.round(value * 100) + "%"
-            } else if (name === "svc_cpu" || name === "namedprocess_namegroup_memory_bytes") {
+            } else if (slot === "cpu" || slot === "ram") {
                 const group = metric.groupname || ""
                 if (group === "")
                     continue
                 if (!byGroup[group])
                     byGroup[group] = { cpu: "", ram: "" }
-                if (name === "svc_cpu")
-                    byGroup[group].cpu = "cpu " + Math.round(value * 100) + "%"
+                if (slot === "cpu")
+                    byGroup[group].cpu = "cpu " + root.formatPercent(value * 100)
                 else
                     byGroup[group].ram = "ram " + root.formatBytes(value)
             }
