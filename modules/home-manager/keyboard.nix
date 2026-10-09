@@ -9,6 +9,8 @@
       input = {
         "type:keyboard" = {
           xkb_options = "caps:escape";
+          xkb_layout = "us";
+          # xkb_layout = "fr";
         };
       };
     };
