@@ -11,6 +11,17 @@
 , lockscreenImage
 , systemctlBin
 , corptaFontPath
+  # Status-widget tokens. Defaulted so greetd.nix and the lockVariant helper,
+  # which never render StatusPanel.qml, do not have to pass them - a required
+  # argument here would break both callers. The colour defaults are the Horizon
+  # dark values; the quickshell module always passes explicit
+  # polarity-correct ones, because Horizon puts teal at base0C in dark but
+  # base0E in light, so no single base16 slot means "up" in both schemes.
+, statusApiUrl ? ""
+, metricsApiUrl ? ""
+, upColor ? "#FF24A8B4"
+, degradedColor ? "#FFEFB993"
+, downColor ? "#FFE93C58"
 }:
 builtins.replaceStrings
   [
@@ -29,6 +40,16 @@ builtins.replaceStrings
     "@glassBg@"
     "@glassBorder@"
     "@corptaFontPath@"
+    "@statusApiUrl@"
+    "@metricsApiUrl@"
+    "@upColor@"
+    "@degradedColor@"
+    "@downColor@"
+    "@unknownColor@"
+    "@panelBg@"
+    "@panelBorder@"
+    "@nameColor@"
+    "@mutedColor@"
   ]
   [
     "#B3${colors.base00}"
@@ -46,4 +67,14 @@ builtins.replaceStrings
     "#66${colors.base00}"
     "#59${colors.base05}"
     corptaFontPath
+    statusApiUrl
+    metricsApiUrl
+    upColor
+    degradedColor
+    downColor
+    "#FF${colors.base03}"
+    "#B3${colors.base00}"
+    "#33${colors.base05}"
+    "#FF${colors.base05}"
+    "#FF${colors.base04}"
   ]

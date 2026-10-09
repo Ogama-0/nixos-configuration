@@ -1,9 +1,27 @@
-{ pkgs, upkgs, config, lib, ... }:
+{ cfg, pkgs, upkgs, config, lib, ... }:
 
 let
   colors = config.lib.stylix.colors;
 
   laserColor = if config.stylix.polarity == "light" then "#FFFFFF" else "#000000";
+
+  # Horizon puts teal at base0C in the dark scheme but base0E in the light one,
+  # and base0C in light is a red-orange - so no single base16 slot can mean
+  # "up" in both. Selected by polarity instead, exactly like laserColor above.
+  # The light teal is the darker #1D8991 so a filled band still clears 3:1
+  # against the light ground.
+  isLight = config.stylix.polarity == "light";
+
+  statusColors = {
+    upColor = if isLight then "#FF1D8991" else "#FF24A8B4";
+    degradedColor = if isLight then "#FFF6661E" else "#FFEFB993";
+    downColor = if isLight then "#FFDA103F" else "#FFE93C58";
+  };
+
+  # Built from cfg.server.domain so the tailnet hostnames are never hardcoded
+  # in QML. cfg-perso embeds the server profile under .server (host/profiles.nix).
+  statusApiUrl = "http://status.tail.${cfg.server.domain}/api/v1/endpoints/statuses";
+  metricsApiUrl = "http://metrics.tail.${cfg.server.domain}/api/v1/query";
 
   # Lockscreen-only theming — reuses the same @token@ substitution the file
   # already uses for the bar, but keyed off the shared palette instead of
@@ -17,10 +35,11 @@ let
   systemctlBin = "${pkgs.systemd}/bin/systemctl";
   corptaFontPath = "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf";
 
-  barTheme = qmlTheme {
+  barTheme = qmlTheme ({
     inherit colors laserColor systemctlBin corptaFontPath;
+    inherit statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
-  };
+  } // statusColors);
 
   themedQmlFile = path: {
     text = barTheme (builtins.readFile path);
@@ -86,6 +105,9 @@ in
     "quickshell/widgets/components/CollisionEffects.qml" = themedQmlFile ./components/CollisionEffects.qml;
     "quickshell/widgets/components/ClockModule.qml" = themedQmlFile ./components/ClockModule.qml;
     "quickshell/widgets/components/LaserBar.qml" = themedQmlFile ./components/LaserBar.qml;
+    "quickshell/widgets/components/StatusModel.qml" = themedQmlFile ./components/StatusModel.qml;
+    "quickshell/widgets/components/Sparkline.qml" = themedQmlFile ./components/Sparkline.qml;
+    "quickshell/widgets/components/StatusPanel.qml" = themedQmlFile ./components/StatusPanel.qml;
   };
 
   home.activation.quickshellLockDefault = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
