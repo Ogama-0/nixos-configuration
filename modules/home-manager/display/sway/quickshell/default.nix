@@ -12,10 +12,19 @@ let
   # against the light ground.
   isLight = config.stylix.polarity == "light";
 
+  # Contrast measured against each theme's composited panel ground
+  # (#1A1C23 dark, #EBDFDC light). Bands are UI components and need 3:1;
+  # mutedColor carries 11px text and needs 4.5:1.
   statusColors = {
     upColor = if isLight then "#FF1D8991" else "#FF24A8B4";
-    degradedColor = if isLight then "#FFF6661E" else "#FFEFB993";
+    # Horizon light's base09 (#F6661E) only reaches 2.4:1 on the light
+    # ground, under the 3:1 floor for a filled band; darkened to 3.8:1.
+    degradedColor = if isLight then "#FFC2490B" else "#FFEFB993";
     downColor = if isLight then "#FFDA103F" else "#FFE93C58";
+    # base04 is 2.5:1 on the light ground - unreadable at 11px. base05 at
+    # 80% reaches 4.9:1 while still reading as muted against base05 text.
+    mutedColor =
+      if isLight then "#CC${colors.base05}" else "#FF${colors.base04}";
   };
 
   # Built from the profile so the tailnet hostnames are never hardcoded in QML.

@@ -22,6 +22,11 @@
 , upColor ? "#FF24A8B4"
 , degradedColor ? "#FFEFB993"
 , downColor ? "#FFE93C58"
+  # base04 is legible on the dark ground (6.5:1) but only 2.5:1 on the light
+  # one, which is too low for the 11px latency column. The quickshell module
+  # passes a polarity-correct value; this default preserves the dark-ground
+  # behaviour for callers that never render these tokens.
+, mutedColor ? "#FF${colors.base04}"
 }:
 builtins.replaceStrings
   [
@@ -80,5 +85,5 @@ builtins.replaceStrings
     "#ED${colors.base00}"
     "#33${colors.base05}"
     "#FF${colors.base05}"
-    "#FF${colors.base04}"
+    mutedColor
   ]
