@@ -256,8 +256,29 @@ Item {
         // the widget offline - that verdict belongs to Gatus alone.
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0)
-                root.metrics = ({})
+                root.clearMetrics()
         }
+    }
+
+    // Prometheus can fail while Gatus stays healthy, in three ways: a non-zero
+    // curl exit, an unparseable body, or a well-formed {"status":"error"}
+    // returned with HTTP 200 (curl exits 0, so onExited never sees it). In
+    // every case the resource layer blanks rather than keeping the last good
+    // numbers on screen as though they were live - the same rule the
+    // transport `unknown` state enforces for reachability. Reachability
+    // itself is untouched: that verdict belongs to Gatus alone.
+    function clearMetrics() {
+        root.metrics = ({})
+        root.hostLoad = "—"
+        root.hostRam = "—"
+        root.hostDisk = "—"
+        root.services = root.services.map(function (s) {
+            return {
+                key: s.key, label: s.label, order: s.order,
+                state: s.state, ms: s.ms, history: s.history,
+                cpu: "", ram: ""
+            }
+        })
     }
 
     function ingestMetrics(text) {
@@ -265,12 +286,14 @@ Item {
         try {
             payload = JSON.parse(text)
         } catch (e) {
-            root.metrics = ({})
+            root.clearMetrics()
             return
         }
 
-        if (!payload || payload.status !== "success" || !payload.data)
+        if (!payload || payload.status !== "success" || !payload.data) {
+            root.clearMetrics()
             return
+        }
 
         const rows = payload.data.result || []
         const byGroup = ({})
