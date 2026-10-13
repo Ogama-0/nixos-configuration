@@ -66,11 +66,14 @@ Available: `librepods` ([kavishdevar's package](https://github.com/kavishdevar/l
 ## TODO
 
 ### personal
-- add a TTY login menu
-- manage sway idle &co
+- add a TTY login menu []
+- manage sway idle &co issue : media player
 - quickshell widget graphana status server
 
 ### server
 - build a website for ogama.me
-- build a qbtorrent instance over qbtorrent.tail.ogama.me
-- build a (?open drive) drive system
+- qbtorrent : let qbittorent add file in jellyfin/film and jellyfin/audiobook
+- build the hdd architectur with 2 2tb hdd with backup on the 4to hdd
+- host calendar with the same methode as pixilie
+- use kristen's vps to let people access to my server (throught tailescale tunel)
+
