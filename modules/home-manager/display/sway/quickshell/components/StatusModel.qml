@@ -45,7 +45,11 @@ Item {
         "web_caddy":         { label: "Caddy",       order: 5, promGroup: "caddy" },
         "web_grafana":       { label: "Grafana",     order: 6, promGroup: "grafana" },
         "dev_wakapi":        { label: "Wakapi",      order: 7, promGroup: "wakapi" },
-        "files_qbittorrent": { label: "qBittorrent", order: 8, promGroup: "qbittorrent" }
+        "files_qbittorrent": { label: "qBittorrent", order: 8, promGroup: "qbittorrent" },
+        // Appended rather than slotted next to Wakapi: `order` fixes the band
+        // positions, and renumbering would move every band you have already
+        // learned to read.
+        "dev_joplin":        { label: "Joplin",      order: 9, promGroup: "joplin" }
     })
 
     // groupname -> { cpu, ram }, rebuilt on every metrics poll.
