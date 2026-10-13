@@ -11,6 +11,22 @@
 , lockscreenImage
 , systemctlBin
 , corptaFontPath
+  # Status-widget tokens. Defaulted so greetd.nix and the lockVariant helper,
+  # which never render StatusPanel.qml, do not have to pass them - a required
+  # argument here would break both callers. The colour defaults are the Horizon
+  # dark values; the quickshell module always passes explicit
+  # polarity-correct ones, because Horizon puts teal at base0C in dark but
+  # base0E in light, so no single base16 slot means "up" in both schemes.
+, statusApiUrl ? ""
+, metricsApiUrl ? ""
+, upColor ? "#FF24A8B4"
+, degradedColor ? "#FFEFB993"
+, downColor ? "#FFE93C58"
+  # base04 is legible on the dark ground (6.5:1) but only 2.5:1 on the light
+  # one, which is too low for the 11px latency column. The quickshell module
+  # passes a polarity-correct value; this default preserves the dark-ground
+  # behaviour for callers that never render these tokens.
+, mutedColor ? "#FF${colors.base04}"
 }:
 builtins.replaceStrings
   [
@@ -29,6 +45,16 @@ builtins.replaceStrings
     "@glassBg@"
     "@glassBorder@"
     "@corptaFontPath@"
+    "@statusApiUrl@"
+    "@metricsApiUrl@"
+    "@upColor@"
+    "@degradedColor@"
+    "@downColor@"
+    "@unknownColor@"
+    "@panelBg@"
+    "@panelBorder@"
+    "@nameColor@"
+    "@mutedColor@"
   ]
   [
     "#B3${colors.base00}"
@@ -46,4 +72,21 @@ builtins.replaceStrings
     "#66${colors.base00}"
     "#59${colors.base05}"
     corptaFontPath
+    statusApiUrl
+    metricsApiUrl
+    upColor
+    degradedColor
+    downColor
+    "#FF${colors.base03}"
+    # More opaque than @cardBg@'s #B3, and for a different reason than that
+    # token's consumers need. The clock and calendar render 26-64px type, so
+    # 70% over wallpaper is fine for them; this panel's latency column is
+    # 11px muted text needing 4.5:1. Wallpaper brightness is not fixed - it
+    # is user-switchable via the picker - so the alpha is chosen for the
+    # worst case rather than the current image: 90% keeps that column legible
+    # even over a white backdrop (4.70:1), where 85% drops to 3.93:1.
+    "#E6${colors.base00}"
+    "#33${colors.base05}"
+    "#FF${colors.base05}"
+    mutedColor
   ]

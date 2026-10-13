@@ -1,9 +1,46 @@
-{ pkgs, upkgs, config, lib, ... }:
+{ cfg, pkgs, upkgs, config, lib, ... }:
 
 let
   colors = config.lib.stylix.colors;
 
   laserColor = if config.stylix.polarity == "light" then "#FFFFFF" else "#000000";
+
+  # Horizon puts teal at base0C in the dark scheme but base0E in the light one,
+  # and base0C in light is a red-orange - so no single base16 slot can mean
+  # "up" in both. Selected by polarity instead, exactly like laserColor above.
+  # The light teal is the darker #1D8991 so a filled band still clears 3:1
+  # against the light ground.
+  isLight = config.stylix.polarity == "light";
+
+  # Contrast measured against each theme's composited panel ground
+  # (#1A1C23 dark, #EBDFDC light). Bands are UI components and need 3:1;
+  # mutedColor carries 11px text and needs 4.5:1.
+  statusColors = {
+    upColor = if isLight then "#FF1D8991" else "#FF24A8B4";
+    # Horizon light's base09 (#F6661E) only reaches 2.4:1 on the light
+    # ground, under the 3:1 floor for a filled band; darkened to 3.8:1.
+    degradedColor = if isLight then "#FFC2490B" else "#FFEFB993";
+    downColor = if isLight then "#FFDA103F" else "#FFE93C58";
+    # base04 is 2.5:1 on the light ground - unreadable at 11px. base05 at
+    # 80% reaches 4.9:1 while still reading as muted against base05 text.
+    mutedColor =
+      if isLight then "#CC${colors.base05}" else "#FF${colors.base04}";
+  };
+
+  # Built from the profile so the tailnet hostnames are never hardcoded in QML.
+  #
+  # The doubled `.server.server` is not a typo. host/profiles.nix builds every
+  # profile as `base // (extra base)`, and base sets `server.domain`. cfg-perso's
+  # extra then sets `server = cfg-server`, which *replaces* that whole attrset
+  # rather than merging into it - so from the personal profile the domain lives
+  # at cfg.server.server.domain, one level deeper than the server-side modules'
+  # cfg.server.domain (where cfg is already cfg-server and base's value is
+  # intact). Every other consumer in the repo is server-only, so this module is
+  # the first to hit it.
+  serverDomain = cfg.server.server.domain;
+
+  statusApiUrl = "http://status.tail.${serverDomain}/api/v1/endpoints/statuses";
+  metricsApiUrl = "http://metrics.tail.${serverDomain}/api/v1/query";
 
   # Lockscreen-only theming — reuses the same @token@ substitution the file
   # already uses for the bar, but keyed off the shared palette instead of
@@ -17,10 +54,11 @@ let
   systemctlBin = "${pkgs.systemd}/bin/systemctl";
   corptaFontPath = "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf";
 
-  barTheme = qmlTheme {
+  barTheme = qmlTheme ({
     inherit colors laserColor systemctlBin corptaFontPath;
+    inherit statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
-  };
+  } // statusColors);
 
   themedQmlFile = path: {
     text = barTheme (builtins.readFile path);
@@ -86,6 +124,9 @@ in
     "quickshell/widgets/components/CollisionEffects.qml" = themedQmlFile ./components/CollisionEffects.qml;
     "quickshell/widgets/components/ClockModule.qml" = themedQmlFile ./components/ClockModule.qml;
     "quickshell/widgets/components/LaserBar.qml" = themedQmlFile ./components/LaserBar.qml;
+    "quickshell/widgets/components/StatusModel.qml" = themedQmlFile ./components/StatusModel.qml;
+    "quickshell/widgets/components/Sparkline.qml" = themedQmlFile ./components/Sparkline.qml;
+    "quickshell/widgets/components/StatusPanel.qml" = themedQmlFile ./components/StatusPanel.qml;
   };
 
   home.activation.quickshellLockDefault = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
