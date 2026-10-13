@@ -18,8 +18,10 @@ let
   calendars = {
     harmo_1 = "harmo_1_calendar_ics_url";
     class_B1 = "class_B1_calendar_ics_url";
+    grand_bain = "grand_bain_calendar_ics_url";
     sortie = "sortie_calendar_ics_url";
     work = "work_calendar_ics_url";
+
   };
 
   calendarDir = name: "${calendarsRoot}/${name}";
