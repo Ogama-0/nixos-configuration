@@ -110,6 +110,16 @@ in {
           conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
         }
         {
+          # Joplin Server runs in docker (see joplin-server.nix). /api/ping
+          # is its health endpoint and answers 200 {"status":"ok"}; "/"
+          # redirects to /login, which would fail [STATUS] == 200.
+          name = "Joplin";
+          group = "dev";
+          url = "http://joplin.tail.${cfg.server.domain}/api/ping";
+          interval = "15s";
+          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+        }
+        {
           name = "Wakapi";
           group = "dev";
           url = "http://wakapi.tail.${cfg.server.domain}";

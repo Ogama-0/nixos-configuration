@@ -173,6 +173,13 @@
     #   the status widget, which shows CPU/RAM on all eight of its rows.
     #   comm matching is exact, so grafana's "gpx_grafana_ela" plugin
     #   helper process is correctly left out of that group.
+    # - joplin: runs in docker, but its processes are ordinary host
+    #   processes as far as /proc is concerned, so process-exporter sees
+    #   them normally. comm is "node", far too generic, hence the cmdline
+    #   match on the app entrypoint. Only the app is grouped, not its
+    #   postgres sidecar: the container's postgres is indistinguishable by
+    #   comm from the host postgres that Immich runs, and lumping them
+    #   together would quietly corrupt Immich's numbers.
     exporters.process = {
       enable = true;
       settings.process_names = [
@@ -207,6 +214,10 @@
         {
           name = "grafana";
           comm = [ "grafana" ];
+        }
+        {
+          name = "joplin";
+          cmdline = [ "packages/server/dist/app\\.js" ];
         }
       ];
     };

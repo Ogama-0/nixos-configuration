@@ -17,7 +17,7 @@
     ../../modules/nixosconf/status-page.nix
 
     ../../modules/nixosconf/docker.nix
-    # ../../modules/nixosconf/joplin-server.nix # <- docker
+    ../../modules/nixosconf/joplin-server.nix # <- docker
     # ../../modules/nixosconf/crafty.nix        # <- docker
 
     ./users

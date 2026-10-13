@@ -2,31 +2,63 @@
   "id": null,
   "uid": "oserv-services",
   "title": "oserv services",
-  "tags": ["oserv"],
+  "tags": [
+    "oserv"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 2,
   "refresh": "30s",
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "panels": [
     {
       "id": 1,
       "type": "stat",
       "title": "Jellyfin",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
-            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
           ]
         },
         "overrides": []
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "node_systemd_unit_state{name=\"jellyfin.service\", state=\"active\"}",
           "refId": "A"
         }
@@ -36,20 +68,47 @@
       "id": 2,
       "type": "stat",
       "title": "Immich",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
-            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
           ]
         },
         "overrides": []
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "min(node_systemd_unit_state{name=~\"immich-server.service|immich-machine-learning.service\", state=\"active\"})",
           "refId": "A"
         }
@@ -59,20 +118,47 @@
       "id": 3,
       "type": "stat",
       "title": "Samba",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
-            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
           ]
         },
         "overrides": []
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "node_systemd_unit_state{name=\"samba-smbd.service\", state=\"active\"}",
           "refId": "A"
         }
@@ -82,20 +168,47 @@
       "id": 4,
       "type": "stat",
       "title": "Caddy",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
-            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
           ]
         },
         "overrides": []
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "node_systemd_unit_state{name=\"caddy.service\", state=\"active\"}",
           "refId": "A"
         }
@@ -105,20 +218,47 @@
       "id": 12,
       "type": "stat",
       "title": "Wakapi",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
-            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
           ]
         },
         "overrides": []
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "node_systemd_unit_state{name=\"wakapi.service\", state=\"active\"}",
           "refId": "A"
         }
@@ -128,20 +268,47 @@
       "id": 14,
       "type": "stat",
       "title": "qBittorrent",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
-            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
           ]
         },
         "overrides": []
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "node_systemd_unit_state{name=\"qbittorrent.service\", state=\"active\"}",
           "refId": "A"
         }
@@ -151,11 +318,22 @@
       "id": 5,
       "type": "logs",
       "title": "Jellyfin logs",
-      "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 0, "y": 4, "w": 4, "h": 8 },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 4,
+        "h": 8
+      },
       "targets": [
         {
-          "datasource": { "type": "loki", "uid": "loki" },
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
           "expr": "{unit=\"jellyfin.service\"}",
           "refId": "A"
         }
@@ -165,11 +343,22 @@
       "id": 6,
       "type": "logs",
       "title": "Immich logs",
-      "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 4, "y": 4, "w": 4, "h": 8 },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 4,
+        "w": 4,
+        "h": 8
+      },
       "targets": [
         {
-          "datasource": { "type": "loki", "uid": "loki" },
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
           "expr": "{unit=~\"immich-server.service|immich-machine-learning.service\"}",
           "refId": "A"
         }
@@ -179,11 +368,22 @@
       "id": 7,
       "type": "logs",
       "title": "Samba connections (by share)",
-      "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 8, "y": 4, "w": 4, "h": 8 },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 4,
+        "w": 4,
+        "h": 8
+      },
       "targets": [
         {
-          "datasource": { "type": "loki", "uid": "loki" },
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
           "expr": "{syslog_identifier=\"smbd_audit\"}",
           "refId": "A"
         }
@@ -193,11 +393,22 @@
       "id": 8,
       "type": "logs",
       "title": "Caddy logs",
-      "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 12, "y": 4, "w": 4, "h": 8 },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 4,
+        "h": 8
+      },
       "targets": [
         {
-          "datasource": { "type": "loki", "uid": "loki" },
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
           "expr": "{unit=\"caddy.service\"}",
           "refId": "A"
         }
@@ -207,11 +418,22 @@
       "id": 13,
       "type": "logs",
       "title": "Wakapi logs",
-      "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 16, "y": 4, "w": 4, "h": 8 },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 4,
+        "w": 4,
+        "h": 8
+      },
       "targets": [
         {
-          "datasource": { "type": "loki", "uid": "loki" },
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
           "expr": "{unit=\"wakapi.service\"}",
           "refId": "A"
         }
@@ -221,11 +443,22 @@
       "id": 15,
       "type": "logs",
       "title": "qBittorrent logs",
-      "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "x": 20, "y": 4, "w": 4, "h": 8 },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 4,
+        "w": 4,
+        "h": 8
+      },
       "targets": [
         {
-          "datasource": { "type": "loki", "uid": "loki" },
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
           "expr": "{unit=\"qbittorrent.service\"}",
           "refId": "A"
         }
@@ -235,8 +468,16 @@
       "id": 16,
       "type": "gauge",
       "title": "CPU usage",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 0, "y": 12, "w": 4, "h": 6 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -244,9 +485,18 @@
           "max": 100,
           "thresholds": {
             "steps": [
-              { "value": 0, "color": "green" },
-              { "value": 70, "color": "orange" },
-              { "value": 90, "color": "red" }
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 70,
+                "color": "orange"
+              },
+              {
+                "value": 90,
+                "color": "red"
+              }
             ]
           }
         },
@@ -254,7 +504,10 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
           "refId": "A"
         }
@@ -264,8 +517,16 @@
       "id": 17,
       "type": "gauge",
       "title": "RAM usage",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 4, "y": 12, "w": 4, "h": 6 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 16,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -273,9 +534,18 @@
           "max": 100,
           "thresholds": {
             "steps": [
-              { "value": 0, "color": "green" },
-              { "value": 70, "color": "orange" },
-              { "value": 90, "color": "red" }
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 70,
+                "color": "orange"
+              },
+              {
+                "value": 90,
+                "color": "red"
+              }
             ]
           }
         },
@@ -283,7 +553,10 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
           "refId": "A"
         }
@@ -293,8 +566,16 @@
       "id": 18,
       "type": "gauge",
       "title": "Disk usage: /",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 8, "y": 12, "w": 4, "h": 6 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 16,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -302,9 +583,18 @@
           "max": 100,
           "thresholds": {
             "steps": [
-              { "value": 0, "color": "green" },
-              { "value": 70, "color": "orange" },
-              { "value": 90, "color": "red" }
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 70,
+                "color": "orange"
+              },
+              {
+                "value": 90,
+                "color": "red"
+              }
             ]
           }
         },
@@ -312,7 +602,10 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100",
           "refId": "A"
         }
@@ -322,8 +615,16 @@
       "id": 19,
       "type": "gauge",
       "title": "Disk usage: SSD (/mnt/ssd)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 12, "y": 12, "w": 4, "h": 6 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -331,9 +632,18 @@
           "max": 100,
           "thresholds": {
             "steps": [
-              { "value": 0, "color": "green" },
-              { "value": 70, "color": "orange" },
-              { "value": 90, "color": "red" }
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 70,
+                "color": "orange"
+              },
+              {
+                "value": 90,
+                "color": "red"
+              }
             ]
           }
         },
@@ -341,7 +651,10 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/mnt/ssd\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/ssd\"}) * 100",
           "refId": "A"
         }
@@ -351,8 +664,16 @@
       "id": 20,
       "type": "gauge",
       "title": "Disk usage: HDD (/mnt/hdd-tmp)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 16, "y": 12, "w": 4, "h": 6 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 16,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -360,9 +681,18 @@
           "max": 100,
           "thresholds": {
             "steps": [
-              { "value": 0, "color": "green" },
-              { "value": 70, "color": "orange" },
-              { "value": 90, "color": "red" }
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 70,
+                "color": "orange"
+              },
+              {
+                "value": 90,
+                "color": "red"
+              }
             ]
           }
         },
@@ -370,7 +700,10 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/mnt/hdd-tmp\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/hdd-tmp\"}) * 100",
           "refId": "A"
         }
@@ -380,8 +713,16 @@
       "id": 21,
       "type": "gauge",
       "title": "Disk usage: Backup (/mnt/backup)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 20, "y": 12, "w": 4, "h": 6 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 16,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -389,9 +730,18 @@
           "max": 100,
           "thresholds": {
             "steps": [
-              { "value": 0, "color": "green" },
-              { "value": 70, "color": "orange" },
-              { "value": 90, "color": "red" }
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 70,
+                "color": "orange"
+              },
+              {
+                "value": 90,
+                "color": "red"
+              }
             ]
           }
         },
@@ -399,7 +749,10 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/mnt/backup\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/backup\"}) * 100",
           "refId": "A"
         }
@@ -409,15 +762,28 @@
       "id": 9,
       "type": "timeseries",
       "title": "CPU usage per service",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 12,
+        "h": 8
+      },
       "fieldConfig": {
-        "defaults": { "unit": "percentunit" },
+        "defaults": {
+          "unit": "percentunit"
+        },
         "overrides": []
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "rate(namedprocess_namegroup_cpu_seconds_total[5m])",
           "legendFormat": "{{groupname}}",
           "refId": "A"
@@ -428,15 +794,28 @@
       "id": 10,
       "type": "timeseries",
       "title": "Memory usage per service",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 12,
+        "h": 8
+      },
       "fieldConfig": {
-        "defaults": { "unit": "bytes" },
+        "defaults": {
+          "unit": "bytes"
+        },
         "overrides": []
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "namedprocess_namegroup_memory_bytes{memtype=\"resident\"}",
           "legendFormat": "{{groupname}}",
           "refId": "A"
@@ -447,13 +826,99 @@
       "id": 11,
       "type": "timeseries",
       "title": "Caddy requests by status code",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "x": 0, "y": 26, "w": 24, "h": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 8
+      },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "sum(rate(caddy_http_request_duration_seconds_count[5m])) by (code)",
           "legendFormat": "{{code}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "Joplin",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "node_systemd_unit_state{name=\"docker-joplin.service\", state=\"active\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "type": "logs",
+      "title": "Joplin logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 12,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{unit=\"docker-joplin.service\"}",
           "refId": "A"
         }
       ]
