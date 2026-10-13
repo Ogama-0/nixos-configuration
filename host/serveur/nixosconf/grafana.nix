@@ -70,6 +70,28 @@
     '';
   };
 
+  # Read-only window onto Prometheus for the Quickshell status widget
+  # (per-service CPU/RAM, host load/memory/disk). Deliberately NOT a bare
+  # reverse_proxy: Prometheus's HTTP API is unauthenticated, so proxying
+  # all of it would hand anyone on the tailnet /api/v1/status/config,
+  # /flags, /targets and the admin/TSDB endpoints. Only the single
+  # instant-query path the widget uses is forwarded; everything else 404s.
+  # That restriction is the security control here — it must not be
+  # loosened to a bare proxy for convenience. Metric *data* does remain
+  # readable tailnet-wide, which is the accepted tradeoff.
+  services.caddy.virtualHosts."http://metrics.tail.${cfg.server.domain}" = {
+    extraConfig = ''
+      handle /api/v1/query* {
+          reverse_proxy http://127.0.0.1:${
+            toString config.services.prometheus.port
+          }
+      }
+      handle {
+          respond 404
+      }
+    '';
+  };
+
   # -------------------- Loki -------------------- #
 
   services.loki = {
@@ -142,6 +164,15 @@
     #   immich_ml.main:app, identified via cmdline (comm is just
     #   "python3.13", too generic to match on its own)
     # - samba-smbd: "smbd" main + notifyd/cleanupd children
+    # - qbittorrent: comm is useless here — the kernel truncates it to 15
+    #   chars and the Nix wrapper prefixes a dot, giving
+    #   ".qbittorrent-no", so the old comm = [ "qbittorrent-nox" ] matched
+    #   nothing and this group was silently absent from Prometheus.
+    #   Matched on cmdline instead.
+    # - caddy, grafana: plain single "caddy" / "grafana" comms, added for
+    #   the status widget, which shows CPU/RAM on all eight of its rows.
+    #   comm matching is exact, so grafana's "gpx_grafana_ela" plugin
+    #   helper process is correctly left out of that group.
     exporters.process = {
       enable = true;
       settings.process_names = [
@@ -167,7 +198,15 @@
         }
         {
           name = "qbittorrent";
-          comm = [ "qbittorrent-nox" ];
+          cmdline = [ "qbittorrent-nox" ];
+        }
+        {
+          name = "caddy";
+          comm = [ "caddy" ];
+        }
+        {
+          name = "grafana";
+          comm = [ "grafana" ];
         }
       ];
     };
@@ -188,6 +227,15 @@
 
       {
         job_name = "process";
+
+        # The status widget asks for rate(...[1m]), and rate() needs two
+        # samples inside its window. At the global 1m scrape_interval a 1m
+        # window holds at most one, so that query returned no series at
+        # all. 15s puts four in the window. Only this job is sped up:
+        # process-exporter is ~16 series, where giving node-exporter the
+        # same treatment would quadruple the bulk of the TSDB for gauges
+        # an instant query reads fine at 1m.
+        scrape_interval = "15s";
 
         static_configs = [{ targets = [ "127.0.0.1:9256" ]; }];
       }

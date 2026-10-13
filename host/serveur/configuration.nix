@@ -14,6 +14,7 @@
     ../../modules/nixosconf/immich.nix
     ../../modules/nixosconf/wakapi.nix
     ../../modules/nixosconf/qbittorrent.nix
+    ../../modules/nixosconf/status-page.nix
 
     ../../modules/nixosconf/docker.nix
     # ../../modules/nixosconf/joplin-server.nix # <- docker
