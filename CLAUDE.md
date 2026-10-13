@@ -55,3 +55,5 @@ There is no linter/formatter/test suite wired into this repo — validate change
 **`templates/`** holds `nix flake init` templates (registered in `templates/default.nix`), unrelated to the host configs — self-contained flakes for quick project scaffolding (C, Python, asm68k, EPITA-style C practicals).
 
 **`scripts/`** is plain shell/fish/python utility scripts (bluetooth/wifi/power toggles for `swaync`, wireguard toggles for fish, backup/mount helpers) invoked from Home Manager/NixOS modules or manually — not part of the Nix build graph itself.
+
+**`docs/`** is prose, not config. `docs/adding-a-server-service.md` is the runbook for putting a new service on `oserv` — module layout, Caddy/DNS/port conventions, the Gatus and process-exporter wiring every service is expected to register with, and the non-obvious failure modes (the `*.tail` names are individual CNAMEs managed outside this repo, `comm` matchers silently match nothing when truncated). Read it before adding a service module. `docs/superpowers/{specs,plans}/` holds per-feature design specs and implementation plans, dated and one topic per file.
