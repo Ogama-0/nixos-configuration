@@ -51,6 +51,28 @@ Item {
     // groupname -> { cpu, ram }, rebuilt on every metrics poll.
     property var metrics: ({})
 
+    // The widget must be visible from the first frame - before any fetch has
+    // returned, and even if oserv is unreachable at login. The idle square's
+    // fill *is* the band list, so an empty list draws nothing at all: the
+    // "unknown" state, whose whole purpose is to say "I don't know" rather
+    // than disappear, would render as no widget. goOffline() maps over the
+    // existing rows, so an empty list also never recovers on its own.
+    //
+    // Seeding from the label map also fixes the band count from the start, so
+    // the spine does not reflow when the first payload lands.
+    Component.onCompleted: {
+        const seeded = []
+        for (const key in root.labels) {
+            const meta = root.labels[key]
+            seeded.push({
+                key: key, label: meta.label, order: meta.order,
+                state: "unknown", ms: 0, history: [], cpu: "", ram: ""
+            })
+        }
+        seeded.sort(function (a, b) { return a.order - b.order })
+        root.services = seeded
+    }
+
     // ---------------- state derivation ----------------
 
     // Conditions are matched on their text, not their index: the server spec

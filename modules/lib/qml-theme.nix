@@ -78,11 +78,14 @@ builtins.replaceStrings
     degradedColor
     downColor
     "#FF${colors.base03}"
-    # Deliberately more opaque than @cardBg@'s #B3. The clock/calendar cards
-    # sit on WlrLayer.Background, so 70% only ever has wallpaper behind it.
-    # The status panel is on WlrLayer.Top and floats over arbitrary
-    # application windows, where 70% leaves dense 11px text unreadable.
-    "#ED${colors.base00}"
+    # More opaque than @cardBg@'s #B3, and for a different reason than that
+    # token's consumers need. The clock and calendar render 26-64px type, so
+    # 70% over wallpaper is fine for them; this panel's latency column is
+    # 11px muted text needing 4.5:1. Wallpaper brightness is not fixed - it
+    # is user-switchable via the picker - so the alpha is chosen for the
+    # worst case rather than the current image: 90% keeps that column legible
+    # even over a white backdrop (4.70:1), where 85% drops to 3.93:1.
+    "#E6${colors.base00}"
     "#33${colors.base05}"
     "#FF${colors.base05}"
     mutedColor

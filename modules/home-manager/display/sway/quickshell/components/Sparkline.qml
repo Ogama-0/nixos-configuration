@@ -11,11 +11,11 @@ Canvas {
     // Array of { success: bool, ms: real }, oldest first.
     property var history: []
 
-    // Gatus keeps 50 results per endpoint. Drawn across 46px that is 0.94px
-    // per point, which merges adjacent 2.8px failure ticks into one block and
-    // makes a single failure read as several. The most recent slice is also
-    // the part worth seeing.
-    readonly property int maxPoints: 16
+    // Gatus keeps 50 results per endpoint. Drawn across the full width that
+    // is well under a pixel per point, which merges adjacent failure ticks
+    // into one block and makes a single failure read as several. The most
+    // recent slice is also the part worth seeing.
+    readonly property int maxPoints: 18
     readonly property var points: history.length > maxPoints
         ? history.slice(history.length - maxPoints) : history
     property color lineColor: "@upColor@"
@@ -44,8 +44,8 @@ Canvas {
         return Math.max(msFloor, peak * 1.15)
     }
 
-    implicitWidth: 46
-    implicitHeight: 13
+    implicitWidth: 58
+    implicitHeight: 16
     renderStrategy: Canvas.Immediate
 
     onPointsChanged: requestPaint()
