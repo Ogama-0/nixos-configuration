@@ -48,7 +48,7 @@ Three service states plus one transport state: `up`, `degraded`, `down`, and
 `unknown`. **`unknown` must never render as `down`** — unreachable is dimmed
 grey, never red, or you learn to ignore red every time you leave the house.
 
-## Adding a service
+## Adding and removing a service
 
 Two edits, deliberately decoupled:
 
@@ -57,17 +57,37 @@ Two edits, deliberately decoupled:
    for a `tcp://` probe) and `[RESPONSE_TIME] < 300`. That split is
    load-bearing: the widget reads `conditionResults` to tell `down` from
    `degraded`, and collapsing to one condition destroys the middle tier.
-2. Widget: add an entry to `labels` in `StatusModel.qml` with `label`, `order`,
-   and `promGroup`.
+2. Widget: add a line to `serviceList` in `StatusModel.qml`.
 
-A service present server-side but missing from `labels` still renders, using
-its Gatus `name`, sorted last, with no CPU/RAM. Nothing breaks; it just looks
-plain until you name it.
+`serviceList` is one line per service and is the only thing you edit on the
+widget side. **Comment a line out to remove that service; uncomment or add one
+to bring it in; move a line to reorder it.** Position in the list is the
+display order and the spine's band order, so there is nothing to renumber, and
+every line ends in a comma — including the last — so any single line can be
+commented out on its own.
 
-`promGroup` cannot be derived from the key — four of the eight differ
-(`media_immich` → `immich-server`, `files_samba` → `samba-smbd`, and so on).
-Those process-exporter matcher names are load-bearing for the existing Grafana
-dashboard, so do not rename them to match.
+Confirm a key against the server before adding it; a typo silently hides the
+row rather than erroring:
+
+```
+curl -s http://status.tail.<domain>/api/v1/endpoints/statuses | jq -r '.[].key'
+```
+
+**The list is authoritative.** A service the server probes but that is not
+listed is not displayed — that is what makes commenting a line out an actual
+delete rather than just un-labelling it. The cost is the mirror image: a
+service added server-side stays invisible until it is added here too. If
+*nothing* in the list matches what the server reports, the widget keeps the
+configured rows on screen as `unknown` and the verdict reads "No matching
+services", rather than blanking to an empty square that would look identical
+to the widget not running.
+
+`promGroup` is the process-exporter `groupname` that gives a row its CPU/RAM.
+It cannot be derived from the key — several differ (`media_immich` →
+`immich-server`, `files_samba` → `samba-smbd`) — and those matcher names are
+load-bearing for the existing Grafana dashboard, so do not rename them to
+match. Omit it for a service with no process matcher; that row simply shows no
+CPU/RAM.
 
 ## The constraints that bite
 
@@ -81,7 +101,7 @@ hidden whenever a window covers the bottom-left corner.
 **The widget must render something before any fetch returns.** The idle
 square's fill *is* the band list, so an empty list draws nothing at all — and
 `goOffline()` maps over the existing rows, so an empty list never recovers.
-`StatusModel` seeds `services` from the `labels` map in `Component.onCompleted`
+`StatusModel` seeds `services` from `serviceList` in `Component.onCompleted`
 for exactly this reason. Remove that and the widget becomes invisible whenever
 `oserv` is unreachable at login.
 
@@ -105,7 +125,8 @@ centre off its row's centre, which is the one thing the spine has to get right.
 - `Uptime` is excluded from the statuses response (`json:"-"`). There is no
   uptime percentage; derive trend from the `results` array.
 - The API returns its array **sorted by key**, not in server config order.
-  Never index into it positionally; band order comes from `labels[].order`.
+  Never index into it positionally; band order comes from each entry's
+  position in `serviceList`.
 - Gatus keeps 50 results per endpoint. Drawn across the sparkline that is well
   under a pixel per point, and adjacent failure ticks merge so one outage reads
   as several. `Sparkline.maxPoints` draws the most recent slice.

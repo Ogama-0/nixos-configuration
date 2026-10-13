@@ -29,28 +29,63 @@ Item {
 
     property double lastOkAt: 0
 
-    // ---------------- presentation list ----------------
+    // ---------------- THE SERVICE LIST ----------------
+    //
+    // This is the only thing you edit to add or remove a service.
+    //
+    //   - comment a line out to drop that service from the widget
+    //   - uncomment or add a line to bring one in
+    //   - move a line to reorder it
+    //
+    // Position in this list *is* the display order and the spine's band
+    // order, so there is nothing to renumber. Every line ends in a comma,
+    // including the last, so any single line can be commented out on its own.
+    //
+    //   key        the Gatus `key`, which is `{group}_{name}` lowercased.
+    //              Must match the server exactly or the row never appears -
+    //              check it with:
+    //                curl -s http://status.tail.<domain>/api/v1/endpoints/statuses | jq -r '.[].key'
+    //   label      what the row shows
+    //   promGroup  process-exporter `groupname`, which gives the row its
+    //              CPU/RAM. It cannot be derived from the key - several
+    //              differ (media_immich -> immich-server, files_samba ->
+    //              samba-smbd) - and those matcher names are load-bearing for
+    //              the Grafana dashboard, so do not rename them to match.
+    //              Omit it for a service with no process matcher; that row
+    //              simply shows no CPU/RAM.
+    //
+    // This list is authoritative: a service the server probes but that is not
+    // listed here is not displayed. That is what makes commenting a line out
+    // an actual delete. The cost is the mirror image - a service added
+    // server-side stays invisible until it is added here too, and a typo in a
+    // key silently hides that row rather than falling back to its server-side
+    // name.
+    readonly property var serviceList: [
+        { key: "media_jellyfin",    label: "Jellyfin",    promGroup: "jellyfin" },
+        { key: "media_immich",      label: "Immich",      promGroup: "immich-server" },
+        // { key: "media_immich-ml",   label: "Immich ML",   promGroup: "immich-machine-learning" },
+        { key: "files_samba",       label: "Samba",       promGroup: "samba-smbd" },
+        { key: "web_caddy",         label: "Caddy",       promGroup: "caddy" },
+        { key: "web_grafana",       label: "Grafana",     promGroup: "grafana" },
+        { key: "dev_wakapi",        label: "Wakapi",      promGroup: "wakapi" },
+        { key: "files_qbittorrent", label: "qBittorrent", promGroup: "qbittorrent" },
+        { key: "dev_joplin",        label: "Joplin",      promGroup: "joplin" },
+    ]
 
-    // The widget's own list, deliberately separate from the server's probe
-    // list. `promGroup` bridges the Gatus key to process-exporter's groupname
-    // label: four of the eight names differ, so this map is mandatory rather
-    // than a nicety, and the group cannot be derived from the key. Those
-    // matcher names are load-bearing for the existing Grafana dashboard and
-    // must not be renamed to match.
-    readonly property var labels: ({
-        "media_jellyfin":    { label: "Jellyfin",    order: 1, promGroup: "jellyfin" },
-        "media_immich":      { label: "Immich",      order: 2, promGroup: "immich-server" },
-        "media_immich-ml":   { label: "Immich ML",   order: 3, promGroup: "immich-machine-learning" },
-        "files_samba":       { label: "Samba",       order: 4, promGroup: "samba-smbd" },
-        "web_caddy":         { label: "Caddy",       order: 5, promGroup: "caddy" },
-        "web_grafana":       { label: "Grafana",     order: 6, promGroup: "grafana" },
-        "dev_wakapi":        { label: "Wakapi",      order: 7, promGroup: "wakapi" },
-        "files_qbittorrent": { label: "qBittorrent", order: 8, promGroup: "qbittorrent" },
-        // Appended rather than slotted next to Wakapi: `order` fixes the band
-        // positions, and renumbering would move every band you have already
-        // learned to read.
-        "dev_joplin":        { label: "Joplin",      order: 9, promGroup: "joplin" }
-    })
+    // key -> { label, order, promGroup }, derived so serviceList above stays
+    // the single place to edit. `order` is just the position in that list.
+    readonly property var labels: {
+        const m = ({})
+        for (let i = 0; i < root.serviceList.length; i++) {
+            const s = root.serviceList[i]
+            m[s.key] = {
+                label: s.label,
+                order: i + 1,
+                promGroup: s.promGroup || s.key
+            }
+        }
+        return m
+    }
 
     // groupname -> { cpu, ram }, rebuilt on every metrics poll.
     property var metrics: ({})
@@ -62,18 +97,17 @@ Item {
     // than disappear, would render as no widget. goOffline() maps over the
     // existing rows, so an empty list also never recovers on its own.
     //
-    // Seeding from the label map also fixes the band count from the start, so
-    // the spine does not reflow when the first payload lands.
+    // Seeding from the service list also fixes the band count from the start,
+    // so the spine does not reflow when the first payload lands.
     Component.onCompleted: {
         const seeded = []
-        for (const key in root.labels) {
-            const meta = root.labels[key]
+        for (let i = 0; i < root.serviceList.length; i++) {
+            const s = root.serviceList[i]
             seeded.push({
-                key: key, label: meta.label, order: meta.order,
+                key: s.key, label: s.label, order: i + 1,
                 state: "unknown", ms: 0, history: [], cpu: "", ram: ""
             })
         }
-        seeded.sort(function (a, b) { return a.order - b.order })
         root.services = seeded
     }
 
@@ -161,21 +195,25 @@ Item {
             return
         }
 
-        const next = payload.map(function (entry) {
-            const key = entry.key || ""
-            const meta = root.labels[key] || null
+        const next = payload
+            // serviceList is authoritative - anything the server probes that
+            // is not listed there is deliberately not shown, which is what
+            // makes commenting a line out an actual delete.
+            .filter(function (entry) { return !!root.labels[entry.key || ""] })
+            .map(function (entry) {
+            const key = entry.key
+            const meta = root.labels[key]
             const results = Array.isArray(entry.results) ? entry.results : []
             // An endpoint added server-side but not yet probed has no results
             // at all - reading [length - 1] off an empty array would yield
             // undefined, so guard rather than index blindly.
             const last = results.length > 0 ? results[results.length - 1] : null
-            const group = meta ? meta.promGroup : key
-            const m = root.metrics[group] || null
+            const m = root.metrics[meta.promGroup] || null
 
             return {
                 key: key,
-                label: meta ? meta.label : (entry.name || key),
-                order: meta ? meta.order : 99,
+                label: meta.label,
+                order: meta.order,
                 state: root.stateFor(last),
                 ms: last ? Math.round(last.duration / 1e6) : 0,
                 history: results.map(function (r) {
@@ -185,6 +223,25 @@ Item {
                 ram: m ? m.ram : ""
             }
         })
+
+        // The server answered, but nothing it probes is in serviceList - a
+        // key mismatch (a typo, or a group renamed server-side), not an
+        // outage. Keep the configured rows on screen as unknown and say so:
+        // blanking them would leave an empty square indistinguishable from
+        // the widget not running at all.
+        if (next.length === 0) {
+            root.online = true
+            root.lastOkAt = Date.now()
+            root.services = root.services.map(function (s) {
+                return {
+                    key: s.key, label: s.label, order: s.order,
+                    state: "unknown", ms: 0, history: [], cpu: "", ram: ""
+                }
+            })
+            root.verdictText = "No matching services"
+            root.verdictCount = "—"
+            return
+        }
 
         // The API returns its array sorted by key, not in server config order,
         // so band positions come from our own `order` - that is what lets a
