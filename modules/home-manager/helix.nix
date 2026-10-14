@@ -2,9 +2,21 @@
   pkgs,
   inputs,
   config,
+  lib,
   ...
 }:
 
+let
+  # helix has no runtime theme switch and its config.toml is a read-only store
+  # symlink, so the theme NAME is pinned here and the theme BODY is swapped at
+  # runtime. themes/auto.toml just inherits one of helix's two terminal
+  # themes, which are built from the terminal's own 16 ANSI colours - so helix
+  # follows alacritty, which darkman already switches.
+  #
+  # Same unmanaged-path rule as alacritty/colors.toml: darkman rewrites this,
+  # so it must not be an xdg.configFile entry.
+  autoThemePath = "${config.xdg.configHome}/helix/themes/auto.toml";
+in
 {
   programs.helix = {
     enable = true;
@@ -49,7 +61,8 @@
     ];
 
     settings = {
-      # theme = "horizon-dark";
+      # Stable name; the body is swapped by darkman. See autoThemePath above.
+      theme = "auto";
 
       editor = {
         auto-format = true;
@@ -244,4 +257,14 @@
       ];
     };
   };
+
+  home.activation.helixThemeDefault =
+    lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      run ${pkgs.coreutils}/bin/mkdir -p "${config.xdg.configHome}/helix/themes"
+      if [ ! -e "${autoThemePath}" ]; then
+        run ${pkgs.coreutils}/bin/install -m 644 \
+          ${(import ../lib/helix-auto-theme.nix { inherit pkgs; }) "dark"} \
+          "${autoThemePath}"
+      fi
+    '';
 }

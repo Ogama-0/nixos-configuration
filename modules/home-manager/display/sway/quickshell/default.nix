@@ -148,8 +148,15 @@ in
   # The link is made by modules/lib/quickshell-tree-link.nix rather than a bare
   # `ln -sfn`, because on the first application of this change widgets/ is
   # still a real directory and `ln -sfn` would link *into* it. See that file.
+  # Only link when `widgets` is not already a symlink: darkman owns which tree
+  # it points at, and relinking unconditionally would point a daytime desktop
+  # at the dark tree and force a second quickshell restart on every switch.
+  # The repair path still runs on first application, when it is a real
+  # directory rather than a symlink.
   home.activation.quickshellThemeTree = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    run ${treeLink} "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
+    if [ ! -L "${config.xdg.configHome}/quickshell/widgets" ]; then
+      run ${treeLink} "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
+    fi
   '';
 
   systemd.user.services.quickshell-widgets = {

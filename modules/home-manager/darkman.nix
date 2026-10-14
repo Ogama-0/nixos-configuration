@@ -6,6 +6,9 @@ let
   alacrittyColors = import ../lib/alacritty-colors.nix { inherit pkgs; };
   treeLink = import ../lib/quickshell-tree-link.nix { inherit pkgs; };
 
+  helixAutoTheme = "${config.xdg.configHome}/helix/themes/auto.toml";
+  helixTheme = import ../lib/helix-auto-theme.nix { inherit pkgs; };
+
   bashExe = "${pkgs.bash}/bin/bash";
   coreutils = pkgs.coreutils;
 
@@ -46,6 +49,11 @@ in
     ${bashExe} ${syncScript}
   '';
 
+  # The GTK themes the scripts below select between. Installed here rather
+  # than in display/gtk.nix because that module is shared with `epita`, which
+  # has no darkman and would gain them for nothing.
+  home.packages = with pkgs; [ adw-gtk3 papirus-icon-theme ];
+
   services.darkman = {
     enable = true;
     package = pkgs.darkman;
@@ -59,6 +67,9 @@ in
     settings = { };
 
     darkModeScripts = {
+      helix = ''
+        ${coreutils}/bin/install -m 644 ${helixTheme "dark"} "${helixAutoTheme}"
+      '';
       alacritty = ''
         ${coreutils}/bin/install -m 644 ${alacrittyColors.dark} "${alacrittyColorsPath}"
       '';
@@ -77,6 +88,9 @@ in
     };
 
     lightModeScripts = {
+      helix = ''
+        ${coreutils}/bin/install -m 644 ${helixTheme "light"} "${helixAutoTheme}"
+      '';
       alacritty = ''
         ${coreutils}/bin/install -m 644 ${alacrittyColors.light} "${alacrittyColorsPath}"
       '';
