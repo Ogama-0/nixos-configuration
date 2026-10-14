@@ -86,7 +86,7 @@ in
         size = 14;
       };
 
-      launcher_window.opacity = 0.9;
+      launcher_window.opacity = 0.95;
     };
   };
 }
