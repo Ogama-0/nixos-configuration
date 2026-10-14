@@ -51,26 +51,27 @@
   light = pkgs.writeText "alacritty-colors-light.toml" ''
     [colors.primary]
     background = "#FDF0ED"
-    foreground = "#403C3D"
+    foreground = "#2B2728"  # 13.3:1
 
     [colors.normal]
-    black   = "#201C1D"  # 15.1:1
-    red     = "#C5283D"  # 5.0:1
-    green   = "#2D7D46"  # 4.6:1
-    yellow  = "#846200"  # 5.1:1
-    blue    = "#1E5FA8"  # 5.8:1
-    magenta = "#7B3FA0"  # 6.2:1
-    cyan    = "#15666C"  # 6.0:1
-    white   = "#403C3D"  # 9.8:1
+    black   = "#1A1618"  # 16.1:1
+    red     = "#991026"  #  7.7:1
+    green   = "#14532D"  #  8.2:1
+    yellow  = "#6B4A00"  #  7.2:1
+    blue    = "#0B3D91"  #  9.0:1
+    magenta = "#6B2585"  #  8.5:1
+    cyan    = "#0B4F56"  #  8.3:1
+    white   = "#403C3D"  #  9.8:1
 
     [colors.bright]
-    black   = "#6B6466"
-    red     = "#A61E30"
-    green   = "#226336"
-    yellow  = "#6B4F00"
-    blue    = "#174B85"
-    magenta = "#633280"
-    cyan    = "#105055"
-    white   = "#201C1D"
+    black   = "#5A5456"  #  6.7:1 - comments; muted on purpose, so it is the
+                         #          one slot deliberately below the 7:1 floor
+    red     = "#7A0C1E"  #  9.9:1
+    green   = "#0D3A1F"  # 11.5:1
+    yellow  = "#4F3600"  # 10.1:1
+    blue    = "#072C6B"  # 11.9:1
+    magenta = "#4E1B61"  # 11.4:1
+    cyan    = "#073A3F"  # 11.2:1
+    white   = "#1A1618"  # 16.1:1
   '';
 }
