@@ -2,6 +2,9 @@
 let
   dconfExe = "${pkgs.dconf}/bin/dconf";
 
+  alacrittyColorsPath = "${config.xdg.configHome}/alacritty/colors.toml";
+  alacrittyColors = import ../lib/alacritty-colors.nix { inherit pkgs; };
+
   bashExe = "${pkgs.bash}/bin/bash";
   coreutils = pkgs.coreutils;
 
@@ -55,6 +58,9 @@ in
     settings = { };
 
     darkModeScripts = {
+      alacritty = ''
+        ${coreutils}/bin/install -m 644 ${alacrittyColors.dark} "${alacrittyColorsPath}"
+      '';
       gtk-theme = ''
         ${dconfExe} write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
         ${dconfExe} write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3-dark'"
@@ -69,6 +75,9 @@ in
     };
 
     lightModeScripts = {
+      alacritty = ''
+        ${coreutils}/bin/install -m 644 ${alacrittyColors.light} "${alacrittyColorsPath}"
+      '';
       gtk-theme = ''
         ${dconfExe} write /org/gnome/desktop/interface/color-scheme "'prefer-light'"
         ${dconfExe} write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3'"

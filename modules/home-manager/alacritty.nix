@@ -1,62 +1,38 @@
-{ ... }:
+{ pkgs, lib, config, ... }:
 let
-  green = "#27d796";
-  yellow = "#fab795";
-  orange = "#f1895c";
-  red = "#e95678";
-in {
+  colorsPath = "${config.xdg.configHome}/alacritty/colors.toml";
+  alacrittyColors = import ../lib/alacritty-colors.nix { inherit pkgs; };
+in
+{
   programs.alacritty = {
     enable = true;
 
     settings = {
+      general = {
+        # colors.toml is rewritten at runtime by darkman and so must NOT be
+        # managed by xdg.configFile - a managed path is a read-only store
+        # symlink. It is seeded by the activation script below, following the
+        # same pattern as darkmanTimezoneSync.
+        import = [ colorsPath ];
+        live_config_reload = true;
+      };
+
       window = { decorations = "buttonless"; };
 
       font = {
         size = 13.5;
-        # normal.family = "UbuntuMonoNerdFont";
-        # bold.family = "UbuntuMonoNerdFont";
-        # italic.family = "UbuntuMonoNerdFont";
         normal.family = "JetBrainsMonoNerdFont";
         bold.family = "JetBrainsMonoNerdFont";
         italic.family = "JetBrainsMonoNerdFont";
-        # size = 16.0;
-        # normal.family = "Monocraft";
-        # bold.family = "Monocraft";
-        # italic.family = "Monocraft";
       };
+
       terminal.shell = { program = "fish"; };
-      colors = {
-        # Default colors
-        primary = {
-          background = "#000000";
-          foreground = "#fffaf3";
-        };
-
-        # Normal colors
-        normal = {
-          black = "#222222";
-          inherit green; # red yellow;
-          red = "#ff000f";
-          # green = "#8ce00a";
-          yellow = "#ffb900";
-          blue = "#008df8";
-          magenta = "#FF00FF";
-          cyan = "#00d7eb";
-          white = "#ffffff";
-        };
-
-        # Bright colors
-        bright = {
-          black = "#444444";
-          red = "#ff273f";
-          green = "#abe05a";
-          yellow = "#ffd141";
-          blue = "#0092ff";
-          magenta = "#6c43a5";
-          cyan = "#67ffef";
-          white = "#ffffff";
-        };
-      };
     };
   };
+
+  home.activation.alacrittyColorsDefault =
+    lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      run ${pkgs.coreutils}/bin/mkdir -p "${config.xdg.configHome}/alacritty"
+      run ${pkgs.coreutils}/bin/install -m 644 ${alacrittyColors.dark} "${colorsPath}"
+    '';
 }
