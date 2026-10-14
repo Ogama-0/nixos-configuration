@@ -3,27 +3,26 @@
 let
   allColors = import ../../../../lib/theme-colors.nix;
 
-  # Horizon light puts teal at base0E where the dark palette has it at base0C,
-  # and several light slots fail contrast floors against the light ground, so
-  # the status colours cannot be one base16 slot for both variants. The light
-  # values are measured; see the comments on each.
+  # Semantic status colours, per variant. They are NOT one base16 slot: the
+  # two palettes disagree about where each hue lives, and several light slots
+  # fail their contrast floors outright. The measured values live in
+  # modules/lib/palette.nix under `<mode>.status` - edit them there.
+  #
+  # The alpha prefixes are applied here because QML wants #AARRGGBB: FF for
+  # the opaque bands, CC for the muted light column (base05 at 80%).
+  palette = import ../../../../lib/palette.nix;
+
   statusColorsFor = variant:
-    if variant == "light" then {
-      # Measured against the composited light panel ground (#EBDFDC).
-      upColor = "#FF1D8991";       # the darker teal, clears 3:1 as a filled band
-      degradedColor = "#FFC2490B"; # base09 #F6661E is only 2.4:1; darkened to 3.8:1
-      downColor = "#FFDA103F";
-      mutedColor = "#CC${allColors.light.base05}"; # base04 is 2.5:1 at 11px; this is 4.9:1
-    } else {
-      # Measured against the new dark ground: base00 is pure black, so the
-      # worst case (a white wallpaper through 10%, about #1A1A1A) is more
-      # forgiving than Horizon's #1C1E26 - cyan 9.9:1, orange 7.0:1, red
-      # 4.7:1, muted 8.1:1, against floors of 3:1 for a filled band and
-      # 4.5:1 for the 11px latency column.
-      upColor = "#FF${allColors.dark.base0C}";
-      degradedColor = "#FF${allColors.dark.base09}";
-      downColor = "#FF${allColors.dark.base08}";
-      mutedColor = "#FF${allColors.dark.base04}";
+    let st = palette.${variant}.status;
+        opaque = c: "#FF" + builtins.substring 1 6 c;
+    in {
+      upColor = opaque st.up;
+      degradedColor = opaque st.degraded;
+      downColor = opaque st.down;
+      mutedColor =
+        if variant == "light"
+        then "#CC" + builtins.substring 1 6 st.muted
+        else opaque st.muted;
     };
 
   # Built from the profile so the tailnet hostnames are never hardcoded in QML.
