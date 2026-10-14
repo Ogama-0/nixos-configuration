@@ -46,6 +46,8 @@ let
   # its own component and artwork (see lockFor below).
   qmlTheme = import ../../../../lib/qml-theme.nix;
 
+  treeLink = import ../../../../lib/quickshell-tree-link.nix { inherit pkgs; };
+
   systemctlBin = "${pkgs.systemd}/bin/systemctl";
   corptaFontPath = "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf";
 
@@ -141,11 +143,13 @@ in
   # `quickshell -c widgets` resolves through this symlink, which darkman
   # repoints on every sunrise/sunset. It must NOT be an xdg.configFile entry:
   # that would make it a read-only store symlink darkman could not replace.
-  # Seeded to the dark tree; darkman corrects it on its next run. The -n
-  # matters: without it a second run would create widgets/widgets-dark inside
-  # the existing symlinked directory instead of replacing the link.
+  # Seeded to the dark tree; darkman corrects it on its next run.
+  #
+  # The link is made by modules/lib/quickshell-tree-link.nix rather than a bare
+  # `ln -sfn`, because on the first application of this change widgets/ is
+  # still a real directory and `ln -sfn` would link *into* it. See that file.
   home.activation.quickshellThemeTree = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    run ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
+    run ${treeLink} "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
   '';
 
   systemd.user.services.quickshell-widgets = {

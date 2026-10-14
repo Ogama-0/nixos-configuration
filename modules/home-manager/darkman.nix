@@ -4,6 +4,7 @@ let
 
   alacrittyColorsPath = "${config.xdg.configHome}/alacritty/colors.toml";
   alacrittyColors = import ../lib/alacritty-colors.nix { inherit pkgs; };
+  treeLink = import ../lib/quickshell-tree-link.nix { inherit pkgs; };
 
   bashExe = "${pkgs.bash}/bin/bash";
   coreutils = pkgs.coreutils;
@@ -70,7 +71,7 @@ in
         ${pkgs.mako}/bin/makoctl mode -r light
       '';
       quickshell-theme = ''
-        ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
+        ${treeLink} "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
         ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets.service || true
       '';
     };
@@ -88,7 +89,7 @@ in
         ${pkgs.mako}/bin/makoctl mode -a light
       '';
       quickshell-theme = ''
-        ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-light" "${config.xdg.configHome}/quickshell/widgets"
+        ${treeLink} "${config.xdg.configHome}/quickshell/widgets-light" "${config.xdg.configHome}/quickshell/widgets"
         ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets.service || true
       '';
     };
