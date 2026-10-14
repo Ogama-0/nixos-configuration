@@ -45,8 +45,14 @@ Item {
         session.send({ type: "create_session", username: username })
     }
 
+    // Latched once start_session is away: greetd is tearing the greeter
+    // down from here on, and nothing else should be sent.
+    property bool starting: false
+
     // The greeter exits and greetd starts the real session.
     function startSession() {
+        if (session.starting) return
+        session.starting = true
         session.send({ type: "start_session", cmd: [ "@swayBin@" ] })
     }
 
@@ -104,6 +110,13 @@ Item {
                 if (message.type === "success") {
                     session.pendingPassword = ""
                     session.busy = false
+                    // greetd acks start_session with a success of its own.
+                    // That is the ack for the session already underway, not
+                    // a fresh authentication - without this guard
+                    // success -> authenticated -> startSession -> success
+                    // spins forever, and in production is only cut short by
+                    // greetd killing the greeter out from under it.
+                    if (session.starting) return
                     session.authenticated()
                     return
                 }

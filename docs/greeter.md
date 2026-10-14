@@ -41,6 +41,15 @@ cannot log into. Do not remove it. Note it only covers quickshell failing to
 *launch* — a surface that starts and then misbehaves is not covered, which is
 why `GreetdSession` handles the helper dying mid-authentication itself.
 
+**The fallback is gated on a marker file, not on quickshell's exit status.**
+greetd kills the greeter the instant it honours `start_session`, so a
+successful login also ends with quickshell exiting non-zero — the two cases are
+indistinguishable from the status alone. `greetd-proxy` creates
+`$GREETD_STARTED_MARKER` just before it relays `start_session`; `greeter-launch`
+exports that path and only execs `agreety` when the marker is absent. Keying off
+the exit status instead flashed agreety onto VT1 on *every* login, where it
+promptly crashed as the real session took the VT.
+
 `Ctrl+Alt+F2` is a plain getty. That is the real last resort.
 
 ## The constraints that bite
@@ -101,6 +110,33 @@ move focus out from under the ring and leave `focusedField` stale.
 - Quickshell appears to discard a `Process`'s stderr, and `console.log` does not
   reliably reach the journal. To observe something, make it change the UI or
   write to a file.
+- **`onAccepted` handing focus to another field lets the same Return land
+  twice.** Enter on the username field focuses the password field *during* that
+  keypress, so holding Enter (or double-tapping it) auto-repeats straight into
+  `passwordField.onAccepted` — once per repeat, ~25×/second. Each one submitted
+  an empty password, and greetd takes an empty password to PAM, which rejects it
+  and then holds everything for its multi-second fail delay: one stray Enter
+  bought a bogus "wrong password" and a visible stall on the way in. Both
+  surfaces now refuse an empty password in `submitPassword()`. Any new field
+  that submits on Enter needs the same thought.
+- **Do not disable an input to mean "busy".** The password field used to be
+  `enabled: !session.busy`. PAM's fail delay is multiple seconds, so a
+  rejected attempt left the field disabled and unfocused for that whole
+  window, silently eating everything typed into it - no dots, no warning.
+  Anyone who starts retyping before the rejection clears submits a truncated
+  password and is rejected a second time, which is indistinguishable from
+  mistyping twice. The field now stays live; `submitPassword()`'s own busy
+  guard is what prevents a second submit, and `root.keepAfterRejection()`
+  strips only the characters that were actually submitted so the retry
+  survives. Both surfaces compute it from `submittedText`, which neither
+  failure handler mutates, so the two handlers agree whichever order Qt runs
+  them in.
+- **A reply is not always a new event.** greetd acks `start_session` with a
+  plain `{"type":"success"}`, the same shape as an authentication success. The
+  surface treated it as one and re-fired `authenticated()`, so
+  `success → authenticated → startSession → success` spun as fast as the pipe
+  allowed; in production only greetd killing the greeter cut it short.
+  `GreetdSession.starting` latches once `start_session` is away.
 
 ## Previewing without a rebuild or a reboot
 

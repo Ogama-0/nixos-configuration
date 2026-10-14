@@ -160,14 +160,57 @@ def recv_message(sock):
     return json.loads(payload.decode("utf-8"))
 
 
-def run_bridge(sock, stdin, stdout):
+def _trace(path, text):
+    """Append one debug line. Never raises, never records a password.
+
+    Temporary instrumentation for diagnosing rejected logins: it answers
+    "did the surface send what the user typed" without putting a secret on
+    disk. Only lengths and message types are written.
+    """
+    if not path:
+        return
+    try:
+        with open(path, "a") as handle:
+            handle.write("%s %s\n" % (datetime.datetime.now().isoformat(timespec="milliseconds"), text))
+    except OSError:
+        pass
+
+
+def _trace_summary(obj, direction):
+    """Describe one message for the trace, with secrets reduced to a length."""
+    kind = obj.get("type", "?")
+    if kind == "post_auth_message_response":
+        response = obj.get("response")
+        if response is None:
+            return "%s post_auth_message_response response=absent" % direction
+        return "%s post_auth_message_response len=%d" % (direction, len(response))
+    if kind == "create_session":
+        return "%s create_session username=%r" % (direction, obj.get("username"))
+    if kind == "auth_message":
+        return "%s auth_message type=%s" % (direction, obj.get("auth_message_type"))
+    if kind == "error":
+        return "%s error %s: %s" % (direction, obj.get("error_type"), obj.get("description"))
+    return "%s %s" % (direction, kind)
+
+
+def run_bridge(sock, stdin, stdout, started_marker=None, trace_path=None):
     """Pump newline-delimited JSON from stdin to greetd and back to stdout.
 
     Tracks whether a session is pending so a retry after a failed password
     cancels first; greetd rejects create_session while one is open, and the
     QML has no way to know that.
+
+    `started_marker`, when given, is a path created the moment a start_session
+    is about to be relayed. greetd kills the greeter as soon as it honours
+    that request, so the surface exiting non-zero is the normal end of a
+    *successful* login, indistinguishable from the surface failing to start.
+    greeter-launch needs to tell those apart - otherwise it drops to the
+    agreety fallback on every login - and this file is the one place that
+    knows a session was really requested. Written before the request goes
+    out, so there is no race against greetd tearing us down.
     """
     session_pending = False
+    _trace(trace_path, "-- bridge up")
 
     def emit(obj):
         stdout.write(json.dumps(obj) + "\n")
@@ -180,7 +223,10 @@ def run_bridge(sock, stdin, stdout):
         try:
             request = json.loads(line)
         except json.JSONDecodeError:
+            _trace(trace_path, "-> UNPARSEABLE len=%d" % len(line))
             continue
+
+        _trace(trace_path, _trace_summary(request, "->"))
 
         if request.get("type") == "create_session":
             if not request.get("username"):
@@ -197,8 +243,19 @@ def run_bridge(sock, stdin, stdout):
                 recv_message(sock)
                 session_pending = False
 
+        if request.get("type") == "start_session" and started_marker:
+            try:
+                with open(started_marker, "w"):
+                    pass
+            except OSError:
+                # A marker we cannot write only costs a spurious fallback;
+                # it must never stop the session from starting.
+                pass
+
         send_message(sock, request)
         response = recv_message(sock)
+        if response is not None:
+            _trace(trace_path, _trace_summary(response, "<-"))
         if response is None:
             emit(
                 {
@@ -287,7 +344,13 @@ def main(argv=None):
         return 0
 
     if args.mock:
-        run_bridge(_MockGreetd(args.mock).client, sys.stdin, sys.stdout)
+        run_bridge(
+            _MockGreetd(args.mock).client,
+            sys.stdin,
+            sys.stdout,
+            os.environ.get("GREETD_STARTED_MARKER"),
+            os.environ.get("GREETD_TRACE"),
+        )
         return 0
 
     sock_path = os.environ.get("GREETD_SOCK")
@@ -296,7 +359,13 @@ def main(argv=None):
         return 1
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.connect(sock_path)
-        run_bridge(sock, sys.stdin, sys.stdout)
+        run_bridge(
+            sock,
+            sys.stdin,
+            sys.stdout,
+            os.environ.get("GREETD_STARTED_MARKER"),
+            os.environ.get("GREETD_TRACE"),
+        )
     return 0
 
 

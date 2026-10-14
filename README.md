@@ -63,6 +63,26 @@ nix shell github:Ogama-0/nixos-configuration#<pkg>
 
 Available: `librepods` ([kavishdevar's package](https://github.com/kavishdevar/librepods))
 
+## Known issues
+
+**Greeter login is improved but not fully fixed.** Logging in used to show a
+spurious "wrong password", stall for several seconds, then flash a TTY before
+Sway started. Three real bugs behind that are fixed (see `docs/greeter.md`):
+
+- a held or double-tapped Enter on the username field submitted an *empty*
+  password, which PAM rejected and then punished with its fail delay;
+- the `agreety` fallback fired on **every** login, because greetd kills the
+  greeter on success so a successful login also exits non-zero;
+- the password field went disabled during PAM's fail delay and silently ate
+  anything typed into it, turning one mistype into two rejections.
+
+The TTY flash is gone and logins are much cleaner, but it has not yet been
+confirmed that the first-login rejection is gone for good. While that stays
+open, `debugTrace = true` in `modules/nixosconf/greetd.nix` writes
+`/tmp/greeter-trace.log` (message types, timings and password *lengths* -
+never a password) and `/tmp/greeter-quickshell.log`. Set it to `false` and
+rebuild to turn both off.
+
 ## TODO
 
 ### personal

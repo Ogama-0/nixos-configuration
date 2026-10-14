@@ -21,6 +21,19 @@ Scope {
     property string currentText: ""
     property bool showFailure: false
 
+    // What the user typed *after* a rejected attempt went out. The password
+    // field stays live through PAM's multi-second fail delay, so anything
+    // typed while waiting is the opening of their retry, not part of the
+    // attempt being rejected - clearing the whole field would swallow it
+    // with no dots and no warning, which reads exactly like a mistype.
+    property string submittedText: ""
+
+    function keepAfterRejection(text) {
+        return text.indexOf(root.submittedText) === 0
+            ? text.substring(root.submittedText.length)
+            : ""
+    }
+
     // The focus ring: 0 username, 1 password, 2-4 the power controls. Tab
     // walks it forwards, Shift+Tab backwards, both wrapping, and Up/Down do
     // the same - a greeter runs before any assistive setup exists, so every
@@ -78,7 +91,10 @@ Scope {
             // first means the field's write is a no-op change that emits
             // nothing. LockLight.qml orders it the same way, for the same
             // reason.
-            root.currentText = ""
+            // Both this and passwordField's own handler recompute the kept
+            // text from submittedText, which neither of them touches, so the
+            // result is the same whichever Qt runs first.
+            root.currentText = root.keepAfterRejection(root.currentText)
             root.showFailure = true
         }
     }
@@ -204,6 +220,15 @@ Scope {
 
         function submitPassword() {
             if (session.busy) return
+            // Enter on the username field hands focus here mid-keypress, so
+            // that same Return - held down, or double-tapped - repeats into
+            // this field and submits an empty password. greetd takes it to
+            // PAM, which rejects it and holds the next attempt for its
+            // several-second fail delay, so one stray Enter costs a bogus
+            // "wrong password" and a visible stall. An empty password is
+            // never a real attempt; drop it here rather than pay for it.
+            if (passwordField.text === "") return
+            root.submittedText = passwordField.text
             session.authenticate(usernameField.text.trim(), passwordField.text)
         }
 
@@ -493,7 +518,9 @@ Scope {
                             font.family: "Nunito"
                             font.bold: true
                             echoMode: TextInput.Password
-                            enabled: !session.busy
+                            // Deliberately not disabled while session.busy: going disabled drops
+                            // focus and silently eats everything typed during PAM's fail delay.
+                            // submitPassword()'s own busy guard is what stops a second submit.
 
                             // Hides the I-beam mouse cursor over the field -
                             // HoverHandler tracks hover without consuming
@@ -527,7 +554,7 @@ Scope {
                                 target: session
                                 function onFailedChanged() {
                                     if (!session.failed) return
-                                    passwordField.text = ""
+                                    passwordField.text = root.keepAfterRejection(passwordField.text)
                                     root.focusSlot(1)
                                 }
                             }

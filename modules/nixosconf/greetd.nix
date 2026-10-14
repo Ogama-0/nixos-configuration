@@ -10,6 +10,13 @@ let
   qmlTheme = import ../lib/qml-theme.nix;
   palettes = import ../lib/theme-colors.nix;
 
+  # TEMPORARY instrumentation for the "first login is always rejected"
+  # investigation. Records message types, timings and password *lengths* -
+  # never a password - to /tmp/greeter-trace.log, plus quickshell's own
+  # output to /tmp/greeter-quickshell.log. Flip to false and rebuild to
+  # remove both; nothing else depends on it.
+  debugTrace = true;
+
   greetdProxy = "${lpkgs.greetd-proxy}/bin/greetd-proxy";
   swayBin = "${pkgs.sway}/bin/sway";
   swaymsgBin = "${pkgs.sway}/bin/swaymsg";
@@ -39,6 +46,14 @@ let
 
   # If quickshell cannot start, fall back to a text greeter rather than
   # leaving the machine with no way in. This is the primary lockout guard.
+  #
+  # The exit status cannot be the trigger: greetd kills the greeter the
+  # moment it honours start_session, so a *successful* login also ends with
+  # quickshell exiting non-zero. Keying off that put agreety on VT1 for a
+  # moment on every single login (it then crashed as the session took over).
+  # greetd-proxy drops the marker just before it relays start_session, so
+  # its absence means no session was ever requested - the one case the
+  # fallback is for.
   launcher = pkgs.writeShellScript "greeter-launch" ''
     VARIANT=$(${greetdProxy} --theme || echo dark)
     case "$VARIANT" in
@@ -46,7 +61,16 @@ let
       *)     SURFACE=/etc/greeter/GreeterDark.qml ;;
     esac
 
-    if ! ${upkgs.quickshell}/bin/quickshell -p "$SURFACE"; then
+    GREETD_STARTED_MARKER="$(${pkgs.coreutils}/bin/mktemp -d)/started"
+    export GREETD_STARTED_MARKER
+${lib.optionalString debugTrace ''
+    GREETD_TRACE=/tmp/greeter-trace.log
+    export GREETD_TRACE
+    echo "-- greeter-launch starting surface $SURFACE" >> "$GREETD_TRACE"
+''}
+    ${upkgs.quickshell}/bin/quickshell -p "$SURFACE" ${lib.optionalString debugTrace ">> /tmp/greeter-quickshell.log 2>&1"} || true
+
+    if [ ! -e "$GREETD_STARTED_MARKER" ]; then
       exec ${pkgs.greetd}/bin/agreety --cmd ${swayBin}
     fi
   '';

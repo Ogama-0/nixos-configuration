@@ -284,3 +284,29 @@ def test_bridge_ignores_malformed_input_lines():
     )
     assert out[0]["type"] == "auth_message"
     assert len(fake.received) == 1
+
+
+def test_bridge_marks_that_a_session_was_started(tmp_path):
+    # greeter-launch reads this marker to tell "the surface exited because
+    # the login succeeded" from "the surface never came up", and only falls
+    # back to agreety for the latter.
+    marker = tmp_path / "started"
+    fake = FakeGreetd("hunter2")
+    stdin = io.StringIO(
+        json.dumps({"type": "create_session", "username": "ogama"}) + "\n"
+        + json.dumps({"type": "post_auth_message_response", "response": "hunter2"}) + "\n"
+        + json.dumps({"type": "start_session", "cmd": ["sway"]}) + "\n"
+    )
+    proxy.run_bridge(fake.client, stdin, io.StringIO(), str(marker))
+    assert marker.exists()
+
+
+def test_bridge_leaves_no_marker_when_no_session_is_started(tmp_path):
+    marker = tmp_path / "started"
+    fake = FakeGreetd("hunter2")
+    stdin = io.StringIO(
+        json.dumps({"type": "create_session", "username": "ogama"}) + "\n"
+        + json.dumps({"type": "post_auth_message_response", "response": "wrong"}) + "\n"
+    )
+    proxy.run_bridge(fake.client, stdin, io.StringIO(), str(marker))
+    assert not marker.exists()
