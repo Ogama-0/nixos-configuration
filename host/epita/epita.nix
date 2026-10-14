@@ -6,7 +6,7 @@
     ../../modules/home-manager/vim.nix
     ../../modules/home-manager/display/font.nix
     ../../modules/home-manager/display/i3
-    ../../modules/home-manager/joplin-desktop.nix
+    # ../../modules/home-manager/joplin-desktop.nix
     # ../../modules/home-manager/kitty.nix
     ../../modules/home-manager/display/gtk.nix
     ../../modules/home-manager/alacritty.nix

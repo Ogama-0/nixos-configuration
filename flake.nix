@@ -30,7 +30,7 @@
     {
       self,
       nixpkgs,
-      # nixpkgs-unstable,
+      nixpkgs-unstable,
       home-manager,
       nixos-hardware,
       stylix,
@@ -53,11 +53,14 @@
         greetd-proxy = self.packages.${system}.greetd-proxy;
         # free-claude-code = self.packages.${system}.free-claude-code;
       };
-      upkgs = {
-        zen-browser = self.inputs.zen-browser.packages.${pkgs.system}.default;
-        quickshell = self.inputs.quickshell.packages.${pkgs.system}.default;
-        # mindustry = self.inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.mindustry;
-      };
+      upkgs = (
+        {
+          zen-browser = self.inputs.zen-browser.packages.${pkgs.system}.default;
+          quickshell = self.inputs.quickshell.packages.${pkgs.system}.default;
+          # mindustry = self.inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.mindustry;
+        }
+        // import nixpkgs-unstable { inherit system; }
+      );
 
     in
     {

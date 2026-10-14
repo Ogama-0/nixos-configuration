@@ -25,6 +25,7 @@
     gimp
     # bitwarden-desktop elecron issue : https://github.com/NixOS/nixpkgs/issues/528213
     nautilus
+    upkgs.joplin-desktop
     # stremio
     qbittorrent
     notify-desktop

@@ -12,7 +12,7 @@
     ../../modules/home-manager/display/font.nix
     ../../modules/home-manager/zed-editor.nix
     ../../modules/home-manager/display/gtk.nix
-    ../../modules/home-manager/joplin-desktop.nix
+    # ../../modules/home-manager/joplin-desktop.nix
     ../../modules/home-manager/zellij
     ../../modules/home-manager/firefox.nix
     ../../modules/home-manager/stylix.nix
