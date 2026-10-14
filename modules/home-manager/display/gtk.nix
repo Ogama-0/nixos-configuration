@@ -1,19 +1,11 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, ... }:
 {
   home.packages = with pkgs; [ dconf ];
 
-  dconf = {
-    enable = true;
-    settings = {
-      "org/gnome/desktop/interface" = {
-        color-scheme = lib.mkForce (
-          if config.stylix.polarity == "dark" then "prefer-dark"
-          else if config.stylix.polarity == "light" then "prefer-light"
-          else "default"
-        );
-      };
-    };
-  };
+  # color-scheme is deliberately not set here: darkman owns that key and
+  # rewrites it on every sunrise/sunset (see modules/home-manager/darkman.nix).
+  # Setting it statically made each activation stomp the current mode.
+  dconf.enable = true;
 
   gtk = {
     enable = true;

@@ -4,7 +4,7 @@
     ../../modules/home-manager/helix.nix
     ../../modules/home-manager/sh.nix
     ../../modules/home-manager/display/font.nix
-    ../../modules/home-manager/display/i3.nix
+    ../../modules/home-manager/display/i3
     ../../modules/home-manager/kitty.nix
     ../../modules/home-manager/wakapi.nix
 

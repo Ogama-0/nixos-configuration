@@ -120,6 +120,7 @@
             cfg = cfg-server;
             inherit inputs;
             inherit pkgs;
+            inherit lpkgs;
           };
           inherit pkgs;
           modules = [
@@ -134,6 +135,7 @@
             inherit pkgs;
             cfg = cfg-epita;
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
+            inherit lpkgs;
           };
           inherit pkgs;
           modules = [
@@ -147,6 +149,7 @@
             inherit pkgs;
             cfg = cfg-epita;
             wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
+            inherit lpkgs;
           };
           inherit pkgs;
           modules = [

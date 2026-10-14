@@ -10,7 +10,6 @@
     # ../../modules/home-manager/kitty.nix
     ../../modules/home-manager/display/gtk.nix
     ../../modules/home-manager/alacritty.nix
-    ../../modules/home-manager/display/rofi.nix
     ../../modules/home-manager/zellij/default.nix
     ../../modules/home-manager/wakapi.nix
     ./tools.nix
