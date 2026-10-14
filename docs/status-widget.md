@@ -167,11 +167,12 @@ centre off its row's centre, which is the one thing the spine has to get right.
 
 ## Colour
 
-"Up" is Horizon's teal, **not `@greenColor@`/`base0B`** — that slot is a peach
-(`#EFAF8E`) in the dark scheme, too close to the red to read at band size. Teal
-is `base0C` in dark but `base0E` in light, so no single base16 slot means "up"
-in both; the semantic colours are selected by `config.stylix.polarity` in
-`default.nix`, the same way `laserColor` already is.
+The two palettes disagree about where each hue lives, so no single base16 slot
+means "up" in both: the dark palette (now the terminal palette, not Horizon)
+puts cyan at `base0C`, while Horizon light puts teal at `base0E` and a
+red-orange at `base0C`. The semantic colours are therefore chosen per variant
+by `statusColorsFor` in `default.nix`, which the two generated trees call with
+`"dark"` and `"light"` — the same way `laserColor` is selected per variant.
 
 Contrast is measured against each theme's *composited* panel ground, not the
 raw base16 value. Bands are UI components and need 3:1; the muted column is
