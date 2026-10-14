@@ -9,6 +9,20 @@ let
   helixAutoTheme = "${config.xdg.configHome}/helix/themes/auto.toml";
   helixTheme = import ../lib/helix-auto-theme.nix { inherit pkgs; };
 
+  # helix re-reads its config and theme on SIGUSR1 (verified: it logs
+  # "failed to load theme" when sent one after the theme file is changed).
+  # Without this an open editor keeps the old theme while the terminal's ANSI
+  # palette flips underneath it, which renders as badly mismatched colours.
+  #
+  # The matcher must cover `.hx-wrapped`: the nixpkgs wrapper means comm is
+  # NOT `hx`, so a bare `pkill -x hx` silently matches nothing - the same
+  # truncated-comm trap documented in docs/adding-a-server-service.md.
+  # `|| true` because no editor running is the normal case, and darkman must
+  # not report a failed transition for it.
+  helixReload = ''
+    ${pkgs.procps}/bin/pkill -x -USR1 '(\.hx-wrapped|hx)' || true
+  '';
+
   bashExe = "${pkgs.bash}/bin/bash";
   coreutils = pkgs.coreutils;
 
@@ -69,6 +83,7 @@ in
     darkModeScripts = {
       helix = ''
         ${coreutils}/bin/install -m 644 ${helixTheme "dark"} "${helixAutoTheme}"
+        ${helixReload}
       '';
       alacritty = ''
         ${coreutils}/bin/install -m 644 ${alacrittyColors.dark} "${alacrittyColorsPath}"
@@ -90,6 +105,7 @@ in
     lightModeScripts = {
       helix = ''
         ${coreutils}/bin/install -m 644 ${helixTheme "light"} "${helixAutoTheme}"
+        ${helixReload}
       '';
       alacritty = ''
         ${coreutils}/bin/install -m 644 ${alacrittyColors.light} "${alacrittyColorsPath}"
