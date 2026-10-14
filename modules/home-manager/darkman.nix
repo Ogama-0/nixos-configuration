@@ -57,6 +57,8 @@ in
     darkModeScripts = {
       gtk-theme = ''
         ${dconfExe} write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
+        ${dconfExe} write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3-dark'"
+        ${dconfExe} write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'"
       '';
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -r light
@@ -69,6 +71,8 @@ in
     lightModeScripts = {
       gtk-theme = ''
         ${dconfExe} write /org/gnome/desktop/interface/color-scheme "'prefer-light'"
+        ${dconfExe} write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3'"
+        ${dconfExe} write /org/gnome/desktop/interface/icon-theme "'Papirus-Light'"
       '';
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -a light
