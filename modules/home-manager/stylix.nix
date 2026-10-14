@@ -23,7 +23,7 @@ in
     targets.fish.enable = false;
     targets.mako.enable = false;
     targets.starship.enable = false;
-    targets.tofi.enable = false;
+    targets.vicinae.enable = false;
     targets.swaync.enable = false;
     targets.waybar.enable = false;
 

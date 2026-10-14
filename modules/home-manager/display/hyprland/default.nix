@@ -7,7 +7,6 @@ in
   imports = [
     ./animation.nix
     ./hyprpolkitagent.nix
-    # ../tofi.nix
     ./waybar.nix
     ./cursor.nix
     ./swaync.nix

@@ -22,7 +22,7 @@ in
     ./mako.nix
     ./quickshell
     # ./idle.nix
-    ../tofi.nix
+    ../vicinae.nix
     ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix
   ];
   home.packages = with pkgs; [

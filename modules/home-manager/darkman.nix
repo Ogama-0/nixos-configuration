@@ -38,7 +38,7 @@ let
   '';
 in
 {
-  home.activation.darkmanTimezoneSync = lib.hm.dag.entryAfter [ "linkGeneration" "tofiConfigDefault" "quickshellLockDefault" ] ''
+  home.activation.darkmanTimezoneSync = lib.hm.dag.entryAfter [ "linkGeneration" "quickshellLockDefault" ] ''
     ${bashExe} ${syncScript}
   '';
 
@@ -61,9 +61,6 @@ in
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -r light
       '';
-      tofi = ''
-        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-dark" "${config.xdg.configHome}/tofi/config"
-      '';
       quickshell-lock-theme = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-dark.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
       '';
@@ -75,9 +72,6 @@ in
       '';
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -a light
-      '';
-      tofi = ''
-        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/tofi/config-light" "${config.xdg.configHome}/tofi/config"
       '';
       quickshell-lock-theme = ''
         ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-light.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
