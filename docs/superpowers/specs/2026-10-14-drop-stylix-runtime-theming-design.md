@@ -64,10 +64,71 @@ stylix reference in the tree is personal-only: `stylix.nix`, `firefox.nix`,
 
 ## Single source of truth
 
-`modules/lib/theme-colors.nix` already holds both Horizon dark and light
-palettes and is already the declared place to change the palette. It becomes the
-only palette source. `modules/lib/qml-theme.nix` already takes `colors` as a
+`modules/lib/theme-colors.nix` is already the declared place to change the
+palette and already holds a `dark` and a `light` attrset. It becomes the only
+palette source. `modules/lib/qml-theme.nix` already takes `colors` as a
 parameter, which is what makes the two-tree approach below free.
+
+## System dark palette: the terminal palette replaces Horizon dark
+
+Decision: light mode stays **Horizon light**, unchanged. Dark mode system-wide
+becomes the hand-picked palette currently living in `alacritty.nix` — pure black
+ground, warm off-white text, vivid accents. `theme-colors.nix`'s `dark` attrset
+is replaced wholesale; its `light` attrset is untouched. The file's header
+comment (which currently says both palettes were transcribed from
+`pkgs.base16-schemes`' horizon yaml files) must be corrected to describe the new
+split provenance.
+
+The source palette is ANSI-16; every consumer wants base16, which additionally
+needs a greyscale ramp and an orange and spare slot that ANSI has no equivalent
+for. Two values in `alacritty.nix`'s `let` block — `orange = "#f1895c"` and
+`red = "#e95678"` — are currently defined but never referenced, and fill two of
+those gaps.
+
+| slot | value | provenance |
+|---|---|---|
+| `base00` | `000000` | terminal background |
+| `base01` | `222222` | terminal normal black |
+| `base02` | `444444` | terminal bright black |
+| `base03` | `6A6A6A` | **derived**, continues the 00 -> 22 -> 44 ramp |
+| `base04` | `B5B0AA` | **derived**, dim foreground, warm-tinted to match base05 |
+| `base05` | `FFFAF3` | terminal foreground |
+| `base06` | `FFFCF8` | **derived** |
+| `base07` | `FFFFFF` | terminal white |
+| `base08` | `FF273F` | terminal **bright** red |
+| `base09` | `F1895C` | the unused `orange` from the `let` block |
+| `base0A` | `FFB900` | terminal yellow |
+| `base0B` | `27D796` | terminal green |
+| `base0C` | `00D7EB` | terminal cyan |
+| `base0D` | `008DF8` | terminal blue — the UI accent |
+| `base0E` | `6C43A5` | terminal **bright** magenta |
+| `base0F` | `E95678` | the unused `red` from the `let` block |
+
+Three deliberate substitutions, chosen so the palette survives being used for UI
+chrome rather than just text:
+
+- `base08` takes the *bright* red `#FF273F` rather than normal `#FF000F`;
+  near-pure red is punishing on borders and status bands.
+- `base0E` takes the *bright* magenta `#6C43A5` rather than normal `#FF00FF`;
+  pure fuchsia is unusable as a UI colour.
+- Only `base03`, `base04` and `base06` are invented. Everything else is a colour
+  already in use on this machine.
+
+`base0D` is the UI accent — bar clock text, mako border, vicinae accent,
+lockscreen highlights. It becomes blue `#008DF8`, where today it is Horizon's
+pink-red `#DF5273`. This was chosen explicitly over keeping a pink accent, in
+favour of fidelity to the terminal palette. Expect the bar, notifications and
+launcher accent to read blue in dark mode.
+
+Consumers affected by this palette swap, beyond the ones listed per-surface
+below: the **greeter**. `modules/nixosconf/greetd.nix` renders through
+`qml-theme.nix` with a variant out of `theme-colors.nix`, so the login screen
+changes appearance too. That is intended, not collateral.
+
+Note that alacritty's own dark `colors.toml` stays a **verbatim** copy of
+today's settings rather than being regenerated from the new base16 slots. The
+base16 mapping deliberately drops normal red `#FF000F` and normal magenta
+`#FF00FF`, and the terminal should keep its full original ANSI set.
 
 ## Design, per surface
 
@@ -198,19 +259,43 @@ Already has dark colours, a `mode=light` block fed from `theme-colors.nix`, and
 working darkman scripts. The only change: its two `config.stylix.fonts.*`
 references become the literal `"Inter 14"` (the values stylix was supplying).
 
-## Light-palette contrast
+## Contrast
 
-Already solved and must be preserved, not recomputed. `quickshell/default.nix`
-carries hand-measured light-mode values because Horizon puts teal at `base0C` in
-dark but `base0E` in light, and several light slots fail contrast floors:
+### Light mode: preserve, do not recompute
+
+Already solved and must be inherited as-is. `quickshell/default.nix` carries
+hand-measured light-mode values because Horizon puts teal at `base0C` in dark
+but `base0E` in light, and several light slots fail contrast floors:
 
 - `upColor` light `#FF1D8991` (the darker teal, clears 3:1 on the light ground)
 - `degradedColor` light `#FFC2490B` (base09 `#F6661E` is only 2.4:1; darkened to 3.8:1)
 - `downColor` light `#FFDA103F`
 - `mutedColor` light `#CC${base05}` (base04 is 2.5:1 at 11px; this reaches 4.9:1)
 
-The light tree inherits these as-is. The `polarity`-driven conditionals that
+The light tree takes these unchanged. The `polarity`-driven conditionals that
 select them are replaced by per-tree constants.
+
+### Dark mode: re-measured for the new palette
+
+The old dark values were Horizon's and were measured against a composited ground
+of `#1A1C23`. The new `base00` is pure black, so the status panel ground
+(`@panelBg@` = `#E6` over the wallpaper) is darker, and the worst case — a fully
+white wallpaper showing through 10% — is about `#1A1A1A`. Ratios against that
+worst case, with the floors the existing comments establish (3:1 for filled
+bands, 4.5:1 for the 11px latency column):
+
+| token | new dark value | source | ratio | floor | verdict |
+|---|---|---|---|---|---|
+| `upColor` | `#FF00D7EB` | `base0C` cyan | 9.9:1 | 3:1 | pass |
+| `degradedColor` | `#FFF1895C` | `base09` orange | 7.0:1 | 3:1 | pass |
+| `downColor` | `#FFFF273F` | `base08` red | 4.7:1 | 3:1 | pass |
+| `mutedColor` | `#FFB5B0AA` | `base04` | 8.1:1 | 4.5:1 | pass |
+
+All four clear their floors with margin, because pure black is a more forgiving
+ground than Horizon's `#1C1E26`. Unlike the light palette, dark mode therefore
+needs no hand-tuned deviations from its base16 slots — the straight slot values
+are sufficient. These ratios should be spot-checked during implementation rather
+than trusted blindly.
 
 ## Verification
 
@@ -226,11 +311,20 @@ requires, in order:
    each surface actually flips: GTK app chrome and icons, alacritty (existing
    window and a new one), the quickshell bar and widgets, the lockscreen, mako
    notifications, vicinae, zen.
-5. `journalctl --user -u quickshell-widgets` clean across both switches.
+5. Confirm the new dark palette landed where it should: the bar clock, mako
+   border and vicinae accent should read blue `#008DF8` in dark mode, and the
+   terminal's own ANSI set should be visibly unchanged from today.
+6. Check the **greeter** separately — it renders from `theme-colors.nix` through
+   `greetd.nix` and so changes with the palette, but it is a NixOS-side surface
+   that a home-manager switch does not touch. Per `docs/greeter.md`, it can be
+   previewed without rebooting.
+7. `journalctl --user -u quickshell-widgets` clean across both switches.
 
 ## Out of scope
 
 - Any change to `epita`, `epita-light`, or `oserv` beyond the flake input going away.
 - The `Theme.qml` singleton refactor (rejected above).
-- Changing the Horizon palette itself, or the lock screens' artwork.
+- Changing the **light** palette: Horizon light stays exactly as it is. (The
+  dark palette is replaced — see the system dark palette section.)
+- The lock screens' artwork.
 - Making sway client borders visible.
