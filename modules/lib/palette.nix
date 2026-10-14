@@ -6,8 +6,9 @@
 #   ui       -> the quickshell bar, widgets and lockscreen, the greeter, mako,
 #               and vicinae, via modules/lib/theme-colors.nix
 #   terminal -> alacritty, via modules/lib/alacritty-colors.nix - and through
-#               alacritty, every TUI app (helix, bat, yazi, ...) since they
-#               draw with the terminal's own ANSI colours
+#               alacritty, most TUI apps (bat, yazi, ...) since they draw with
+#               the terminal's own ANSI colours. helix is the exception: it
+#               uses real themes instead, see modules/lib/helix-auto-theme.nix
 #   status   -> the oserv status widget, via the quickshell module
 #
 # Two things NOT to change casually:
