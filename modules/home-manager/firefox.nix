@@ -73,15 +73,6 @@ in
 
   home.sessionVariables.BROWSER = lib.getExe config.programs.zen-browser.package;
 
-  stylix.targets.firefox = {
-    enable = false;
-    profileNames = [ "default" ];
-  };
-  stylix.targets.zen-browser = {
-    # enable = false;
-    profileNames = [ "default" ];
-  };
-
   programs.zen-browser = {
     enable = true;
 

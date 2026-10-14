@@ -14,8 +14,6 @@
     zen-browser.inputs.nixpkgs.follows = "nixpkgs-unstable";
     zen-browser.inputs.home-manager.follows = "home-manager";
 
-    stylix.url = "github:nix-community/stylix/release-26.05";
-    stylix.inputs.nixpkgs.follows = "nixpkgs";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
@@ -33,7 +31,6 @@
       nixpkgs-unstable,
       home-manager,
       nixos-hardware,
-      stylix,
       sops-nix,
       ...
     }@inputs:
@@ -109,7 +106,6 @@
           inherit pkgs;
           modules = [
             ./host/personal/home.nix
-            stylix.homeModules.stylix
             sops-nix.homeManagerModules.sops
           ];
         };

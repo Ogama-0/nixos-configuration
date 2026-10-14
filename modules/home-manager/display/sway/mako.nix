@@ -10,8 +10,10 @@ in
       max-visible = 3;
       default-timeout = 7000;
 
-      font =
-        "${config.stylix.fonts.sansSerif.name} ${toString config.stylix.fonts.sizes.popups}";
+      # Literal because the font no longer comes from a global theming
+      # module; these are the values it used to supply (sans-serif name and
+      # the popup size). display/font.nix installs Inter.
+      font = "Inter 14";
 
       background-color = "#${colors.dark.base00}";
       text-color = "#${colors.dark.base05}";
