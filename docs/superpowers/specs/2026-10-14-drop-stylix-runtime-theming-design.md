@@ -178,20 +178,36 @@ Making the terminal switch makes every TUI app switch with it.
   of `programs.alacritty.settings.colors` unchanged, so dark mode looks exactly
   as it does now. stylix never themed alacritty
   (`targets.alacritty.enable = false`), so there is nothing to recover here.
-  The light variant is derived from `theme-colors.nix`'s `light` palette with
-  the standard base16 to ANSI mapping:
+  The light variant keeps Horizon light's background and foreground but uses
+  **hand-tuned ANSI accents**, not the raw base16 slots. The naive base16 to
+  ANSI mapping is unusable: Horizon light was never designed as a terminal
+  palette, and it puts `base0A` ("yellow") at `#FBE0D9`, which measures
+  **1.13:1** against the `#FDF0ED` background — invisible — while `base0D`
+  ("blue") is a crimson `#DA103F` and `base0C` ("cyan") a red-orange `#DC3318`,
+  so blue and cyan would both render red.
 
-  | ANSI | light source | ANSI | light source |
+  Instead, the 8 accents are chosen as legible dark-on-light values, each
+  measured against the `#FDF0ED` ground and clearing the 4.5:1 text floor. The
+  rule for bright variants inverts the dark-mode convention: on a light ground
+  "bright" means *darker*, i.e. more emphasis.
+
+  | ANSI | normal | ratio | bright |
   |---|---|---|---|
-  | background | `base00` | foreground | `base05` |
-  | black | `base01` | bright black | `base03` |
-  | red | `base08` | bright red | `base08` |
-  | green | `base0B` | bright green | `base0B` |
-  | yellow | `base0A` | bright yellow | `base0A` |
-  | blue | `base0D` | bright blue | `base0D` |
-  | magenta | `base0E` | bright magenta | `base0E` |
-  | cyan | `base0C` | bright cyan | `base0C` |
-  | white | `base05` | bright white | `base07` |
+  | background | `#FDF0ED` (`base00`) | — | — |
+  | foreground | `#403C3D` (`base05`) | 9.8:1 | — |
+  | black | `#201C1D` | 15.1:1 | `#6B6466` |
+  | red | `#C5283D` | 5.0:1 | `#A61E30` |
+  | green | `#2D7D46` | 4.6:1 | `#226336` |
+  | yellow | `#846200` | 5.1:1 | `#6B4F00` |
+  | blue | `#1E5FA8` | 5.8:1 | `#174B85` |
+  | magenta | `#7B3FA0` | 6.2:1 | `#633280` |
+  | cyan | `#15666C` | 6.0:1 | `#105055` |
+  | white | `#403C3D` | 9.8:1 | `#201C1D` |
+
+  Note on cyan: the status widget's light `upColor` is `#1D8991`, and that value
+  stays correct there, because it is a filled band against a 3:1 floor. As
+  *terminal text* `#1D8991` measures only 3.74:1, so the terminal uses the
+  darker `#15666C`. Same hue, different floor — not an inconsistency.
 
   Accepted consequence: the two modes are not from one palette. Dark mode
   keeping its current look was chosen over cross-mode consistency.
