@@ -1,26 +1,37 @@
 { cfg, pkgs, upkgs, config, lib, ... }:
 
 let
-  colors = config.lib.stylix.colors;
+  # The bar renders in one polarity per generated tree. Task 7 turns this into
+  # a per-variant value; until then the single tree is the dark one.
+  polarity = "dark";
 
-  laserColor = if config.stylix.polarity == "light" then "#FFFFFF" else "#000000";
+  colors = (import ../../../../lib/theme-colors.nix).${polarity};
+
+  laserColor = if polarity == "light" then "#FFFFFF" else "#000000";
 
   # Horizon puts teal at base0C in the dark scheme but base0E in the light one,
   # and base0C in light is a red-orange - so no single base16 slot can mean
   # "up" in both. Selected by polarity instead, exactly like laserColor above.
   # The light teal is the darker #1D8991 so a filled band still clears 3:1
   # against the light ground.
-  isLight = config.stylix.polarity == "light";
+  isLight = polarity == "light";
 
   # Contrast measured against each theme's composited panel ground
   # (#1A1C23 dark, #EBDFDC light). Bands are UI components and need 3:1;
   # mutedColor carries 11px text and needs 4.5:1.
+  # The dark values come straight from the palette's slots: base00 is pure
+  # black now, so the worst-case composited ground (a white wallpaper through
+  # 10%, about #1A1A1A) is more forgiving than Horizon's #1C1E26 and every
+  # slot clears its floor with margin - cyan 9.9:1, orange 7.0:1, red 4.7:1,
+  # muted 8.1:1, against floors of 3:1 for a filled band and 4.5:1 for the
+  # 11px latency column. The light values stay hand-measured literals: they
+  # cannot be derived from `colors`, which is the dark palette in this tree.
   statusColors = {
-    upColor = if isLight then "#FF1D8991" else "#FF24A8B4";
+    upColor = if isLight then "#FF1D8991" else "#FF${colors.base0C}";
     # Horizon light's base09 (#F6661E) only reaches 2.4:1 on the light
     # ground, under the 3:1 floor for a filled band; darkened to 3.8:1.
-    degradedColor = if isLight then "#FFC2490B" else "#FFEFB993";
-    downColor = if isLight then "#FFDA103F" else "#FFE93C58";
+    degradedColor = if isLight then "#FFC2490B" else "#FF${colors.base09}";
+    downColor = if isLight then "#FFDA103F" else "#FF${colors.base08}";
     # base04 is 2.5:1 on the light ground - unreadable at 11px. base05 at
     # 80% reaches 4.9:1 while still reading as muted against base05 text.
     mutedColor =
@@ -42,11 +53,11 @@ let
   statusApiUrl = "http://status.tail.${serverDomain}/api/v1/endpoints/statuses";
   metricsApiUrl = "http://metrics.tail.${serverDomain}/api/v1/query";
 
-  # Lockscreen-only theming — reuses the same @token@ substitution the file
-  # already uses for the bar, but keyed off the shared palette instead of
-  # config.lib.stylix.colors, and scoped to just the lock component. Do not
-  # extend this to shell.qml/Wallpaper/Clock/Music/Calendar/RevealMask/
-  # LaserBar — those are the in-progress bar and are out of scope.
+  # Lockscreen-only theming - reuses the same @token@ substitution the file
+  # already uses for the bar, and the same shared palette, but scoped to just
+  # the lock component and with each variant's own artwork. Do not extend this
+  # to shell.qml/Wallpaper/Clock/Music/Calendar/RevealMask/LaserBar - those are
+  # the in-progress bar.
   lockThemeColors = import ../../../../lib/theme-colors.nix;
 
   qmlTheme = import ../../../../lib/qml-theme.nix;
