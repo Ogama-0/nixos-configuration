@@ -8,7 +8,7 @@
 }:
 let
   inherit (inputs) stylix;
-  background_monocle = ../../assets/wallpaper/background_monocle.png;
+  background_monocle = ../../assets/wallpaper/both/background_monocle.png;
 
 in
 {

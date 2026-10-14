@@ -84,7 +84,7 @@ in {
 
       startup = [{
         command =
-          "feh --bg-fill ${../../../../assets/wallpaper/background_monocle.png}";
+          "feh --bg-fill ${../../../../assets/wallpaper/both/background_monocle.png}";
         always = true;
       }];
 

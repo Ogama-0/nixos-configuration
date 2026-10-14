@@ -10,11 +10,6 @@ let
   down = "j";
   left = "h";
   right = "l";
-  wallpeper = toString /background.png;
-  wallpeper_blure = toString /background_blure.png;
-  wallpaper_tache = toString /background_tache.png;
-
-  wallpeper_monocle = toString /background_monocle.png;
 in
 {
   imports = [

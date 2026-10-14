@@ -27,6 +27,11 @@
   # passes a polarity-correct value; this default preserves the dark-ground
   # behaviour for callers that never render these tokens.
 , mutedColor ? "#FF${colors.base04}"
+  # Space-separated directory names under assets/wallpaper that the picker
+  # draws from, substituted into Wallpaper.qml's find. Defaulted so
+  # modules/nixosconf/greetd.nix, which renders no Wallpaper.qml, needs no
+  # change. The quickshell module passes "dark both" or "light both".
+, wallpaperDirs ? "both"
 }:
 builtins.replaceStrings
   [
@@ -55,6 +60,7 @@ builtins.replaceStrings
     "@panelBorder@"
     "@nameColor@"
     "@mutedColor@"
+    "@wallpaperDirs@"
   ]
   [
     "#B3${colors.base00}"
@@ -89,4 +95,5 @@ builtins.replaceStrings
     "#33${colors.base05}"
     "#FF${colors.base05}"
     mutedColor
+    wallpaperDirs
   ]

@@ -10,6 +10,10 @@ Scope {
     property var imagePaths: []
     property bool pickerOpen: false
 
+    // Review Focus 4: a mode whose pool is empty (nothing in dark/ and nothing
+    // in both/) would otherwise leave no wallpaper at all and no clue why.
+    property bool wallpaperPoolEmpty: root.imagePaths.length === 0
+
     property int activeLayer: 0
     property string pathA: ""
     property string pathB: ""
@@ -64,11 +68,13 @@ Scope {
         running: true
         command: [
             "bash", "-c",
-            "find \"$HOME/nixos-configuration/assets/wallpaper\" -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | sort"
+            "cd \"$HOME/nixos-configuration/assets/wallpaper\" && find @wallpaperDirs@ -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) -printf '%h/%f\\n' | sed \"s|^|$HOME/nixos-configuration/assets/wallpaper/|\" | sort"
         ]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.imagePaths = this.text.split("\n").map(s => s.trim()).filter(s => s.length > 0)
+                if (root.imagePaths.length === 0)
+                    console.warn("wallpaper: pool empty for dirs '@wallpaperDirs@' - add an image to assets/wallpaper/both/")
                 if (root.pathA === "" && root.imagePaths.length > 0) {
                     root.pathA = root.imagePaths[Math.floor(Math.random() * root.imagePaths.length)]
                     root.activeLayer = 0

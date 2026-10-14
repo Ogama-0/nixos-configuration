@@ -56,6 +56,9 @@ let
 
   barTheme = qmlTheme ({
     inherit colors laserColor systemctlBin corptaFontPath;
+    # Task 7 replaces this with a per-variant value; "dark both" preserves
+    # today's dark-mode behaviour for the single tree.
+    wallpaperDirs = "dark both";
     inherit statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
   } // statusColors);
