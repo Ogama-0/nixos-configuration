@@ -253,7 +253,66 @@ switches with no restart flicker, but it means rewriting all 11 themed QML files
 and reworking `greetd.nix`'s store-path call to `qml-theme.nix`. Not worth it to
 avoid a brief flicker that occurs twice a day.
 
-### 5. mako
+### 5. wallpapers split by mode
+
+`assets/wallpaper/` becomes three directories:
+
+- `dark/` — wallpapers only shown in dark mode
+- `light/` — wallpapers only shown in light mode
+- `both/` — wallpapers suitable for either mode
+
+All four files currently in `assets/wallpaper/` move into `both/` via `git mv`:
+`background_monocle.png`, `IMG-20260904-WA0008.jpg`,
+`wallpaper_the_lords_of_the_rings.jpeg`,
+`wp11126805-lord-of-the-rings-art-wallpapers.jpg`. `dark/` and `light/` start
+empty.
+
+Because git does not track empty directories, `dark/` and `light/` each need a
+`.gitkeep`. Without it they would be absent from a fresh checkout and the
+`find` below would emit a stderr warning on every start.
+
+The pool is mode-specific: dark mode draws from `dark/` + `both/`, light mode
+from `light/` + `both/`.
+
+`Wallpaper.qml:67` currently hardcodes its search:
+
+    find "$HOME/nixos-configuration/assets/wallpaper" -maxdepth 1 -type f ...
+
+The directory list becomes a new `@wallpaperDirs@` substitution token, which
+drops out of the two-tree design for free: the dark tree is generated with
+`dark both`, the light tree with `light both`. `qml-theme.nix` gains the token
+and a corresponding required argument, and the quickshell module passes the
+per-variant value.
+
+No persistence work is needed. `Wallpaper.qml` keeps no record of the current
+selection — `listProc` picks a random image on startup and a `Timer` rotates
+every 10 minutes. Since a theme switch restarts `quickshell-widgets`, the new
+mode's pool takes effect immediately with a fresh random pick, and a wallpaper
+from the outgoing mode's folder can never persist into the wrong mode.
+
+Two existing references to the moved files must be updated in the same change:
+
+- **`display/i3/default.nix:87`** uses
+  `${../../../../assets/wallpaper/background_monocle.png}` as a **Nix path
+  literal**, and `display/i3` is imported by **`epita`**. A Nix path literal
+  must resolve at evaluation time, so leaving this stale breaks the `epita`
+  profile's evaluation outright — not merely its wallpaper. Repoint it at
+  `both/background_monocle.png`. This is the one place where the wallpaper
+  reorganisation reaches outside the `personal` profile.
+- **`stylix.nix:11,31`** also references `background_monocle.png`, but that file
+  is being deleted wholesale, so nothing to repoint.
+
+Unrelated cleanup, taken because it sits in the middle of this work:
+`sway/default.nix:15-17` defines `wallpeper`, `wallpeper_blure`,
+`wallpaper_tache` and `wallpeper_monocle` as `toString /background.png` and
+friends — absolute paths to the filesystem root that do not exist. They are
+never referenced; `toString` on a missing path does not error, so they have been
+silently dead. Delete them.
+
+`assets/wallpaper-bank/` (3 files) is a separate holding area that the picker
+never reads. Left untouched.
+
+### 6. mako
 
 Already has dark colours, a `mode=light` block fed from `theme-colors.nix`, and
 working darkman scripts. The only change: its two `config.stylix.fonts.*`
@@ -318,7 +377,13 @@ requires, in order:
    `greetd.nix` and so changes with the palette, but it is a NixOS-side surface
    that a home-manager switch does not touch. Per `docs/greeter.md`, it can be
    previewed without rebooting.
-7. `journalctl --user -u quickshell-widgets` clean across both switches.
+7. Wallpapers: confirm the picker (`Mod+w`) lists only `both/` contents in both
+   modes initially, then drop a test image into `dark/` and confirm it appears
+   in dark mode and not in light. Confirm no `find: No such file or directory`
+   on stderr in the service log.
+8. Evaluate `epita` specifically after the wallpaper move, since its i3 module
+   holds a Nix path literal into `assets/wallpaper/`.
+9. `journalctl --user -u quickshell-widgets` clean across both switches.
 
 ## Out of scope
 
@@ -326,5 +391,7 @@ requires, in order:
 - The `Theme.qml` singleton refactor (rejected above).
 - Changing the **light** palette: Horizon light stays exactly as it is. (The
   dark palette is replaced — see the system dark palette section.)
-- The lock screens' artwork.
+- The lock screens' artwork, and `assets/lockscreen/` generally: those images
+  are already per-variant and are not folded into the new wallpaper layout.
+- `assets/wallpaper-bank/`.
 - Making sway client borders visible.
