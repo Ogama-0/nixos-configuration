@@ -1,42 +1,30 @@
 { cfg, pkgs, upkgs, config, lib, ... }:
 
 let
-  # The bar renders in one polarity per generated tree. Task 7 turns this into
-  # a per-variant value; until then the single tree is the dark one.
-  polarity = "dark";
+  allColors = import ../../../../lib/theme-colors.nix;
 
-  colors = (import ../../../../lib/theme-colors.nix).${polarity};
-
-  laserColor = if polarity == "light" then "#FFFFFF" else "#000000";
-
-  # Horizon puts teal at base0C in the dark scheme but base0E in the light one,
-  # and base0C in light is a red-orange - so no single base16 slot can mean
-  # "up" in both. Selected by polarity instead, exactly like laserColor above.
-  # The light teal is the darker #1D8991 so a filled band still clears 3:1
-  # against the light ground.
-  isLight = polarity == "light";
-
-  # Contrast measured against each theme's composited panel ground
-  # (#1A1C23 dark, #EBDFDC light). Bands are UI components and need 3:1;
-  # mutedColor carries 11px text and needs 4.5:1.
-  # The dark values come straight from the palette's slots: base00 is pure
-  # black now, so the worst-case composited ground (a white wallpaper through
-  # 10%, about #1A1A1A) is more forgiving than Horizon's #1C1E26 and every
-  # slot clears its floor with margin - cyan 9.9:1, orange 7.0:1, red 4.7:1,
-  # muted 8.1:1, against floors of 3:1 for a filled band and 4.5:1 for the
-  # 11px latency column. The light values stay hand-measured literals: they
-  # cannot be derived from `colors`, which is the dark palette in this tree.
-  statusColors = {
-    upColor = if isLight then "#FF1D8991" else "#FF${colors.base0C}";
-    # Horizon light's base09 (#F6661E) only reaches 2.4:1 on the light
-    # ground, under the 3:1 floor for a filled band; darkened to 3.8:1.
-    degradedColor = if isLight then "#FFC2490B" else "#FF${colors.base09}";
-    downColor = if isLight then "#FFDA103F" else "#FF${colors.base08}";
-    # base04 is 2.5:1 on the light ground - unreadable at 11px. base05 at
-    # 80% reaches 4.9:1 while still reading as muted against base05 text.
-    mutedColor =
-      if isLight then "#CC${colors.base05}" else "#FF${colors.base04}";
-  };
+  # Horizon light puts teal at base0E where the dark palette has it at base0C,
+  # and several light slots fail contrast floors against the light ground, so
+  # the status colours cannot be one base16 slot for both variants. The light
+  # values are measured; see the comments on each.
+  statusColorsFor = variant:
+    if variant == "light" then {
+      # Measured against the composited light panel ground (#EBDFDC).
+      upColor = "#FF1D8991";       # the darker teal, clears 3:1 as a filled band
+      degradedColor = "#FFC2490B"; # base09 #F6661E is only 2.4:1; darkened to 3.8:1
+      downColor = "#FFDA103F";
+      mutedColor = "#CC${allColors.light.base05}"; # base04 is 2.5:1 at 11px; this is 4.9:1
+    } else {
+      # Measured against the new dark ground: base00 is pure black, so the
+      # worst case (a white wallpaper through 10%, about #1A1A1A) is more
+      # forgiving than Horizon's #1C1E26 - cyan 9.9:1, orange 7.0:1, red
+      # 4.7:1, muted 8.1:1, against floors of 3:1 for a filled band and
+      # 4.5:1 for the 11px latency column.
+      upColor = "#FF${allColors.dark.base0C}";
+      degradedColor = "#FF${allColors.dark.base09}";
+      downColor = "#FF${allColors.dark.base08}";
+      mutedColor = "#FF${allColors.dark.base04}";
+    };
 
   # Built from the profile so the tailnet hostnames are never hardcoded in QML.
   #
@@ -53,39 +41,30 @@ let
   statusApiUrl = "http://status.tail.${serverDomain}/api/v1/endpoints/statuses";
   metricsApiUrl = "http://metrics.tail.${serverDomain}/api/v1/query";
 
-  # Lockscreen-only theming - reuses the same @token@ substitution the file
-  # already uses for the bar, and the same shared palette, but scoped to just
-  # the lock component and with each variant's own artwork. Do not extend this
-  # to shell.qml/Wallpaper/Clock/Music/Calendar/RevealMask/LaserBar - those are
-  # the in-progress bar.
-  lockThemeColors = import ../../../../lib/theme-colors.nix;
-
+  # Lockscreen theming reuses the same @token@ substitution and the same
+  # `allColors` palette as the bar; what differs is that each variant renders
+  # its own component and artwork (see lockFor below).
   qmlTheme = import ../../../../lib/qml-theme.nix;
 
   systemctlBin = "${pkgs.systemd}/bin/systemctl";
   corptaFontPath = "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf";
 
-  barTheme = qmlTheme ({
-    inherit colors laserColor systemctlBin corptaFontPath;
-    # Task 7 replaces this with a per-variant value; "dark both" preserves
-    # today's dark-mode behaviour for the single tree.
-    wallpaperDirs = "dark both";
-    inherit statusApiUrl metricsApiUrl;
+  themeFor = variant: qmlTheme ({
+    colors = allColors.${variant};
+    laserColor = if variant == "light" then "#FFFFFF" else "#000000";
+    wallpaperDirs = "${variant} both";
+    inherit systemctlBin corptaFontPath statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
-  } // statusColors);
+  } // statusColorsFor variant);
 
-  themedQmlFile = path: {
-    text = barTheme (builtins.readFile path);
+  themedQmlFile = variant: path: {
+    text = themeFor variant (builtins.readFile path);
   };
 
-  # Each variant gets its own lockscreen artwork: the dark variant uses the
-  # Arcane/Jinx piece (see LockDark.qml), the light variant keeps the
-  # original Nausicaa/snow treatment (see LockLight.qml) - they're
-  # deliberately different designs, not the same skin recolored.
   lockVariant = variant: lockComponent: image: {
     text = qmlTheme {
       inherit systemctlBin corptaFontPath;
-      colors = lockThemeColors.${variant};
+      colors = allColors.${variant};
       laserColor = if variant == "light" then "#FFFFFF" else "#000000";
       lockscreenImage = image;
     } (builtins.readFile lockComponent);
@@ -99,52 +78,74 @@ in
     pkgs.imagemagick
   ];
 
-  xdg.configFile = {
-    "quickshell/widgets/cava.conf".text = ''
-      [general]
-      bars = 20
-      framerate = 60
-      sensitivity = 195
+  xdg.configFile =
+    let
+      cavaConf = ''
+        [general]
+        bars = 20
+        framerate = 60
+        sensitivity = 195
 
-      [input]
-      method = pipewire
-      source = auto
+        [input]
+        method = pipewire
+        source = auto
 
-      [smoothing]
-      noise_reduction = 30
+        [smoothing]
+        noise_reduction = 30
 
-      [output]
-      method = raw
-      raw_target = /dev/stdout
-      data_format = ascii
-      ascii_max_range = 100
-      bar_delimiter = 59
-      frame_delimiter = 10
-    '';
+        [output]
+        method = raw
+        raw_target = /dev/stdout
+        data_format = ascii
+        ascii_max_range = 100
+        bar_delimiter = 59
+        frame_delimiter = 10
+      '';
 
-    "quickshell/widgets/shell.qml" = themedQmlFile ./shell.qml;
-    "quickshell/widgets/components/Wallpaper.qml" = themedQmlFile ./components/Wallpaper.qml;
-    "quickshell/widgets/components/Clock.qml" = themedQmlFile ./components/Clock.qml;
-    "quickshell/widgets/components/Music.qml" = themedQmlFile ./components/Music.qml;
-    "quickshell/widgets/components/Calendar.qml" = themedQmlFile ./components/Calendar.qml;
-    "quickshell/widgets/components/Lock-dark.qml" = lockVariant "dark" ./components/LockDark.qml
-      "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/dark-lockscreen-arcane-jinx.jpeg";
-    "quickshell/widgets/components/Lock-light.qml" = lockVariant "light" ./components/LockLight.qml
-      "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
-    "quickshell/widgets/components/RevealMask.qml" = themedQmlFile ./components/RevealMask.qml;
-    "quickshell/widgets/components/GlassPill.qml" = themedQmlFile ./components/GlassPill.qml;
-    "quickshell/widgets/components/ColorUtils.qml" = themedQmlFile ./components/ColorUtils.qml;
-    "quickshell/widgets/components/BeamSide.qml" = themedQmlFile ./components/BeamSide.qml;
-    "quickshell/widgets/components/CollisionEffects.qml" = themedQmlFile ./components/CollisionEffects.qml;
-    "quickshell/widgets/components/ClockModule.qml" = themedQmlFile ./components/ClockModule.qml;
-    "quickshell/widgets/components/LaserBar.qml" = themedQmlFile ./components/LaserBar.qml;
-    "quickshell/widgets/components/StatusModel.qml" = themedQmlFile ./components/StatusModel.qml;
-    "quickshell/widgets/components/Sparkline.qml" = themedQmlFile ./components/Sparkline.qml;
-    "quickshell/widgets/components/StatusPanel.qml" = themedQmlFile ./components/StatusPanel.qml;
-  };
+      # Each variant gets its own lockscreen artwork: dark uses the Arcane/Jinx
+      # piece (see LockDark.qml), light keeps the original Nausicaa/snow
+      # treatment (see LockLight.qml) - they are deliberately different
+      # designs, not the same skin recoloured.
+      lockFor = {
+        dark = lockVariant "dark" ./components/LockDark.qml
+          "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/dark-lockscreen-arcane-jinx.jpeg";
+        light = lockVariant "light" ./components/LockLight.qml
+          "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
+      };
 
-  home.activation.quickshellLockDefault = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    run ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-dark.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
+      # Music.qml resolves cava as Quickshell.shellDir + "/cava.conf", so each
+      # tree needs its own copy; shellDir makes that automatic.
+      treeFor = variant:
+        let d = "quickshell/widgets-${variant}"; in {
+          "${d}/cava.conf".text = cavaConf;
+          "${d}/shell.qml" = themedQmlFile variant ./shell.qml;
+          "${d}/components/Lock.qml" = lockFor.${variant};
+          "${d}/components/Wallpaper.qml" = themedQmlFile variant ./components/Wallpaper.qml;
+          "${d}/components/Clock.qml" = themedQmlFile variant ./components/Clock.qml;
+          "${d}/components/Music.qml" = themedQmlFile variant ./components/Music.qml;
+          "${d}/components/Calendar.qml" = themedQmlFile variant ./components/Calendar.qml;
+          "${d}/components/RevealMask.qml" = themedQmlFile variant ./components/RevealMask.qml;
+          "${d}/components/GlassPill.qml" = themedQmlFile variant ./components/GlassPill.qml;
+          "${d}/components/ColorUtils.qml" = themedQmlFile variant ./components/ColorUtils.qml;
+          "${d}/components/BeamSide.qml" = themedQmlFile variant ./components/BeamSide.qml;
+          "${d}/components/CollisionEffects.qml" = themedQmlFile variant ./components/CollisionEffects.qml;
+          "${d}/components/ClockModule.qml" = themedQmlFile variant ./components/ClockModule.qml;
+          "${d}/components/LaserBar.qml" = themedQmlFile variant ./components/LaserBar.qml;
+          "${d}/components/StatusModel.qml" = themedQmlFile variant ./components/StatusModel.qml;
+          "${d}/components/Sparkline.qml" = themedQmlFile variant ./components/Sparkline.qml;
+          "${d}/components/StatusPanel.qml" = themedQmlFile variant ./components/StatusPanel.qml;
+        };
+    in
+    treeFor "dark" // treeFor "light";
+
+  # `quickshell -c widgets` resolves through this symlink, which darkman
+  # repoints on every sunrise/sunset. It must NOT be an xdg.configFile entry:
+  # that would make it a read-only store symlink darkman could not replace.
+  # Seeded to the dark tree; darkman corrects it on its next run. The -n
+  # matters: without it a second run would create widgets/widgets-dark inside
+  # the existing symlinked directory instead of replacing the link.
+  home.activation.quickshellThemeTree = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    run ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
   '';
 
   systemd.user.services.quickshell-widgets = {

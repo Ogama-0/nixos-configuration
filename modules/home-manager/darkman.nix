@@ -41,7 +41,7 @@ let
   '';
 in
 {
-  home.activation.darkmanTimezoneSync = lib.hm.dag.entryAfter [ "linkGeneration" "quickshellLockDefault" ] ''
+  home.activation.darkmanTimezoneSync = lib.hm.dag.entryAfter [ "linkGeneration" "quickshellThemeTree" ] ''
     ${bashExe} ${syncScript}
   '';
 
@@ -69,8 +69,9 @@ in
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -r light
       '';
-      quickshell-lock-theme = ''
-        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-dark.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
+      quickshell-theme = ''
+        ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
+        ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets.service || true
       '';
     };
 
@@ -86,8 +87,9 @@ in
       mako = ''
         ${pkgs.mako}/bin/makoctl mode -a light
       '';
-      quickshell-lock-theme = ''
-        ${pkgs.coreutils}/bin/ln -sf "${config.xdg.configHome}/quickshell/widgets/components/Lock-light.qml" "${config.xdg.configHome}/quickshell/widgets/components/Lock.qml"
+      quickshell-theme = ''
+        ${pkgs.coreutils}/bin/ln -sfn "${config.xdg.configHome}/quickshell/widgets-light" "${config.xdg.configHome}/quickshell/widgets"
+        ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets.service || true
       '';
     };
   };
