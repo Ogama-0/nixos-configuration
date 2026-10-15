@@ -10,6 +10,10 @@
 #               the terminal's own ANSI colours. helix is the exception: it
 #               uses real themes instead, see modules/lib/helix-auto-theme.nix
 #   status   -> the oserv status widget, via the quickshell module
+#   both     -> zellij, via modules/lib/zellij-theme.nix - it needs its own
+#               themes because it paints its chrome in true colour instead of
+#               the terminal's ANSI slots, and it takes the ground from `ui`
+#               but the light accents from `terminal` (reasons in that file)
 #
 # Two things NOT to change casually:
 #   * `ui` follows the base16 slot convention (base00 darkest ground ->

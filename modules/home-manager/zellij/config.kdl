@@ -247,42 +247,21 @@ default_shell "fish"
 
 auto_layout true
 
-themes {
-    onedark {
-        fg "#3B4048"
-        bg "#2C323C"
-        red "#E06C75"
-        green "#98C379" // borders
-        yellow "#E5C07B"
-        blue "#61AFEF"
-        magenta "#C678DD"
-        orange "#D19A66"
-        cyan "#56B6C2"
-        black "#282C34"
-        white "#ABB2BF"
-    }
-        
-
-    horizon-dark {
-        // https://themes.vivaldi.net/themes/r6Elro6vRkq
-        // https://zellij.dev/documentation/themes
-        fg "#2e303e" // down next to arrow layout
-        bg "#16161c"
-        red "#E06C75"
-        green "#f1895c" // borders
-        yellow "#E5C07B"
-        blue "#61AFEF"
-        magenta "#C678DD"
-        orange "#D19A66"
-        cyan "#56B6C2"
-        black "#282C34"
-        white "#ABB2BF"
-        // green pastel : #27d796
-        // orange pastel: #f1895c
-    }
-}
-
-theme "horizon-dark"
+// Themes live in themes/, generated from modules/lib/palette.nix.
+//
+// theme_dark/theme_light are what zellij picks between after asking the
+// terminal for its background colour, and what darkman flips a running
+// session between with `zellij action set-dark-theme` / `set-light-theme`
+// (see modules/home-manager/darkman.nix). Both names must resolve or that
+// command refuses to switch at all.
+//
+// `theme` is the fallback when that background query goes unanswered -
+// without it zellij falls back to its own built-in theme and a fresh session
+// opens in radioactive green. themes/auto.kdl is darkman-written, so the
+// fallback is the current mode.
+theme "palette-auto"
+theme_dark "palette-dark"
+theme_light "palette-light"
 
 show_startup_tips false
 

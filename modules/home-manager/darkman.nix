@@ -23,6 +23,34 @@ let
     ${pkgs.procps}/bin/pkill -x -USR1 '(\.hx-wrapped|hx)' || true
   '';
 
+  zellijAutoTheme = "${config.xdg.configHome}/zellij/themes/auto.kdl";
+  zellijThemes = import ../lib/zellij-theme.nix { inherit pkgs; };
+
+  # zellij paints its own chrome in true colour, so unlike the other TUIs it
+  # does not follow alacritty's ANSI palette - it has to be told, and twice:
+  #
+  #   * auto.kdl is the theme *new* sessions start in. zellij decides that for
+  #     itself by asking the terminal for its background with OSC 11, but
+  #     falls back to its own built-in (radioactive green) theme whenever no
+  #     answer arrives - see modules/lib/zellij-theme.nix.
+  #   * the `action` below is for the sessions already running.
+  #
+  # `action` targets a single session, so every live one gets its own call.
+  # `list-sessions` also lists dead-but-resurrectable sessions - those have no
+  # server to talk to, hence the EXITED filter - and exits non-zero when there
+  # are none at all, which is the normal case. A session started before the
+  # last switch still holds the old config and will refuse the switch, hence
+  # `|| true`.
+  zellijTheme = mode: ''
+    ${coreutils}/bin/install -m 644 ${zellijThemes.auto mode} "${zellijAutoTheme}"
+    ${pkgs.zellij}/bin/zellij list-sessions -n 2>/dev/null \
+      | ${pkgs.gnugrep}/bin/grep -v EXITED \
+      | ${coreutils}/bin/cut -d' ' -f1 \
+      | while read -r session; do
+          ${pkgs.zellij}/bin/zellij --session "$session" action set-${mode}-theme || true
+        done
+  '';
+
   bashExe = "${pkgs.bash}/bin/bash";
   coreutils = pkgs.coreutils;
 
@@ -81,6 +109,7 @@ in
     settings = { };
 
     darkModeScripts = {
+      zellij = zellijTheme "dark";
       helix = ''
         ${coreutils}/bin/install -m 644 ${helixTheme "dark"} "${helixAutoTheme}"
         ${helixReload}
@@ -103,6 +132,7 @@ in
     };
 
     lightModeScripts = {
+      zellij = zellijTheme "light";
       helix = ''
         ${coreutils}/bin/install -m 644 ${helixTheme "light"} "${helixAutoTheme}"
         ${helixReload}
