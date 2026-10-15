@@ -86,7 +86,14 @@ in
         size = 14;
       };
 
-      launcher_window.opacity = 0.95;
+      launcher_window = {
+        opacity = 1;
+
+        # Sway stacks fullscreen windows above the 'top' layer, so the default
+        # leaves the launcher hidden behind a fullscreen app. 'overlay' is the
+        # only other layer vicinae accepts, and sway draws it above fullscreen.
+        layer_shell.layer = "overlay";
+      };
     };
   };
 }
