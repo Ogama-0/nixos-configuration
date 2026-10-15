@@ -61,7 +61,11 @@ Available: `python`, `c`, `epita-c` (EPITA-style C practical), `asm68k`.
 nix shell github:Ogama-0/nixos-configuration#<pkg>
 ```
 
-Available: `librepods` ([kavishdevar's package](https://github.com/kavishdevar/librepods))
+Available: `librepods` ([kavishdevar's package](https://github.com/kavishdevar/librepods)), `calino` ([Ivan-Malinovski's web CalDAV client](https://github.com/Ivan-Malinovski/calino), built for this server's own hostname)
+
+The server also self-hosts its calendars — RustiCal (CalDAV), `calendar_syncer`
+and Calino. See `docs/calendar-stack.md` for the setup that cannot be
+declared in Nix (app tokens, DNS, the sops key).
 
 ## Known issues
 
@@ -94,6 +98,5 @@ rebuild to turn both off.
 - build a website for ogama.me
 - qbtorrent : let qbittorent add file in jellyfin/film and jellyfin/audiobook
 - build the hdd architectur with 2 2tb hdd with backup on the 4to hdd
-- host calendar with the same methode as pixilie
 - use kristen's vps to let people access to my server (throught tailescale tunel)
 

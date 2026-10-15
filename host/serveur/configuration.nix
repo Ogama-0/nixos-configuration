@@ -16,6 +16,12 @@
     ../../modules/nixosconf/qbittorrent.nix
     ../../modules/nixosconf/status-page.nix
 
+    # Calendar stack: rustical is the CalDAV server, calendar-syncer feeds it,
+    # calino is the browser client for it.
+    ../../modules/nixosconf/rustical.nix
+    ../../modules/nixosconf/calendar-syncer.nix
+    ../../modules/nixosconf/calino.nix
+
     ../../modules/nixosconf/docker.nix
     ../../modules/nixosconf/joplin-server.nix # <- docker
     # ../../modules/nixosconf/crafty.nix        # <- docker

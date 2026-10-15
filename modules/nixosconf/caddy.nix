@@ -22,11 +22,16 @@
       # Catch-all for any subdomain that doesn't have its own explicit
       # vhost below. Deliberately kept plain HTTP (the "http://" scheme
       # prefix disables automatic HTTPS for this site): a real wildcard
-      # cert needs a DNS-01 challenge, which isn't configured here.
+      # cert would need a DNS-01 challenge, which isn't configured here.
       # Any *.${cfg.server.domain} request over HTTPS that isn't
-      # jellyfin/immich.tail will simply fail the TLS handshake instead
-      # of silently being served by an unrelated backend, unlike
-      # nginx's implicit default_server fallback.
+      # jellyfin/rustical will simply fail the TLS handshake instead of
+      # silently being served by an unrelated backend, unlike nginx's
+      # implicit default_server fallback.
+      #
+      # Side effect worth knowing: because this site claims port 80 for
+      # every subdomain, Caddy will *not* generate the usual
+      # HTTP->HTTPS redirect for a site that does use TLS — see the
+      # hand-written redirect in rustical.nix.
       "http://*.${cfg.server.domain}".extraConfig = ''
         respond 404
       '';

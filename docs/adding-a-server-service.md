@@ -79,11 +79,30 @@ concluding anything is broken.
 ## Caddy conventions
 
 - **`http://` scheme prefix = tailnet-only, plain HTTP.** The prefix disables
-  Caddy's automatic HTTPS for that site. A real `*.tail` cert would need a
-  DNS-01 challenge, which is not configured; see the comment in
-  `modules/nixosconf/caddy.nix`. Everything on the tailnet uses this.
-- **A bare hostname = public, with ACME.** Only `jellyfin.ogama.me` does this
-  today. Do not add one unless the service is deliberately internet-facing.
+  Caddy's automatic HTTPS for that site. This is the default for everything on
+  the tailnet, and is fine: the tailnet is already encrypted.
+- **A `*.tail` name cannot have a certificate.** It resolves to a tailnet
+  address, so no ACME challenge can validate it without DNS-01, which is not
+  configured. A service that needs TLS needs a public name — see below.
+- **A bare hostname = public, with ACME.** `jellyfin.ogama.me` and
+  `rustical.ogama.me` do this. Do not add one unless the service is
+  deliberately internet-facing. Three things about this path are not obvious:
+  - **It is IPv6-only.** The name is a CNAME to
+    `neskwik.portal.ogama.me`, which is an **AAAA** record holding this
+    host's global IPv6 address. There is no A record anywhere in the chain,
+    so `dig +short <name>` (an A-only query) prints the CNAME and nothing
+    else — which looks exactly like a broken record. Use `dig AAAA` before
+    concluding anything. IPv4-only clients cannot reach these names at all,
+    which is why both services also keep a `*.tail` vhost.
+  - **ACME HTTP-01 validates fine over IPv6**, so a bare vhost just works
+    once the CNAME exists — no DNS-01, no credentials. Verify the result
+    with `openssl s_client -6 -connect <name>:443 -servername <name>`;
+    `Verify return code: 0` and a `Let's Encrypt` issuer mean it worked.
+  - **Caddy will not generate the HTTP->HTTPS redirect**, because the
+    `http://*.ogama.me` catch-all already claims port 80 for every
+    subdomain. Write an explicit `http://` vhost with
+    `redir https://{host}{uri} permanent`, or `http://` links land on the
+    catch-all's 404 and look like a dead service.
 - There is a catch-all `http://*.ogama.me` that answers 404, so a typo in a
   vhost name degrades to a clean 404 rather than silently landing on another
   backend.
@@ -101,7 +120,8 @@ Check it is free before committing to it. Gatus defaults to 8080, which
 only shows up at runtime as a service that will not start. `ss -ltnp` on the
 server is the authority. Ports currently in use include 2019 (Caddy admin),
 2283/2281 (Immich), 3000 (Grafana), 3003 (Immich ML), 3030 (Loki), 3033
-(Wakapi), 8080 (qBittorrent), 8085 (Gatus), 8096 (Jellyfin), 9001 (Prometheus),
+(Wakapi), 4000 (RustiCal), 8020 (calendar_syncer), 8080 (qBittorrent), 8081
+(Calino's CORS proxy), 8085 (Gatus), 8096 (Jellyfin), 9001 (Prometheus),
 9002 (node-exporter), 9256 (process-exporter).
 
 ## Firewall
@@ -141,6 +161,11 @@ Three rules, all load-bearing for the desktop widget that reads this API:
   service — hence `/health`. Check with
   `curl -s -o /dev/null -w '%{http_code}' <url>` before committing, and prefer
   a real health path (`/health`, `/api/health`, `/ping`) over `/`.
+- **A service behind HTTP basic auth answers 401, and that is its healthy
+  state.** `calendar_syncer` authenticates every route including `/`, so its
+  endpoint asserts `[STATUS] == 401`; demanding 200 there would show a
+  correctly secured service as permanently down. A dead or wedged service
+  still fails the condition, which is what the row is for.
 
 Probe through the public hostname wherever a vhost exists: the question is
 "can I use this", and that path includes DNS, Tailscale, Caddy and the

@@ -70,6 +70,9 @@ Item {
         { key: "dev_wakapi",        label: "Wakapi",      promGroup: "wakapi" },
         { key: "files_qbittorrent", label: "qBittorrent", promGroup: "qbittorrent" },
         { key: "dev_joplin",        label: "Joplin",      promGroup: "joplin" },
+        { key: "calendar_rustical", label: "Rustical",    promGroup: "rustical" },
+        { key: "calendar_calsync",  label: "Calsync",     promGroup: "calendar-syncer" },
+        { key: "calendar_calino",   label: "Calino",      promGroup: "calino-proxy" },
     ]
 
     // key -> { label, order, promGroup }, derived so serviceList above stays

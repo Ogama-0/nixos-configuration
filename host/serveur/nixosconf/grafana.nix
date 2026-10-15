@@ -180,6 +180,14 @@
     #   postgres sidecar: the container's postgres is indistinguishable by
     #   comm from the host postgres that Immich runs, and lumping them
     #   together would quietly corrupt Immich's numbers.
+    # - rustical, calendar_syncer: single-process Rust binaries, plain comm
+    #   matches. calendar-syncer's matcher name uses a dash where its comm
+    #   uses an underscore (the binary is calendar_syncer) — the two are
+    #   independent, and the dashed form is what the widget's promGroup
+    #   expects.
+    # - calino-proxy: the Calino *site* is static files served by Caddy and so
+    #   has no process of its own; only its CORS proxy does, and that is a
+    #   node process whose comm is "node", hence the cmdline match.
     exporters.process = {
       enable = true;
       settings.process_names = [
@@ -218,6 +226,23 @@
         {
           name = "joplin";
           cmdline = [ "packages/server/dist/app\\.js" ];
+        }
+        {
+          name = "rustical";
+          comm = [ "rustical" ];
+        }
+        {
+          # "calendar_syncer" is exactly 15 characters, so the kernel's comm
+          # truncation leaves it intact — one more character upstream and this
+          # would have to move to cmdline.
+          name = "calendar-syncer";
+          comm = [ "calendar_syncer" ];
+        }
+        {
+          # The static site is served by Caddy itself and has no process; this
+          # is the CORS proxy, whose comm is just "node".
+          name = "calino-proxy";
+          cmdline = [ "share/calino/proxy/server\\.mjs" ];
         }
       ];
     };

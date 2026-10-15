@@ -1,5 +1,25 @@
 {
   "nodes": {
+    "calendar-syncer": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790848001,
+        "narHash": "sha256-Z+17P+pcDPg6D8hyW3YMUnUqhhmKFXzzRoCOTW4M4vs=",
+        "ref": "refs/heads/main",
+        "rev": "322122647a538a9e26219ab8ef79b1432b33b11b",
+        "revCount": 8,
+        "type": "git",
+        "url": "ssh://git@github.com/pixilie/calendar_syncer"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/pixilie/calendar_syncer"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -76,11 +96,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1788179007,
-        "narHash": "sha256-hn1oU2rue2SYK8dAr8+WNZWtbsz1S2W5mnHlSEuh3bo=",
+        "lastModified": 1791956154,
+        "narHash": "sha256-jBYGPi4udQ9uo4KQp9m2J0546nJVQitG15gvZSaVVAs=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
+        "rev": "55bfb4d7437bd4e09ab7cba58a43bd68eb310044",
         "type": "github"
       },
       "original": {
@@ -128,6 +148,7 @@
     },
     "root": {
       "inputs": {
+        "calendar-syncer": "calendar-syncer",
         "home-manager": "home-manager",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",

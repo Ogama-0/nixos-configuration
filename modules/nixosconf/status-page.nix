@@ -126,6 +126,45 @@ in {
           interval = "15s";
           conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
         }
+        {
+          # Rustical answers 200 "Pong!" on /ping with no auth. "/" is the web
+          # frontend, which redirects to /frontend/login.
+          #
+          # Probed on the tail name, not the public https:// one, matching
+          # what Jellyfin does with its two names. The public vhost depends on
+          # the ISP's IPv6 prefix still matching the portal's AAAA record, so
+          # probing it would make this row red for a DNS problem outside the
+          # service. The cost is that a failed certificate renewal does not
+          # show up here — for that, `journalctl -u caddy | grep -i acme`.
+          name = "Rustical";
+          group = "calendar";
+          url = "http://rustical.tail.${cfg.server.domain}/ping";
+          interval = "15s";
+          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+        }
+        {
+          # 401 is the *healthy* answer here: calendar-syncer puts HTTP basic
+          # auth in front of every route including "/", and the probe sends no
+          # credentials. Expecting 200 would leave a correctly secured service
+          # looking permanently down; 401 still fails on a dead or wedged one,
+          # which is what the row is for.
+          name = "Calsync";
+          group = "calendar";
+          url = "http://calsync.tail.${cfg.server.domain}";
+          interval = "15s";
+          conditions = [ "[STATUS] == 401" "[RESPONSE_TIME] < 300" ];
+        }
+        {
+          # Probes the CORS proxy, not the static site: Caddy serves the site
+          # from the nix store and would answer 200 with the proxy unit dead,
+          # and the proxy is the half that can actually break. handle_path
+          # strips /proxy, so this lands on the proxy's own /health.
+          name = "Calino";
+          group = "calendar";
+          url = "http://calino.tail.${cfg.server.domain}/proxy/health";
+          interval = "15s";
+          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+        }
       ];
 
       # No `security` block on purpose: the response carries only service

@@ -22,6 +22,15 @@
 
     quickshell.url = "github:quickshell-mirror/quickshell";
     quickshell.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
+    # Private repo: fetched over SSH, so the key that reads it must be
+    # available to whoever evaluates the flake. `sudo nixos-rebuild` runs
+    # as root and has no such key — run the non-sudo
+    # `nix build .#nixosConfigurations.oserv...` first (docs/adding-a-server-service.md
+    # already prescribes this), which puts the input in the store where the
+    # privileged evaluation finds it by narHash alone.
+    calendar-syncer.url = "git+ssh://git@github.com/pixilie/calendar_syncer";
+    calendar-syncer.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
   outputs =
@@ -48,6 +57,7 @@
         corpta-font = self.packages.${system}.corpta-font;
         orbitron-font = self.packages.${system}.orbitron-font;
         greetd-proxy = self.packages.${system}.greetd-proxy;
+        calino = self.packages.${system}.calino;
         # free-claude-code = self.packages.${system}.free-claude-code;
       };
       upkgs = (
@@ -68,6 +78,11 @@
         corpta-font = pkgs.callPackage ./pkgs/corpta-font.nix { };
         orbitron-font = pkgs.callPackage ./pkgs/orbitron-font.nix { };
         greetd-proxy = pkgs.callPackage ./pkgs/greetd-proxy.nix { };
+        # siteUrl is baked into the build (see pkgs/calino.nix), so it has to
+        # be known here rather than in the module that serves it.
+        calino = pkgs.callPackage ./pkgs/calino.nix {
+          siteUrl = "http://calino.tail.${cfg-server.server.domain}";
+        };
         # free-claude-code = pkgs.callPackage ./pkgs/freeclaudecode.nix { };
       };
 
@@ -84,6 +99,7 @@
           inherit system;
           specialArgs = {
             cfg = cfg-server;
+            inherit inputs lpkgs upkgs;
           };
           modules = [
             ./host/serveur/configuration.nix
