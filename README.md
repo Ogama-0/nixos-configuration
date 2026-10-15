@@ -99,4 +99,5 @@ rebuild to turn both off.
 - qbtorrent : let qbittorent add file in jellyfin/film and jellyfin/audiobook
 - build the hdd architectur with 2 2tb hdd with backup on the 4to hdd
 - use kristen's vps to let people access to my server (throught tailescale tunel)
+- FIX : joplin filling the routeur
 
