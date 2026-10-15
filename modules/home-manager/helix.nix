@@ -239,12 +239,18 @@ in
         {
           name = "bash";
           auto-format = true;
-          language-servers = [ "bash-language-server" "wakatime" ];
+          language-servers = [
+            "bash-language-server"
+            "wakatime"
+          ];
         }
         {
           name = "fish";
           auto-format = true;
-          language-servers = [ "fish-lsp" "wakatime" ];
+          language-servers = [
+            "fish-lsp"
+            "wakatime"
+          ];
         }
         {
           name = "nasm";
@@ -258,13 +264,12 @@ in
     };
   };
 
-  home.activation.helixThemeDefault =
-    lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      run ${pkgs.coreutils}/bin/mkdir -p "${config.xdg.configHome}/helix/themes"
-      if [ ! -e "${autoThemePath}" ]; then
-        run ${pkgs.coreutils}/bin/install -m 644 \
-          ${(import ../lib/helix-auto-theme.nix { inherit pkgs; }) "dark"} \
-          "${autoThemePath}"
-      fi
-    '';
+  home.activation.helixThemeDefault = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    run ${pkgs.coreutils}/bin/mkdir -p "${config.xdg.configHome}/helix/themes"
+    if [ ! -e "${autoThemePath}" ]; then
+      run ${pkgs.coreutils}/bin/install -m 644 \
+        ${(import ../lib/helix-auto-theme.nix { inherit pkgs; }) "dark"} \
+        "${autoThemePath}"
+    fi
+  '';
 }
