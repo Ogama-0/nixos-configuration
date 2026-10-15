@@ -16,7 +16,7 @@ in
     ./barbar.nix
     ./mako.nix
     ./quickshell
-    # ./idle.nix
+    ./idle.nix
     ../vicinae.nix
     ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix
   ];
@@ -26,6 +26,7 @@ in
     wlroots
   ];
   # swaylock-effect
+  services.autotiling.enable = true;
   wayland.windowManager.sway = {
     enable = true;
     xwayland = true;
@@ -56,6 +57,7 @@ in
       window = {
         titlebar = false;
         border = 0;
+
       };
 
       keybindings = lib.mkOptionDefault {

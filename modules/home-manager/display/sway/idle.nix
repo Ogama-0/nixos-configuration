@@ -26,21 +26,21 @@ in
   services.swayidle = {
     enable = true;
 
-    timeouts = [
-      {
-        timeout = 180; # 3min idle: quick lock, same as the manual shortcut.
-        command = skipIfPlaying lockWithSwaylock;
-      }
-      {
-        timeout = 300; # 5min idle: escalate to the quickshell lockscreen.
-        command = skipIfPlaying lockWithQuickshell;
-      }
-      {
-        timeout = 600; # 10min idle: turn off the screens.
-        command = skipIfPlaying "${swaymsg} \"output * power off\"";
-        resumeCommand = "${swaymsg} \"output * power on\"";
-      }
-    ];
+    # timeouts = [
+    #   {
+    #     timeout = 180; # 3min idle: quick lock, same as the manual shortcut.
+    #     command = skipIfPlaying lockWithSwaylock;
+    #   }
+    #   {
+    #     timeout = 300; # 5min idle: escalate to the quickshell lockscreen.
+    #     command = skipIfPlaying lockWithQuickshell;
+    #   }
+    #   {
+    #     timeout = 600; # 10min idle: turn off the screens.
+    #     command = skipIfPlaying "${swaymsg} \"output * power off\"";
+    #     resumeCommand = "${swaymsg} \"output * power on\"";
+    #   }
+    # ];
 
     events = {
       # Closing the lid ("clap") suspends the machine; lock with
