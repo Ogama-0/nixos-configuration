@@ -49,6 +49,18 @@ in
     "Mod4+d" = "exec vicinae toggle";
   };
 
+  # Without a platform theme Qt never asks the portal what the system
+  # appearance is: the server puts no org.freedesktop.portal.Settings call on
+  # the bus at all (verified with dbus-monitor across a restart),
+  # QStyleHints::colorScheme stays Unknown and vicinae resolves that to its
+  # dark theme - so the launcher stayed black all through light mode, even
+  # after a restart. `gnome` is the built-in theme that does the portal
+  # lookup: with it the server ReadAll's the portal at startup and follows
+  # colorSchemeChanged afterwards, so darkman's own portal backend drives the
+  # switch live. Scoped to this service rather than set session-wide, because
+  # it would change how every other Qt app resolves its theme too.
+  systemd.user.services.vicinae.Service.Environment = [ "QT_QPA_PLATFORMTHEME=gnome" ];
+
   programs.vicinae = {
     enable = true;
 
@@ -68,8 +80,10 @@ in
     };
 
     settings = {
-      # Vicinae picks light or dark itself, from the XDG portal color-scheme
-      # that darkman already drives through dconf. No darkman script needed.
+      # Vicinae picks light or dark itself, from Qt's
+      # QStyleHints::colorScheme() - which only reaches the XDG portal when a
+      # platform theme is loaded, hence QT_QPA_PLATFORMTHEME on the service
+      # below. No darkman script: Qt follows SettingChanged live.
       theme = {
         dark = {
           name = "horizon-dark";
