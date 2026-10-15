@@ -152,6 +152,18 @@ in
       format = "via [$symbol$state]($style) ";
       symbol = " ";
     };
+
+    # starship's default ssh_symbol is U+1F310 GLOBE WITH MERIDIANS, an emoji -
+    # and it renders as tofu in the terminal, because the fallback for that
+    # codepoint does not land on a font that actually draws it there. It is not
+    # simply missing: three installed fonts claim U+1F310, so adding an emoji
+    # font would not fix it. This is the Nerd Font globe U+F0AC instead, which
+    # comes from the same JetBrainsMono Nerd Font that already draws the git
+    # branch icon - so it renders wherever the rest of the prompt does,
+    # including on hosts carrying no emoji font at all.
+    #
+    # Only ever visible over SSH, which in practice means the oserv prompt.
+    settings.hostname.ssh_symbol = " ";
   };
 
   programs.zoxide = {
