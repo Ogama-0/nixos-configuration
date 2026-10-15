@@ -20,6 +20,7 @@
     firefox
     google-chrome
     vesktop
+    thunderbird
     # spotify
     deezer-enhanced
     gimp
