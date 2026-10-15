@@ -21,3 +21,4 @@ creation_rules:
       - age:
           - *admin_ogama
           - *host_oserv
+          - *user_ogama_serv
