@@ -105,7 +105,7 @@ Scope {
             screen: modelData
 
             anchors {
-                top: true
+                bottom: true
                 left: true
                 right: true
             }
@@ -115,10 +115,11 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             mask: Region {}
 
-            // Vertical center of the whole bar, pinned near the panel's top
+            // Vertical center of the whole bar, pinned near the panel's bottom
             // edge rather than the window's own vertical center, so the bar
-            // hugs the very top of the screen.
-            readonly property real beamY: 34
+            // hugs the very bottom of the screen. Mirrors the old top-anchored
+            // 34: the beam sits the same 36px in from the screen edge.
+            readonly property real beamY: implicitHeight - 34
 
             // Where the two beams collide: the battery percentage.
             readonly property real batteryMeetX: root.batteryFraction * width
