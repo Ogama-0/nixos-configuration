@@ -6,3 +6,6 @@ result
 project/
 __pycache__/
 .pytest_cache/
+
+# Brainstorming visual-companion sessions
+.superpowers/

@@ -24,7 +24,11 @@ Scope {
 
     Process {
         id: batteryProc
-        command: ["bash", "-c", "cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1"]
+        // LASERBAR_FAKE_BATTERY stands in for the capacity file, in the same
+        // unit (percent), so a headless render collides the beams at a fixed
+        // x instead of wherever this machine happens to be charged to. Only
+        // scripts/laserbar-preview.sh sets it.
+        command: ["bash", "-c", "if [ -n \"$LASERBAR_FAKE_BATTERY\" ]; then echo \"$LASERBAR_FAKE_BATTERY\"; else cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1; fi"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const value = parseFloat(this.text.trim())

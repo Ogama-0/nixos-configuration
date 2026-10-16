@@ -17,10 +17,10 @@ let
 
   shadow = {
     enable = true;
-    blurRadius = 20; # 0 - 99
-    offset = "0 2"; # x y
-    color = "#0000007F";
-    inactiveColor = "#00000050";
+    blurRadius = 28; # 0 - 99
+    offset = "0 4"; # x y
+    color = "#000000A0";
+    inactiveColor = "#00000066";
   };
 
   # Blur only shows through transparent windows and costs GPU time, so it

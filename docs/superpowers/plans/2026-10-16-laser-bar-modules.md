@@ -62,15 +62,15 @@ All `.../components/` paths are under `modules/home-manager/display/sway/quicksh
 
 **Interfaces:**
 - Produces: `scripts/laserbar-preview.sh <entry.qml> <out.png> [battery-fraction]` — copies the generated `widgets-dark` tree to a temp dir, drops `<entry.qml>` in as `shell.qml`, runs nested headless sway at 1920x1080, calls `laserbar reveal` over IPC, writes `<out.png>`, exits non-zero if no PNG is produced.
-- Produces: `scripts/laserbar-probe.sh <png> <x> <y> <#rrggbb> [tolerance=24]` — exit 0 if the pixel is within tolerance per channel, else exit 1 printing both colours.
+- Produces: `scripts/laserbar-probe.sh <png> <x> <y> <w> <h> --near '#rrggbb' [tol=24] | --dominant r|g|b [margin=18]` — averages the region and asserts it, exit 1 printing the average on failure. A region, not a pixel: the beam's strands and its white core line make any single pixel a coin toss.
 - Produces: `LASERBAR_FAKE_BATTERY` env var, read by `LaserBar.qml`, pinning `batteryFraction` so renders are deterministic.
 
 - [ ] **Step 1: Write the failing check**
 
 ```bash
 scripts/laserbar-preview.sh tests/laserbar/current-bar.qml /tmp/bar.png 0.5 \
-  && scripts/laserbar-probe.sh /tmp/bar.png 200 34 '#2ec27e' \
-  && scripts/laserbar-probe.sh /tmp/bar.png 1700 34 '#e93c58'
+  && scripts/laserbar-probe.sh /tmp/bar.png 200 16 80 14 --dominant g \
+  && scripts/laserbar-probe.sh /tmp/bar.png 1620 16 80 14 --dominant r
 ```
 
 `tests/laserbar/current-bar.qml` is a one-line fixture: `import "components"` and `Scope { LaserBar {} }`.
