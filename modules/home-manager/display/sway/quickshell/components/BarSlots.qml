@@ -84,7 +84,16 @@ Item {
 
         const spans = [];
         for (const c of slotted()) {
-            if (c.visible && c.width > 0) spans.push([c.x, c.x + c.width]);
+            if (!c.visible || c.width <= 0) continue;
+            // A module whose item is larger than what it actually draws - the
+            // workspace strip reserves room for ten cells - publishes the span
+            // it really occupies. Pinching on the item instead would flatten
+            // the strands across empty beam either side of the capsule.
+            if (c.occupiedSpan !== undefined && c.occupiedSpan.length === 2) {
+                spans.push(c.occupiedSpan);
+            } else {
+                spans.push([c.x, c.x + c.width]);
+            }
         }
         moduleSpans = spans;
     }

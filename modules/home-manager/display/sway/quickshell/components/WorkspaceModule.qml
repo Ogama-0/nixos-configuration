@@ -9,6 +9,14 @@ import "." as Components
 // the strip renders a list and something else decides where the list comes
 // from (LaserBar.qml wires the live one). Each entry is
 // { number, focused, icon }.
+//
+// The item's own size is FIXED, at the width ten workspaces would need, with
+// the capsule centred inside it. Two reasons: this is wrapped in a RevealMask,
+// whose layer texture is exactly the item's size, so an item that resized
+// while a cell grew would reallocate and re-render that texture every
+// animation frame - the resizing-layer cost this design exists to avoid. And a
+// capsule centred in a fixed box opens out to both sides as it grows, which is
+// the behaviour asked for.
 Components.RevealMask {
     id: root
 
@@ -25,68 +33,180 @@ Components.RevealMask {
     readonly property real cellWidthPlain: 27
     readonly property real cellWidthFocused: 37
 
-    // Two-digit workspaces need the extra room or the number touches the
-    // dividers either side of it.
+    // Focus moves faster than a workspace opening or closing: a switch answers
+    // a keypress, a life event changes what exists.
+    property int switchDuration: 170
+    property int lifeDuration: 200
+    // Overrides both when positive. For slowing a transition down to look at
+    // it, which is also how the render test catches a cell mid-growth.
+    property int transitionDuration: 0
+
+    property real maxCells: 10
+    readonly property real maxBodyWidth:
+        maxCells * (cellWidthPlain + 6) + (cellWidthFocused - cellWidthPlain)
+
+    // Displayed cells, which is not the same list as `workspaces`: a cell
+    // whose workspace has closed stays here, marked dying, until it has
+    // finished shrinking away.
+    property var cells: []
+    property var fromW: []
+    property var toW: []
+    property real phase: 1
+
     function cellWidth(ws) {
         return (ws.focused ? cellWidthFocused : cellWidthPlain) + (ws.number > 9 ? 6 : 0);
     }
 
+    // One interpolated phase drives every cell, so they move in lockstep and
+    // the offsets stay exact at any point in the transition.
+    function widthAt(i) {
+        const a = fromW.length > i ? fromW[i] : 0;
+        const b = toW.length > i ? toW[i] : 0;
+        return a + (b - a) * phase;
+    }
+
     function cellOffset(index) {
         let x = 0;
-        for (let i = 0; i < index && i < workspaces.length; i++) x += cellWidth(workspaces[i]);
+        for (let i = 0; i < index && i < cells.length; i++) x += widthAt(i);
         return x;
     }
 
-    readonly property real bodyW: cellOffset(workspaces.length)
+    readonly property real bodyW: cellOffset(cells.length)
+    readonly property real dividerWidth: shell.outline * 0.78
 
-    // The span the capsule occupies in panel coordinates, flares included, for
-    // BeamSide.pinchSpans. Empty while there is nothing to show, so the beam
-    // runs uninterrupted.
-    readonly property var occupiedSpan:
-        workspaces.length > 0 ? [x, x + width] : []
-
-    width: shell.width
+    width: maxBodyWidth + 2 * shell.flare + shell.outline
     height: shell.height
     // A capsule with no cells would be a zero-width body whose two flares meet
     // in a black dart. Nothing to show means nothing drawn.
-    visible: workspaces.length > 0
+    visible: cells.length > 0
+
+    // Where the capsule actually sits, in panel coordinates, for
+    // BeamSide.pinchSpans. The item's own box is the ten-workspace
+    // reservation, and pinching on that would flatten the strands over empty
+    // beam.
+    readonly property var occupiedSpan:
+        cells.length > 0 ? [x + shell.x, x + shell.x + shell.width] : []
+
+    onWorkspacesChanged: sync()
+    Component.onCompleted: sync()
+
+    // Merge the incoming list into the displayed one: survivors keep their
+    // place, newcomers start at zero width, and anything gone is kept as a
+    // dying cell so it shrinks out instead of vanishing.
+    function sync() {
+        const incoming = workspaces || [];
+        const held = [];
+        for (let i = 0; i < cells.length; i++) held.push(widthAt(i));
+
+        const present = {};
+        for (let i = 0; i < incoming.length; i++) present[incoming[i].number] = true;
+
+        const next = [];
+        for (let i = 0; i < incoming.length; i++) {
+            const w = incoming[i];
+            next.push({ number: w.number, focused: w.focused, icon: w.icon, dying: false });
+        }
+
+        let membershipChanged = false;
+        for (let i = 0; i < cells.length; i++) {
+            const c = cells[i];
+            if (c.dying || present[c.number]) continue;
+            membershipChanged = true;
+            next.splice(Math.min(i, next.length), 0,
+                        { number: c.number, focused: false, icon: c.icon, dying: true });
+        }
+
+        const heldByNumber = {};
+        for (let i = 0; i < cells.length; i++) heldByNumber[cells[i].number] = held[i];
+
+        const nf = [];
+        const nt = [];
+        for (let i = 0; i < next.length; i++) {
+            const c = next[i];
+            const had = heldByNumber[c.number];
+            if (had === undefined) membershipChanged = true;
+            nf.push(had === undefined ? 0 : had);
+            nt.push(c.dying ? 0 : cellWidth(c));
+        }
+
+        cells = next;
+        fromW = nf;
+        toW = nt;
+
+        phaseAnim.stop();
+        phase = 0;
+        phaseAnim.duration = transitionDuration > 0
+            ? transitionDuration
+            : (membershipChanged ? lifeDuration : switchDuration);
+        phaseAnim.start();
+    }
+
+    NumberAnimation {
+        id: phaseAnim
+        target: root
+        property: "phase"
+        from: 0
+        to: 1
+        duration: root.switchDuration
+        easing.type: Easing.OutCubic
+        onFinished: root.settle()
+    }
+
+    // Drop the cells that have finished shrinking and rebase the widths, so
+    // the next transition starts from where this one ended.
+    function settle() {
+        const kept = [];
+        const w = [];
+        for (let i = 0; i < cells.length; i++) {
+            if (cells[i].dying) continue;
+            kept.push(cells[i]);
+            w.push(toW[i]);
+        }
+        cells = kept;
+        fromW = w;
+        toW = w;
+        phase = 1;
+    }
 
     Components.BarShell {
         id: shell
+
+        x: (root.width - width) / 2
         bodyWidth: Math.max(1, root.bodyW)
         bodyHeight: root.cellHeight
         accentColor: root.accent
-        // The focused cell's wash, in body coordinates offset by the flare.
-        // Running it to the item's edge when the cell is first or last is what
-        // carries the colour out into the flare and tapers it to the point.
+
+        // The focused cell's wash. Running it to the item's edge when the cell
+        // is first or last carries the colour out into the flare and tapers it
+        // to the point.
         accentFromX: {
-            for (let i = 0; i < root.workspaces.length; i++) {
-                if (!root.workspaces[i].focused) continue;
-                return i === 0 ? 0 : root.flareOffset + root.cellOffset(i);
+            for (let i = 0; i < root.cells.length; i++) {
+                if (!root.cells[i].focused) continue;
+                return i === 0 ? 0 : shell.flare + root.cellOffset(i);
             }
             return 0;
         }
         accentToX: {
-            for (let i = 0; i < root.workspaces.length; i++) {
-                if (!root.workspaces[i].focused) continue;
-                if (i === root.workspaces.length - 1) return shell.width;
-                return root.flareOffset + root.cellOffset(i) + root.cellWidth(root.workspaces[i]);
+            for (let i = 0; i < root.cells.length; i++) {
+                if (!root.cells[i].focused) continue;
+                if (i === root.cells.length - 1) return shell.width;
+                return shell.flare + root.cellOffset(i) + root.widthAt(i);
             }
             return 0;
         }
 
         // Cells. Explicit x arithmetic, not a Row: the widths animate, and a
-        // positioner over a model that is reassigned on every sway event is
-        // the failure StatusPanel.qml documents.
+        // positioner over a model reassigned on every sway event is the
+        // failure StatusPanel.qml documents.
         Repeater {
-            model: root.workspaces
+            model: root.cells
 
             Item {
                 id: cell
                 required property var modelData
                 required property int index
 
-                readonly property real cw: root.cellWidth(modelData)
+                readonly property real cw: root.widthAt(index)
 
                 x: shell.bodyX + root.cellOffset(index)
                 y: shell.inset
@@ -96,6 +216,9 @@ Components.RevealMask {
                 // from its first frame; without this they spill over its
                 // neighbours.
                 clip: true
+                // Fades up over the first few pixels of growth, so a cell
+                // opens rather than pops.
+                opacity: Math.min(1, cw / root.cellWidthPlain)
 
                 Components.WorkspaceIcon {
                     name: cell.modelData.icon !== undefined ? cell.modelData.icon : "plain"
@@ -119,11 +242,10 @@ Components.RevealMask {
         }
 
         // Dividers are siblings of the cells, not children: a cell clips its
-        // own content (so a growing cell's icon cannot spill over its
-        // neighbour), which would cut a divider straddling the boundary down
+        // own content, which would cut a divider straddling the boundary down
         // to half its width.
         Repeater {
-            model: Math.max(0, root.workspaces.length - 1)
+            model: Math.max(0, root.cells.length - 1)
 
             Rectangle {
                 required property int index
@@ -132,11 +254,11 @@ Components.RevealMask {
                 y: shell.inset
                 width: root.dividerWidth
                 height: root.cellHeight
+                // A divider whose cell has shrunk to nothing would otherwise
+                // sit on top of its neighbour's edge.
+                opacity: Math.min(1, root.widthAt(index) / root.cellWidthPlain)
                 color: "@capsuleInk@"
             }
         }
     }
-
-    readonly property real flareOffset: shell.flare
-    readonly property real dividerWidth: shell.outline * 0.78
 }
