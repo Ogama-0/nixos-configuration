@@ -22,6 +22,7 @@
     ../../modules/nixosconf/greetd.nix
     ../../modules/nixosconf/vm.nix
     ../../modules/nixosconf/localsend.nix
+    ../../modules/nixosconf/earlyoom.nix
 
     ./nixosconf/backup-laptop.nix
     ./nixosconf/volumes.nix
