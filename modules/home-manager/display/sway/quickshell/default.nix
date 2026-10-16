@@ -141,6 +141,7 @@ in
           "${d}/components/BarSlots.qml" = themedQmlFile variant ./components/BarSlots.qml;
           "${d}/components/WorkspaceIcon.qml" = themedQmlFile variant ./components/WorkspaceIcon.qml;
           "${d}/components/WorkspaceModule.qml" = themedQmlFile variant ./components/WorkspaceModule.qml;
+          "${d}/components/WifiModule.qml" = themedQmlFile variant ./components/WifiModule.qml;
           "${d}/components/BeamSide.qml" = themedQmlFile variant ./components/BeamSide.qml;
           "${d}/components/CollisionEffects.qml" = themedQmlFile variant ./components/CollisionEffects.qml;
           "${d}/components/ClockModule.qml" = themedQmlFile variant ./components/ClockModule.qml;

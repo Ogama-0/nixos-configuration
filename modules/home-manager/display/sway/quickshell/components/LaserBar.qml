@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import Quickshell.I3
+import Quickshell.Networking
 
 // The laser bar itself: battery-driven beams from each screen edge, a
 // collision payoff where they meet, and whatever bar modules are listed at
@@ -29,6 +30,29 @@ Scope {
             out.push({ number: w.number, focused: w.focused, icon: root.iconFor(w.number) });
         }
         return out;
+    }
+
+    // NetworkManager over DBus, signal-driven: no `iw` poll loop.
+    readonly property var wifiState: {
+        const blank = { ssid: "", strength: 0, connected: false };
+        const devs = Networking.devices ? Networking.devices.values : [];
+        for (let i = 0; i < devs.length; i++) {
+            const d = devs[i];
+            if (d.type !== DeviceType.Wifi) continue;
+            const nets = d.networks ? d.networks.values : [];
+            for (let j = 0; j < nets.length; j++) {
+                const n = nets[j];
+                if (!n.active && !n.connected) continue;
+                // Reported as a fraction by some backends and a percentage by
+                // others; neither may reach the bar arithmetic as a NaN.
+                let strength = n.signalStrength;
+                if (strength === undefined || isNaN(strength)) strength = 0;
+                if (strength > 1) strength = strength / 100;
+                return { ssid: n.name, strength: strength, connected: true };
+            }
+            return blank;
+        }
+        return blank;
     }
 
     function iconFor(n) {
@@ -133,6 +157,18 @@ Scope {
                 panelWidth: panel.width
                 beamY: panel.beamY
                 pinchSpans: slots.moduleSpans
+                // Signal strength, carried by the rail itself: full amplitude
+                // at the screen edge, falling to a calm baseline over the
+                // 180px before the wifi capsule. Done here rather than with a
+                // second BeamSide for that stretch - two rails leave a seam
+                // where they meet and duplicate the blurred glow layer.
+                amplitudeAt: function (px, s) {
+                    const calm = 3.5 + (s % 3) * 1.5;
+                    const full = 4 + 14 * root.wifiState.strength + (s % 3) * 4;
+                    const edge = wifi.x;
+                    const t = Math.max(0, Math.min(1, (edge - px) / 180));
+                    return full + (calm - full) * t;
+                }
             }
 
             CollisionEffects {
@@ -166,6 +202,14 @@ Scope {
                 }
 
                 ClockModule { slotSide: "centre" }
+
+                WifiModule {
+                    id: wifi
+                    slotSide: "right"
+                    ssid: root.wifiState.ssid
+                    strength: root.wifiState.strength
+                    connected: root.wifiState.connected
+                }
             }
         }
     }
