@@ -6,9 +6,14 @@ import QtQuick.Effects
 Item {
     id: root
 
-    required property real coverLeft
-    required property real coverRight
-    required property real panelWidth
+    // Not `required`: BarSlots binds these after construction, and a required
+    // property that is not set at creation time makes QML refuse to create the
+    // object at all - which surfaced as the whole bar silently never drawing.
+    // Defaulting to 0 means an unwired module stays hidden, which is the safe
+    // way round for a bar that is only ever shown while a key is held.
+    property real coverLeft: 0
+    property real coverRight: 0
+    property real panelWidth: 0
 
     default property alias content: contentItem.data
 

@@ -112,19 +112,20 @@ Scope {
             }
 
             // ── Modules ──────────────────────────────────────────────
-            // Add or remove a module by adding/removing one block here.
-            // Every module needs coverLeft/coverRight/panelWidth so its
-            // GlassPill/RevealMask reveals in sync with the beams;
-            // everything else (size, position, content) is the module's
-            // own concern.
+            // Add or remove a module by adding/removing one block here. A
+            // module says which side of the bar it belongs on and nothing
+            // else: BarSlots places it on the beam and wires its reveal, so
+            // size, position and the coverLeft/coverRight plumbing are not
+            // the module's problem. See BarSlots.qml.
 
-            ClockModule {
+            BarSlots {
+                panelWidth: panel.width
+                beamY: panel.beamY
                 coverLeft: panel.leftExtent
                 coverRight: panel.rightExtent
-                panelWidth: panel.width
                 active: root.active
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: panel.beamY - height / 2
+
+                ClockModule { slotSide: "centre" }
             }
         }
     }

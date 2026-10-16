@@ -94,6 +94,7 @@ quickshell -p "$TREE/shell.qml" ipc call laserbar reveal >>"$RT/qs.log" 2>&1 || 
 sleep 1
 
 grim -o HEADLESS-1 "$OUT"
+cp "$RT/qs.log" "${OUT%.png}.log" 2>/dev/null || true
 [ -s "$OUT" ] || { echo "grim produced nothing" >&2; tail -20 "$RT/qs.log" >&2; exit 1; }
 
 # A QML error leaves the surface blank rather than failing the run, so surface

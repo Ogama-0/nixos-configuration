@@ -12,7 +12,12 @@ import "." as Components
 Components.RevealMask {
     id: root
 
-    required property bool active
+    property bool active: false
+
+    // Read by BarSlots, which does the placing. See BarSlots.qml.
+    property string slotSide: "centre"
+    property int slotOrder: 0
+    property bool slotWired: false
 
     // Includes both flares, via BarShell's own width: a module sized to its
     // body alone would have its flares revealed on a different schedule from

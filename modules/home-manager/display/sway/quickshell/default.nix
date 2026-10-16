@@ -138,6 +138,7 @@ in
           "${d}/components/GlassPill.qml" = themedQmlFile variant ./components/GlassPill.qml;
           "${d}/components/ColorUtils.qml" = themedQmlFile variant ./components/ColorUtils.qml;
           "${d}/components/BarShell.qml" = themedQmlFile variant ./components/BarShell.qml;
+          "${d}/components/BarSlots.qml" = themedQmlFile variant ./components/BarSlots.qml;
           "${d}/components/BeamSide.qml" = themedQmlFile variant ./components/BeamSide.qml;
           "${d}/components/CollisionEffects.qml" = themedQmlFile variant ./components/CollisionEffects.qml;
           "${d}/components/ClockModule.qml" = themedQmlFile variant ./components/ClockModule.qml;
