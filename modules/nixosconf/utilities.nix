@@ -27,5 +27,8 @@
   };
   # nautilus
   services.gvfs.enable = true;
-  documentation.man.cache.enable = false;
+  documentation.enable = true;
+  documentation.man.enable = true;
+  documentation.man.generateCaches = true;
+  documentation.dev.enable = true;
 }

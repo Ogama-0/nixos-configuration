@@ -52,11 +52,11 @@ in
     direnv
     gnumake
     vulkan-tools
+    linux-manual
+    man-pages
+    man-pages-posix
 
   ];
-
-  # documentation.man.generateCaches =
-  #   false; # remove the build man-pages at every rebuild
 
   programs.fish = {
     enable = true;
