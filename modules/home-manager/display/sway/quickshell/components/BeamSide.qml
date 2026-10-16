@@ -20,6 +20,31 @@ Item {
 
     readonly property bool isLeft: side === "left"
 
+    // Spans of panel x where a module clamps the wire. Amplitude ramps to zero
+    // inside each, over `pinchPad` either side, so the strands flatten into a
+    // capsule rather than crossing it. Same coordinate space as `extent`.
+    property var pinchSpans: []
+    readonly property real pinchPad: 20
+
+    // Optional amplitude as a function of x, so one rail can carry a varying
+    // signal (Wi-Fi strength) along its length. Deliberately not a second
+    // BeamSide for the varying stretch: that would duplicate the blurred glow
+    // layer and leave a visible seam where the two met.
+    property var amplitudeAt: null
+
+    function pinchScale(px) {
+        if (!pinchSpans || pinchSpans.length === 0) return 1
+        let scale = 1
+        for (let i = 0; i < pinchSpans.length; i++) {
+            const a = pinchSpans[i][0]
+            const b = pinchSpans[i][1]
+            if (px >= a && px <= b) return 0
+            const d = px < a ? a - px : px - b
+            if (d < pinchPad) scale = Math.min(scale, d / pinchPad)
+        }
+        return scale
+    }
+
     // Right-anchored children (the glow layers below) resolve
     // `anchors.right: parent.right` against this width. Without it, root
     // defaults to width 0 and those anchors collapse to x: 0 instead of the
@@ -51,17 +76,38 @@ Item {
         if (root.extent <= 0) return []
         const phaseOffset = s * 1.05
         const speedFactor = 1 + s * 0.08
-        const amplitude = 8 + (s % 3) * 4
+        const baseAmplitude = 8 + (s % 3) * 4
         const wavelength = 11 + s * 1
         const pts = []
         for (let t = 0; t <= root.extent; t += 3) {
             const px = root.isLeft ? t : root.panelWidth - t
-            const ramp = Math.min(1, t / 20, (root.extent - t) / 20)
+            const ramp = Math.min(1, t / 20, (root.extent - t) / 20) * root.pinchScale(px)
+            const amplitude = root.amplitudeAt ? root.amplitudeAt(px, s) : baseAmplitude
             const y = midY + amplitude * ramp * Math.sin(t / wavelength + root.wavePhase * speedFactor + phaseOffset)
             pts.push(Qt.point(px, y))
         }
         return pts
     }
+
+    // Both Repeaters below used to call strandPoints() for the same index,
+    // computing every array twice per frame. Computed once here instead, on
+    // each phase tick, and read from the cache by both.
+    property var strandCache: []
+    property var coreCache: []
+
+    function rebuildStrands() {
+        const midY = waveShape.height / 2
+        const next = []
+        for (let s = 0; s < waveShape.strandCount; s++) next.push(strandPoints(s, midY))
+        strandCache = next
+        coreCache = corePoints(midY)
+    }
+
+    onWavePhaseChanged: rebuildStrands()
+    onExtentChanged: rebuildStrands()
+    onPinchSpansChanged: rebuildStrands()
+    onAmplitudeAtChanged: rebuildStrands()
+    Component.onCompleted: rebuildStrands()
 
     function corePoints(midY) {
         if (root.extent <= 0) return []
@@ -196,7 +242,7 @@ Item {
                     fillColor: "transparent"
                     capStyle: ShapePath.RoundCap
                     joinStyle: ShapePath.RoundJoin
-                    PathPolyline { path: root.strandPoints(index, waveShape.height / 2) }
+                    PathPolyline { path: root.strandCache[index] || [] }
                 }
                 Component.onCompleted: waveShape.data.push(shapePath)
             }
@@ -211,7 +257,7 @@ Item {
                     fillColor: "transparent"
                     capStyle: ShapePath.RoundCap
                     joinStyle: ShapePath.RoundJoin
-                    PathPolyline { path: root.strandPoints(index, waveShape.height / 2) }
+                    PathPolyline { path: root.strandCache[index] || [] }
                 }
                 Component.onCompleted: waveShape.data.push(shapePath)
             }
@@ -223,7 +269,7 @@ Item {
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap
             joinStyle: ShapePath.RoundJoin
-            PathPolyline { path: root.corePoints(waveShape.height / 2) }
+            PathPolyline { path: root.coreCache }
         }
         ShapePath {
             strokeColor: root.alphaColor("#EEEEEE", 0.9)
@@ -231,7 +277,7 @@ Item {
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap
             joinStyle: ShapePath.RoundJoin
-            PathPolyline { path: root.corePoints(waveShape.height / 2) }
+            PathPolyline { path: root.coreCache }
         }
     }
 }
