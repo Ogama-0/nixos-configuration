@@ -29,22 +29,34 @@ Item {
     property real outline: 4.6
     property color fillColor: "@capsuleFill@"
 
-    readonly property real bodyX: flare
+    // Half the stroke falls outside the path, so the item carries an
+    // allowance for it on every side. Without this the capsule looks fine on
+    // its own but loses the outer half of its outline the moment it is put
+    // inside RevealMask, whose layer texture is exactly the item's size and
+    // clips anything hanging over the edge.
+    readonly property real inset: outline / 2
+
+    readonly property real bodyX: inset + flare
     readonly property real centreY: height / 2
 
-    width: bodyWidth + 2 * flare
-    height: bodyHeight
+    width: bodyWidth + 2 * flare + outline
+    height: bodyHeight + outline
 
     // Module content goes here, positioned against the item - so a consumer
     // offsets by bodyX to work in body coordinates.
     default property alias content: slot.data
 
     readonly property real tipPull: flare * 0.62
-    readonly property real ctrlTop: centreY - (centreY - radius) * 0.45
-    readonly property real ctrlBottom: centreY + ((bodyHeight - radius) - centreY) * 0.45
+    // Shape-local, where the body occupies y 0..bodyHeight.
+    readonly property real pathCentreY: bodyHeight / 2
+    readonly property real ctrlTop: pathCentreY - (pathCentreY - radius) * 0.45
+    readonly property real ctrlBottom: pathCentreY + ((bodyHeight - radius) - pathCentreY) * 0.45
 
     Shape {
-        anchors.fill: parent
+        x: root.inset
+        y: root.inset
+        width: root.bodyWidth + 2 * root.flare
+        height: root.bodyHeight
         antialiasing: true
         // Same reason as the wave strands in BeamSide.qml: the default
         // renderer triangulates with no edge smoothing, CurveRenderer
@@ -58,51 +70,51 @@ Item {
             joinStyle: ShapePath.RoundJoin
 
             startX: 0
-            startY: root.centreY
+            startY: root.pathCentreY
 
             // Left flare, up to the top-left corner's tangent.
             PathCubic {
-                control1X: root.tipPull; control1Y: root.centreY
-                control2X: root.bodyX; control2Y: root.ctrlTop
-                x: root.bodyX; y: root.radius
+                control1X: root.tipPull; control1Y: root.pathCentreY
+                control2X: root.flare; control2Y: root.ctrlTop
+                x: root.flare; y: root.radius
             }
             PathArc {
-                x: root.bodyX + root.radius; y: 0
+                x: root.flare + root.radius; y: 0
                 radiusX: root.radius; radiusY: root.radius
                 direction: PathArc.Clockwise
             }
-            PathLine { x: root.bodyX + root.bodyWidth - root.radius; y: 0 }
+            PathLine { x: root.flare + root.bodyWidth - root.radius; y: 0 }
             PathArc {
-                x: root.bodyX + root.bodyWidth; y: root.radius
+                x: root.flare + root.bodyWidth; y: root.radius
                 radiusX: root.radius; radiusY: root.radius
                 direction: PathArc.Clockwise
             }
             // Right flare, out to the tip and straight back in.
             PathCubic {
-                control1X: root.bodyX + root.bodyWidth; control1Y: root.ctrlTop
-                control2X: root.width - root.tipPull; control2Y: root.centreY
-                x: root.width; y: root.centreY
+                control1X: root.flare + root.bodyWidth; control1Y: root.ctrlTop
+                control2X: root.bodyWidth + 2 * root.flare - root.tipPull; control2Y: root.pathCentreY
+                x: root.bodyWidth + 2 * root.flare; y: root.pathCentreY
             }
             PathCubic {
-                control1X: root.width - root.tipPull; control1Y: root.centreY
-                control2X: root.bodyX + root.bodyWidth; control2Y: root.ctrlBottom
-                x: root.bodyX + root.bodyWidth; y: root.bodyHeight - root.radius
+                control1X: root.bodyWidth + 2 * root.flare - root.tipPull; control1Y: root.pathCentreY
+                control2X: root.flare + root.bodyWidth; control2Y: root.ctrlBottom
+                x: root.flare + root.bodyWidth; y: root.bodyHeight - root.radius
             }
             PathArc {
-                x: root.bodyX + root.bodyWidth - root.radius; y: root.bodyHeight
+                x: root.flare + root.bodyWidth - root.radius; y: root.bodyHeight
                 radiusX: root.radius; radiusY: root.radius
                 direction: PathArc.Clockwise
             }
-            PathLine { x: root.bodyX + root.radius; y: root.bodyHeight }
+            PathLine { x: root.flare + root.radius; y: root.bodyHeight }
             PathArc {
-                x: root.bodyX; y: root.bodyHeight - root.radius
+                x: root.flare; y: root.bodyHeight - root.radius
                 radiusX: root.radius; radiusY: root.radius
                 direction: PathArc.Clockwise
             }
             PathCubic {
-                control1X: root.bodyX; control1Y: root.ctrlBottom
-                control2X: root.tipPull; control2Y: root.centreY
-                x: 0; y: root.centreY
+                control1X: root.flare; control1Y: root.ctrlBottom
+                control2X: root.tipPull; control2Y: root.pathCentreY
+                x: 0; y: root.pathCentreY
             }
         }
     }

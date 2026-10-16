@@ -79,6 +79,23 @@ case "$MODE" in
         exit 1
     fi
     ;;
+--darker-than)
+    # "There is ink in this band" - a region containing dark glyphs on a light
+    # plate averages well below the plate itself. Stated as a margin against a
+    # known colour rather than an absolute, so it does not encode whatever the
+    # renderer happened to produce.
+    EXPECT="${7:?--darker-than needs a #rrggbb}"; MARGIN="${8:-25}"
+    HEX="${EXPECT#\#}"
+    ER=$((16#${HEX:0:2})); EG=$((16#${HEX:2:2})); EB=$((16#${HEX:4:2}))
+    LUM=$(( (299 * R + 587 * G + 114 * B) / 1000 ))
+    ELUM=$(( (299 * ER + 587 * EG + 114 * EB) / 1000 ))
+    if [ $((ELUM - LUM)) -ge "$MARGIN" ]; then
+        echo "PASS luma $LUM is >= $MARGIN below $EXPECT ($ELUM)"
+    else
+        echo "FAIL luma $LUM not $MARGIN below $EXPECT ($ELUM)" >&2
+        exit 1
+    fi
+    ;;
 --dominant)
     CH="${7:?--dominant needs r, g or b}"; MARGIN="${8:-18}"
     case "$CH" in
