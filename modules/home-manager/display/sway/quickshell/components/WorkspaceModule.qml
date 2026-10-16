@@ -93,8 +93,27 @@ Components.RevealMask {
     // Merge the incoming list into the displayed one: survivors keep their
     // place, newcomers start at zero width, and anything gone is kept as a
     // dying cell so it shrinks out instead of vanishing.
+    // True when we are already showing, or already animating towards, exactly
+    // this list. LaserBar.qml rebuilds its array on every i3 event, including
+    // ones that change nothing here, and restarting the transition each time
+    // would leave the strip permanently mid-animation.
+    function alreadyHeadedFor(incoming) {
+        const target = [];
+        for (let i = 0; i < cells.length; i++) {
+            if (!cells[i].dying) target.push(cells[i]);
+        }
+        if (target.length !== incoming.length) return false;
+        for (let i = 0; i < target.length; i++) {
+            if (target[i].number !== incoming[i].number) return false;
+            if (target[i].focused !== incoming[i].focused) return false;
+            if (target[i].icon !== incoming[i].icon) return false;
+        }
+        return true;
+    }
+
     function sync() {
         const incoming = workspaces || [];
+        if (alreadyHeadedFor(incoming)) return;
         const held = [];
         for (let i = 0; i < cells.length; i++) held.push(widthAt(i));
 
