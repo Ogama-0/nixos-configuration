@@ -114,6 +114,16 @@ Item {
             // the same child twice when children change again later.
             if (!c.slotWired) {
                 c.widthChanged.connect(root.relayout);
+                // Width alone is not enough. A module whose item size is
+                // fixed but whose drawn capsule grows - the workspace strip,
+                // which reserves room for ten cells - never changes width, so
+                // its pinch span would keep whatever value it had when the
+                // bar started and the beam would run straight through the
+                // capsule instead of collapsing into it.
+                if (c.occupiedSpanChanged !== undefined)
+                    c.occupiedSpanChanged.connect(root.relayout);
+                if (c.visibleChanged !== undefined)
+                    c.visibleChanged.connect(root.relayout);
                 c.slotWired = true;
             }
         }

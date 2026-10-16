@@ -1,0 +1,70 @@
+import QtQuick
+import Quickshell
+import Quickshell.Wayland
+import Quickshell.Io
+import "components"
+
+// The workspace strip grows after the bar has already laid out, with a real
+// beam behind it. The strands must collapse around the capsule's NEW extent,
+// not the one it had when the bar started.
+Scope {
+    id: root
+    property bool active: false
+
+    IpcHandler {
+        target: "laserbar"
+        function reveal(): void { root.active = true }
+        function hide(): void { root.active = false }
+    }
+
+    PanelWindow {
+        id: panel
+        anchors { top: true; left: true; right: true }
+        implicitHeight: 70
+        color: "#FF000000"
+        focusable: false
+        exclusionMode: ExclusionMode.Ignore
+        mask: Region {}
+        WlrLayershell.layer: WlrLayer.Overlay
+
+        BeamSide {
+            side: "left"
+            accentColor: "#FF27D796"
+            active: root.active
+            extent: root.active ? panel.width : 0
+            panelWidth: panel.width
+            beamY: 34
+            pinchSpans: slots.moduleSpans
+        }
+
+        BarSlots {
+            id: slots
+            panelWidth: panel.width
+            beamY: 34
+            coverLeft: panel.width
+            coverRight: panel.width
+            active: true
+
+            WorkspaceModule {
+                id: ws
+                slotSide: "left"
+                accent: "#FF27D796"
+
+                workspaces: [{ number: 1, focused: true, icon: "code" }]
+
+                Timer {
+                    interval: 700
+                    running: true
+                    repeat: false
+                    onTriggered: ws.workspaces = [
+                        { number: 1, focused: true,  icon: "code"  },
+                        { number: 2, focused: false, icon: "code"  },
+                        { number: 3, focused: false, icon: "web"   },
+                        { number: 5, focused: false, icon: "music" },
+                        { number: 10, focused: false, icon: "term" }
+                    ]
+                }
+            }
+        }
+    }
+}
