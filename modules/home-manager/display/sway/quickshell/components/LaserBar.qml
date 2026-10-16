@@ -72,6 +72,19 @@ Scope {
         function hide(): void { root.active = false }
     }
 
+    // Backstop for a hide that never arrives. Sway suppresses the --release
+    // binding for a modifier once another binding has fired while it was held,
+    // so mod+Return leaves the bar revealed with nothing to collapse it. This
+    // guarantees it comes down on its own; it is not the mechanism, just the
+    // net under it. Holding mod longer than this collapses the bar, which is
+    // the trade for never being able to get stuck on.
+    Timer {
+        interval: 8000
+        running: root.active
+        repeat: false
+        onTriggered: root.active = false
+    }
+
     Process {
         id: batteryProc
         // LASERBAR_FAKE_BATTERY stands in for the capacity file, in the same
