@@ -98,6 +98,13 @@ quickshell -p "$TREE/shell.qml" ipc call laserbar reveal >>"$RT/qs.log" 2>&1 || 
 # The beams animate over 90ms; give them room to finish travelling.
 sleep 1
 
+# LASERBAR_RETRACT=1 captures the released state instead: the bar must go back
+# to nothing, with no module left painted.
+if [ "${LASERBAR_RETRACT:-}" = "1" ]; then
+    quickshell -p "$TREE/shell.qml" ipc call laserbar hide >>"$RT/qs.log" 2>&1 || true
+    sleep 1
+fi
+
 grim -o HEADLESS-1 "$OUT"
 cp "$RT/qs.log" "${OUT%.png}.log" 2>/dev/null || true
 [ -s "$OUT" ] || { echo "grim produced nothing" >&2; tail -20 "$RT/qs.log" >&2; exit 1; }

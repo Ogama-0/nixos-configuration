@@ -14,7 +14,6 @@ in
 {
   imports = [
     ./barbar.nix
-    ./effects.nix
     ./mako.nix
     ./quickshell
     ./idle.nix
@@ -31,17 +30,7 @@ in
   wayland.windowManager.sway = {
     enable = true;
     xwayland = true;
-    # SwayFX: sway plus rounded corners / shadows / blur, configured in
-    # ./effects.nix. Defined in modules/lib/swayfx.nix because greetd execs
-    # the very same binary to start the session.
-    package = import ../../../lib/swayfx.nix pkgs;
-    # Sway initialises a renderer even for `--validate` (swaywm/sway#4691),
-    # and swayfx's fx_renderer is GLES2-only: in the Nix sandbox it dies on
-    # "Cannot create GLES2 renderer: no DRM FD available" before it ever
-    # reads the config. Plain sway passed only because wlr_renderer falls
-    # back to pixman. Validate by hand instead:
-    #   swayfx --validate --config ~/.config/sway/config
-    checkConfig = false;
+    wrapperFeatures.gtk = true; # Fixes common issues with GTK 3 apps
     config = {
       modifier = "${modifier}";
       terminal = "alacritty";
