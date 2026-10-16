@@ -72,37 +72,33 @@ Scope {
         function hide(): void { root.active = false }
     }
 
-    // What actually collapses the bar after mod+key.
+    // The bar follows the modifier key exactly, and nothing else touches it.
     //
-    // Sway stops firing a modifier's --release binding once another binding
-    // has run while it was held, so `bindsym --release Super_L` works for a
-    // bare tap and never fires after mod+Return. Instead of guessing at key
-    // state, subscribe to sway's `binding` event, which it emits every time a
-    // keybinding runs: the moment you use mod for anything, the bar goes.
+    // sway tracks the modifier itself for a `bar { mode hide; modifier ... }`
+    // block (see the sway config) and broadcasts the result as
+    // bar_state_update with visible_by_modifier. That block draws nothing -
+    // it exists purely as this signal.
     //
-    // One long-lived subscription, not a poll - the socket sits idle until
-    // sway writes to it. Its own reveal binding is ignored, or the bar would
-    // dismiss itself the instant it appeared.
+    // Key bindings cannot do this: sway stops firing a modifier's --release
+    // binding once it has been used as a modifier, so mod+key would leave the
+    // bar up with no hide ever sent. Subscribing to the compositor's own view
+    // of the key is the only exact correspondence available.
+    //
+    // One long-lived subscription, idle on a socket until sway writes to it.
     Process {
+        id: modifierWatch
         running: true
-        command: ["@swaymsgBin@", "-t", "subscribe", "-m", "[\"binding\"]"]
+        command: ["@swaymsgBin@", "-t", "subscribe", "-m", "[\"bar_state_update\"]"]
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: line => {
-                if (line.indexOf("laserbar") !== -1) return;
-                root.active = false;
+                if (line.indexOf("visible_by_modifier") === -1) return;
+                root.active = JSON.parse(line).visible_by_modifier === true;
             }
         }
-    }
-
-    // Backstop, in case that subscription ever dies: the bar must not be able
-    // to stay up forever. Long enough not to interrupt reading it while mod
-    // is held.
-    Timer {
-        interval: 30000
-        running: root.active
-        repeat: false
-        onTriggered: root.active = false
+        // If the subscription ever dies the bar would be stuck at whatever it
+        // was last told, so it goes down with it.
+        onExited: root.active = false
     }
 
     Process {
