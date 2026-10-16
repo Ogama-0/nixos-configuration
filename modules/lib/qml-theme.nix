@@ -36,6 +36,9 @@
   # variants (dark base05 is near-white, light base05 is near-black). The
   # quickshell module passes polarity-correct values; these defaults are the
   # dark ones, for the callers that render no bar.
+  # Absolute path to swaymsg. PATH is not dependable inside the systemd user
+  # service, which is why @systemctlBin@ exists too.
+, swaymsgBin ? "swaymsg"
 , capsuleFill ? "#F2${colors.base05}"
 , capsuleInk ? "#FF${colors.base00}"
 }:
@@ -67,6 +70,7 @@ builtins.replaceStrings
     "@nameColor@"
     "@mutedColor@"
     "@wallpaperDirs@"
+    "@swaymsgBin@"
     "@capsuleFill@"
     "@capsuleInk@"
   ]
@@ -104,6 +108,7 @@ builtins.replaceStrings
     "#FF${colors.base05}"
     mutedColor
     wallpaperDirs
+    swaymsgBin
     capsuleFill
     capsuleInk
   ]

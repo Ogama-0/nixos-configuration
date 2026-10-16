@@ -57,13 +57,16 @@ let
   treeLink = import ../../../../lib/quickshell-tree-link.nix { inherit pkgs; };
 
   systemctlBin = "${pkgs.systemd}/bin/systemctl";
+  # The session's own sway, not pkgs.sway, so this pulls nothing extra into
+  # the closure. See modules/lib/swayfx.nix.
+  swaymsgBin = "${import ../../../../lib/swayfx.nix pkgs}/bin/swaymsg";
   corptaFontPath = "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf";
 
   themeFor = variant: qmlTheme ({
     colors = allColors.${variant};
     laserColor = if variant == "light" then "#FFFFFF" else "#000000";
     wallpaperDirs = "${variant} both";
-    inherit systemctlBin corptaFontPath statusApiUrl metricsApiUrl;
+    inherit systemctlBin swaymsgBin corptaFontPath statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
   } // statusColorsFor variant // capsuleColorsFor variant);
 

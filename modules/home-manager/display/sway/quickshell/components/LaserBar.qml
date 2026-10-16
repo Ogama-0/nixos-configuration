@@ -72,14 +72,34 @@ Scope {
         function hide(): void { root.active = false }
     }
 
-    // Backstop for a hide that never arrives. Sway suppresses the --release
-    // binding for a modifier once another binding has fired while it was held,
-    // so mod+Return leaves the bar revealed with nothing to collapse it. This
-    // guarantees it comes down on its own; it is not the mechanism, just the
-    // net under it. Holding mod longer than this collapses the bar, which is
-    // the trade for never being able to get stuck on.
+    // What actually collapses the bar after mod+key.
+    //
+    // Sway stops firing a modifier's --release binding once another binding
+    // has run while it was held, so `bindsym --release Super_L` works for a
+    // bare tap and never fires after mod+Return. Instead of guessing at key
+    // state, subscribe to sway's `binding` event, which it emits every time a
+    // keybinding runs: the moment you use mod for anything, the bar goes.
+    //
+    // One long-lived subscription, not a poll - the socket sits idle until
+    // sway writes to it. Its own reveal binding is ignored, or the bar would
+    // dismiss itself the instant it appeared.
+    Process {
+        running: true
+        command: ["@swaymsgBin@", "-t", "subscribe", "-m", "[\"binding\"]"]
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: line => {
+                if (line.indexOf("laserbar") !== -1) return;
+                root.active = false;
+            }
+        }
+    }
+
+    // Backstop, in case that subscription ever dies: the bar must not be able
+    // to stay up forever. Long enough not to interrupt reading it while mod
+    // is held.
     Timer {
-        interval: 8000
+        interval: 30000
         running: root.active
         repeat: false
         onTriggered: root.active = false
