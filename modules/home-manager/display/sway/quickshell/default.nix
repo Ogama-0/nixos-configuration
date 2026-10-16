@@ -25,6 +25,15 @@ let
         else opaque st.muted;
     };
 
+  # The capsule is a light plate with a near-black outline in both variants,
+  # which means reading from opposite ends of the palette depending on polarity
+  # rather than from one fixed slot.
+  capsuleColorsFor = variant:
+    let c = allColors.${variant}; in
+    if variant == "light"
+    then { capsuleFill = "#F2${c.base00}"; capsuleInk = "#FF${c.base05}"; }
+    else { capsuleFill = "#F2${c.base05}"; capsuleInk = "#FF${c.base00}"; };
+
   # Built from the profile so the tailnet hostnames are never hardcoded in QML.
   #
   # The doubled `.server.server` is not a typo. host/profiles.nix builds every
@@ -56,7 +65,7 @@ let
     wallpaperDirs = "${variant} both";
     inherit systemctlBin corptaFontPath statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
-  } // statusColorsFor variant);
+  } // statusColorsFor variant // capsuleColorsFor variant);
 
   themedQmlFile = variant: path: {
     text = themeFor variant (builtins.readFile path);
@@ -128,6 +137,7 @@ in
           "${d}/components/RevealMask.qml" = themedQmlFile variant ./components/RevealMask.qml;
           "${d}/components/GlassPill.qml" = themedQmlFile variant ./components/GlassPill.qml;
           "${d}/components/ColorUtils.qml" = themedQmlFile variant ./components/ColorUtils.qml;
+          "${d}/components/BarShell.qml" = themedQmlFile variant ./components/BarShell.qml;
           "${d}/components/BeamSide.qml" = themedQmlFile variant ./components/BeamSide.qml;
           "${d}/components/CollisionEffects.qml" = themedQmlFile variant ./components/CollisionEffects.qml;
           "${d}/components/ClockModule.qml" = themedQmlFile variant ./components/ClockModule.qml;

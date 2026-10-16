@@ -31,6 +31,13 @@
   # modules/nixosconf/greetd.nix, which renders no Wallpaper.qml, needs no
   # change. The quickshell module passes "dark both" or "light both".
 , wallpaperDirs ? "both"
+  # Bar-module capsule colours. Not a single base16 slot: the plate is the
+  # light one and the outline the dark one, and those swap between the
+  # variants (dark base05 is near-white, light base05 is near-black). The
+  # quickshell module passes polarity-correct values; these defaults are the
+  # dark ones, for the callers that render no bar.
+, capsuleFill ? "#F2${colors.base05}"
+, capsuleInk ? "#FF${colors.base00}"
 }:
 builtins.replaceStrings
   [
@@ -60,6 +67,8 @@ builtins.replaceStrings
     "@nameColor@"
     "@mutedColor@"
     "@wallpaperDirs@"
+    "@capsuleFill@"
+    "@capsuleInk@"
   ]
   [
     "#B3${colors.base00}"
@@ -95,4 +104,6 @@ builtins.replaceStrings
     "#FF${colors.base05}"
     mutedColor
     wallpaperDirs
+    capsuleFill
+    capsuleInk
   ]
