@@ -32,6 +32,11 @@ Item {
     property real edgeMargin: 24
     property real spacing: 16
 
+    // Where the placed modules sit, in panel coordinates, for
+    // BeamSide.pinchSpans. Recomputed with the layout, since a module that
+    // changes width moves the spans of everything after it.
+    property var moduleSpans: []
+
     anchors.fill: parent
 
     function slotted() {
@@ -76,6 +81,12 @@ Item {
         }
 
         for (const c of slotted()) c.y = beamY - c.height / 2;
+
+        const spans = [];
+        for (const c of slotted()) {
+            if (c.visible && c.width > 0) spans.push([c.x, c.x + c.width]);
+        }
+        moduleSpans = spans;
     }
 
     // Reveal wiring, bound once per module so it keeps tracking the beams.

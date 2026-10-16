@@ -16,9 +16,11 @@ import QtQuick.Shapes
 //     corner's x, so it arrives vertically, on the corner arc's tangent.
 //     Landing inside the rounded corner instead leaves a visible step.
 //
-// `width` deliberately includes both flares. RevealMask clips on an x range,
-// so a module sized to its body alone would have its flares revealed on a
-// different schedule from the thing they are attached to.
+// `width` deliberately includes both flares and a half-stroke allowance on
+// every side. RevealMask clips on an x range and its layer texture is exactly
+// the item's size, so a module sized to its body alone would both lose the
+// outer half of its outline and have its flares revealed on a different
+// schedule from the capsule they belong to.
 Item {
     id: root
 
@@ -29,21 +31,22 @@ Item {
     property real outline: 4.6
     property color fillColor: "@capsuleFill@"
 
-    // Half the stroke falls outside the path, so the item carries an
-    // allowance for it on every side. Without this the capsule looks fine on
-    // its own but loses the outer half of its outline the moment it is put
-    // inside RevealMask, whose layer texture is exactly the item's size and
-    // clips anything hanging over the edge.
-    readonly property real inset: outline / 2
+    // An accent wash over part of the capsule - the focused workspace cell.
+    // Clipped to an x range but drawn from the same path, so a cell at either
+    // end carries its colour out into the flare and tapers with it.
+    property color accentColor: "transparent"
+    property real accentFromX: 0
+    property real accentToX: 0
 
+    readonly property real inset: outline / 2
     readonly property real bodyX: inset + flare
     readonly property real centreY: height / 2
 
     width: bodyWidth + 2 * flare + outline
     height: bodyHeight + outline
 
-    // Module content goes here, positioned against the item - so a consumer
-    // offsets by bodyX to work in body coordinates.
+    // Module content goes here. Children are positioned against the item, so a
+    // consumer offsets by bodyX to work in body coordinates.
     default property alias content: slot.data
 
     readonly property real tipPull: flare * 0.62
@@ -51,6 +54,26 @@ Item {
     readonly property real pathCentreY: bodyHeight / 2
     readonly property real ctrlTop: pathCentreY - (pathCentreY - radius) * 0.45
     readonly property real ctrlBottom: pathCentreY + ((bodyHeight - radius) - pathCentreY) * 0.45
+
+    // One source of truth for the outline, so the accent wash cannot drift
+    // from the capsule it is washing.
+    readonly property string pathData: {
+        const f = flare, w = bodyWidth, h = bodyHeight, r = radius;
+        const cy = pathCentreY, k = tipPull, ct = ctrlTop, cb = ctrlBottom;
+        const rt = w + 2 * f;
+        return "M 0 " + cy
+            + " C " + k + " " + cy + " " + f + " " + ct + " " + f + " " + r
+            + " A " + r + " " + r + " 0 0 1 " + (f + r) + " 0"
+            + " L " + (f + w - r) + " 0"
+            + " A " + r + " " + r + " 0 0 1 " + (f + w) + " " + r
+            + " C " + (f + w) + " " + ct + " " + (rt - k) + " " + cy + " " + rt + " " + cy
+            + " C " + (rt - k) + " " + cy + " " + (f + w) + " " + cb + " " + (f + w) + " " + (h - r)
+            + " A " + r + " " + r + " 0 0 1 " + (f + w - r) + " " + h
+            + " L " + (f + r) + " " + h
+            + " A " + r + " " + r + " 0 0 1 " + f + " " + (h - r)
+            + " C " + f + " " + cb + " " + k + " " + cy + " 0 " + cy
+            + " Z";
+    }
 
     Shape {
         x: root.inset
@@ -65,57 +88,50 @@ Item {
 
         ShapePath {
             fillColor: root.fillColor
+            strokeColor: "transparent"
+            strokeWidth: 0
+            PathSvg { path: root.pathData }
+        }
+    }
+
+    // Accent wash, between fill and outline so the stroke still caps it.
+    Item {
+        x: root.inset + root.accentFromX
+        width: Math.max(0, root.accentToX - root.accentFromX)
+        y: root.inset
+        height: root.bodyHeight
+        clip: true
+        visible: width > 0
+
+        Shape {
+            x: -(root.accentFromX)
+            width: root.bodyWidth + 2 * root.flare
+            height: root.bodyHeight
+            antialiasing: true
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+                fillColor: root.accentColor
+                strokeColor: "transparent"
+                strokeWidth: 0
+                PathSvg { path: root.pathData }
+            }
+        }
+    }
+
+    Shape {
+        x: root.inset
+        y: root.inset
+        width: root.bodyWidth + 2 * root.flare
+        height: root.bodyHeight
+        antialiasing: true
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+            fillColor: "transparent"
             strokeColor: "@capsuleInk@"
             strokeWidth: root.outline
             joinStyle: ShapePath.RoundJoin
-
-            startX: 0
-            startY: root.pathCentreY
-
-            // Left flare, up to the top-left corner's tangent.
-            PathCubic {
-                control1X: root.tipPull; control1Y: root.pathCentreY
-                control2X: root.flare; control2Y: root.ctrlTop
-                x: root.flare; y: root.radius
-            }
-            PathArc {
-                x: root.flare + root.radius; y: 0
-                radiusX: root.radius; radiusY: root.radius
-                direction: PathArc.Clockwise
-            }
-            PathLine { x: root.flare + root.bodyWidth - root.radius; y: 0 }
-            PathArc {
-                x: root.flare + root.bodyWidth; y: root.radius
-                radiusX: root.radius; radiusY: root.radius
-                direction: PathArc.Clockwise
-            }
-            // Right flare, out to the tip and straight back in.
-            PathCubic {
-                control1X: root.flare + root.bodyWidth; control1Y: root.ctrlTop
-                control2X: root.bodyWidth + 2 * root.flare - root.tipPull; control2Y: root.pathCentreY
-                x: root.bodyWidth + 2 * root.flare; y: root.pathCentreY
-            }
-            PathCubic {
-                control1X: root.bodyWidth + 2 * root.flare - root.tipPull; control1Y: root.pathCentreY
-                control2X: root.flare + root.bodyWidth; control2Y: root.ctrlBottom
-                x: root.flare + root.bodyWidth; y: root.bodyHeight - root.radius
-            }
-            PathArc {
-                x: root.flare + root.bodyWidth - root.radius; y: root.bodyHeight
-                radiusX: root.radius; radiusY: root.radius
-                direction: PathArc.Clockwise
-            }
-            PathLine { x: root.flare + root.radius; y: root.bodyHeight }
-            PathArc {
-                x: root.flare; y: root.bodyHeight - root.radius
-                radiusX: root.radius; radiusY: root.radius
-                direction: PathArc.Clockwise
-            }
-            PathCubic {
-                control1X: root.flare; control1Y: root.ctrlBottom
-                control2X: root.tipPull; control2Y: root.pathCentreY
-                x: 0; y: root.pathCentreY
-            }
+            PathSvg { path: root.pathData }
         }
     }
 

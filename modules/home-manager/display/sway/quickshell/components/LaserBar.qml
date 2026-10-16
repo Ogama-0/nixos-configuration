@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
+import Quickshell.I3
 
 // The laser bar itself: battery-driven beams from each screen edge, a
 // collision payoff where they meet, and whatever bar modules are listed at
@@ -15,6 +16,31 @@ Scope {
 
     property bool active: false
     property real batteryFraction: 0.5
+
+    // Sway speaks the i3 IPC, so this is socket-driven: no swaymsg subprocess
+    // and no polling. Sway destroys a workspace as soon as its last window
+    // closes, so "the workspaces it reports" is already "the workspaces with
+    // windows" - the swaybar question.
+    readonly property var workspaceList: {
+        const out = [];
+        const all = I3.workspaces ? I3.workspaces.values : [];
+        for (let i = 0; i < all.length; i++) {
+            const w = all[i];
+            out.push({ number: w.number, focused: w.focused, icon: root.iconFor(w.number) });
+        }
+        return out;
+    }
+
+    function iconFor(n) {
+        switch (n) {
+        case 1: case 2: return "code";
+        case 3: return "web";
+        case 4: return "chat";
+        case 5: return "music";
+        case 10: return "term";
+        default: return "plain";
+        }
+    }
 
     IpcHandler {
         target: "laserbar"
@@ -70,6 +96,9 @@ Scope {
             // hugs the very top of the screen.
             readonly property real beamY: 34
 
+            // Where the two beams collide: the battery percentage.
+            readonly property real batteryMeetX: root.batteryFraction * width
+
             // Current travel distance of each beam from its screen edge,
             // shared by the beams, the collision meeting point, and every
             // module's reveal-mask sync.
@@ -93,6 +122,7 @@ Scope {
                 extent: panel.leftExtent
                 panelWidth: panel.width
                 beamY: panel.beamY
+                pinchSpans: slots.moduleSpans
             }
 
             BeamSide {
@@ -102,6 +132,7 @@ Scope {
                 extent: panel.rightExtent
                 panelWidth: panel.width
                 beamY: panel.beamY
+                pinchSpans: slots.moduleSpans
             }
 
             CollisionEffects {
@@ -119,11 +150,20 @@ Scope {
             // the module's problem. See BarSlots.qml.
 
             BarSlots {
+                id: slots
                 panelWidth: panel.width
                 beamY: panel.beamY
                 coverLeft: panel.leftExtent
                 coverRight: panel.rightExtent
                 active: root.active
+
+                WorkspaceModule {
+                    slotSide: "left"
+                    workspaces: root.workspaceList
+                    // The rail covering this module, so the focused cell
+                    // drifts green to red with the battery.
+                    accent: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
+                }
 
                 ClockModule { slotSide: "centre" }
             }

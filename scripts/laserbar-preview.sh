@@ -60,6 +60,11 @@ cp "$ENTRY" "$TREE/shell.qml"
 
 # --- nested headless compositor ---------------------------------------------
 export XDG_RUNTIME_DIR="$RT"
+# Inherited from the real session otherwise, which would point the bar's
+# Quickshell.I3 at the host compositor's workspaces instead of this nested
+# one's - making any render that uses live workspace data depend on whatever
+# the user happens to have open.
+unset I3SOCK
 export WLR_BACKENDS=headless
 export WLR_LIBINPUT_NO_DEVICES=1
 export SWAYSOCK="$RT/sway.sock"
