@@ -32,7 +32,7 @@ Components.RevealMask {
     Components.BarShell {
         id: shell
         bodyWidth: 128
-        bodyHeight: 34
+        bodyHeight: 38
 
         Text {
             id: clockText

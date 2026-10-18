@@ -30,6 +30,13 @@ Item {
     property real flare: 21
     property real outline: 4.6
     property color fillColor: "@capsuleFill@"
+    property color strokeColor: "@capsuleInk@"
+
+    // The flare ends at the beam's own thickness, not at a point, and that
+    // end is left unstroked. A flare closing to a point puts two strokes on
+    // top of each other and the beam dead-ends into the resulting blob; an
+    // open throat reads as two rails guiding the beam into the capsule.
+    property real throat: 12
 
     // An accent wash over part of the capsule - the focused workspace cell.
     // Clipped to an x range but drawn from the same path, so a cell at either
@@ -56,22 +63,40 @@ Item {
     readonly property real ctrlBottom: pathCentreY + ((bodyHeight - radius) - pathCentreY) * 0.45
 
     // One source of truth for the outline, so the accent wash cannot drift
-    // from the capsule it is washing.
-    readonly property string pathData: {
-        const f = flare, w = bodyWidth, h = bodyHeight, r = radius;
-        const cy = pathCentreY, k = tipPull, ct = ctrlTop, cb = ctrlBottom;
-        const rt = w + 2 * f;
-        return "M 0 " + cy
-            + " C " + k + " " + cy + " " + f + " " + ct + " " + f + " " + r
+    // from the capsule it is washing. Split in three: a closed path for the
+    // fill (which has to span the throats, or the capsule would leak), and
+    // the top and bottom edges as separate OPEN paths for the stroke, so
+    // nothing is ever drawn across a throat.
+    readonly property string topEdge: {
+        const f = flare, w = bodyWidth, r = radius, cy = pathCentreY, k = tipPull;
+        const th = throat / 2, rt = w + 2 * f;
+        return "M 0 " + (cy - th)
+            + " C " + k + " " + (cy - th) + " " + f + " " + ctrlTop + " " + f + " " + r
             + " A " + r + " " + r + " 0 0 1 " + (f + r) + " 0"
             + " L " + (f + w - r) + " 0"
             + " A " + r + " " + r + " 0 0 1 " + (f + w) + " " + r
-            + " C " + (f + w) + " " + ct + " " + (rt - k) + " " + cy + " " + rt + " " + cy
-            + " C " + (rt - k) + " " + cy + " " + (f + w) + " " + cb + " " + (f + w) + " " + (h - r)
+            + " C " + (f + w) + " " + ctrlTop + " " + (rt - k) + " " + (cy - th) + " " + rt + " " + (cy - th);
+    }
+    readonly property string bottomEdge: {
+        const f = flare, w = bodyWidth, h = bodyHeight, r = radius, cy = pathCentreY, k = tipPull;
+        const th = throat / 2, rt = w + 2 * f;
+        return "M 0 " + (cy + th)
+            + " C " + k + " " + (cy + th) + " " + f + " " + ctrlBottom + " " + f + " " + (h - r)
+            + " A " + r + " " + r + " 0 0 0 " + (f + r) + " " + h
+            + " L " + (f + w - r) + " " + h
+            + " A " + r + " " + r + " 0 0 0 " + (f + w) + " " + (h - r)
+            + " C " + (f + w) + " " + ctrlBottom + " " + (rt - k) + " " + (cy + th) + " " + rt + " " + (cy + th);
+    }
+    readonly property string pathData: {
+        const f = flare, w = bodyWidth, h = bodyHeight, r = radius, cy = pathCentreY, k = tipPull;
+        const th = throat / 2, rt = w + 2 * f;
+        return topEdge
+            + " L " + rt + " " + (cy + th)
+            + " C " + (rt - k) + " " + (cy + th) + " " + (f + w) + " " + ctrlBottom + " " + (f + w) + " " + (h - r)
             + " A " + r + " " + r + " 0 0 1 " + (f + w - r) + " " + h
             + " L " + (f + r) + " " + h
             + " A " + r + " " + r + " 0 0 1 " + f + " " + (h - r)
-            + " C " + f + " " + cb + " " + k + " " + cy + " 0 " + cy
+            + " C " + f + " " + ctrlBottom + " " + k + " " + (cy + th) + " 0 " + (cy + th)
             + " Z";
     }
 
@@ -81,9 +106,6 @@ Item {
         width: root.bodyWidth + 2 * root.flare
         height: root.bodyHeight
         antialiasing: true
-        // Same reason as the wave strands in BeamSide.qml: the default
-        // renderer triangulates with no edge smoothing, CurveRenderer
-        // antialiases on the GPU.
         preferredRendererType: Shape.CurveRenderer
 
         ShapePath {
@@ -128,10 +150,19 @@ Item {
 
         ShapePath {
             fillColor: "transparent"
-            strokeColor: "@capsuleInk@"
+            strokeColor: root.strokeColor
             strokeWidth: root.outline
             joinStyle: ShapePath.RoundJoin
-            PathSvg { path: root.pathData }
+            capStyle: ShapePath.RoundCap
+            PathSvg { path: root.topEdge }
+        }
+        ShapePath {
+            fillColor: "transparent"
+            strokeColor: root.strokeColor
+            strokeWidth: root.outline
+            joinStyle: ShapePath.RoundJoin
+            capStyle: ShapePath.RoundCap
+            PathSvg { path: root.bottomEdge }
         }
     }
 

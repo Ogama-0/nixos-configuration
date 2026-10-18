@@ -38,7 +38,7 @@ Components.RevealMask {
     Components.BarShell {
         id: shell
         bodyWidth: 148
-        bodyHeight: 34
+        bodyHeight: 38
 
         Text {
             // An empty capsule says nothing useful. Name the state instead.
