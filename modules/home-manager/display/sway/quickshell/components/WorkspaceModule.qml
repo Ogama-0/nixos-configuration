@@ -210,7 +210,7 @@ Components.RevealMask {
         accentFromX: {
             for (let i = 0; i < root.cells.length; i++) {
                 if (!root.cells[i].focused) continue;
-                return i === 0 ? 0 : shell.flare + root.cellOffset(i);
+                return i === 0 ? 0 : shell.bodyX + root.cellOffset(i);
             }
             return 0;
         }
@@ -218,7 +218,7 @@ Components.RevealMask {
             for (let i = 0; i < root.cells.length; i++) {
                 if (!root.cells[i].focused) continue;
                 if (i === root.cells.length - 1) return shell.width;
-                return shell.flare + root.cellOffset(i) + root.widthAt(i);
+                return shell.bodyX + root.cellOffset(i) + root.widthAt(i);
             }
             return 0;
         }
@@ -237,7 +237,7 @@ Components.RevealMask {
                 readonly property real cw: root.widthAt(index)
 
                 x: shell.bodyX + root.cellOffset(index)
-                y: shell.inset
+                y: shell.bodyY
                 width: cw
                 height: root.cellHeight
                 // A cell growing in from zero has a full-size icon and number
@@ -279,7 +279,7 @@ Components.RevealMask {
                 required property int index
 
                 x: shell.bodyX + root.cellOffset(index + 1) - root.dividerWidth / 2
-                y: shell.inset
+                y: shell.bodyY
                 width: root.dividerWidth
                 height: root.cellHeight
                 // A divider whose cell has shrunk to nothing would otherwise

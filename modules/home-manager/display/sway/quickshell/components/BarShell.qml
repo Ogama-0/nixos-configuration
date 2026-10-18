@@ -63,68 +63,73 @@ Item {
     property real accentToX: 0
 
     readonly property real inset: outline / 2
-    readonly property real bodyX: inset + flare
+
+    // How far out the mouth opens, past the pinch point, and how tall it gets
+    // there. The border leaves the capsule, pinches to a point, then opens to
+    // the full height of the beam band - so the border itself forms the
+    // funnel the beam pours through, instead of stopping at a tip.
+    property real mouth: 30
+    property real mouthHeight: 44
+
+    width: bodyWidth + 2 * (flare + mouth) + outline
+    height: Math.max(bodyHeight, mouthHeight) + outline
+
     readonly property real centreY: height / 2
+    readonly property real bodyX: inset + mouth + flare
+    readonly property real bodyY: (height - bodyHeight) / 2
+    readonly property real bodyRight: bodyX + bodyWidth
 
-    width: bodyWidth + 2 * flare + outline
-    height: bodyHeight + outline
-
-    // Module content goes here. Children are positioned against the item, so a
-    // consumer offsets by bodyX to work in body coordinates.
+    // Module content goes here. Children are positioned against the item, so
+    // a consumer offsets by bodyX / bodyY to work in body coordinates.
     default property alias content: slot.data
 
-    readonly property real tipPull: flare * 0.62
-    // Shape-local, where the body occupies y 0..bodyHeight.
-    readonly property real pathCentreY: bodyHeight / 2
-    readonly property real ctrlTop: pathCentreY - (pathCentreY - radius) * 0.45
-    readonly property real ctrlBottom: pathCentreY + ((bodyHeight - radius) - pathCentreY) * 0.45
+    // Shoulder control points. Each shoulder is ONE smooth S from the band's
+    // lip to the body's corner - no pinch in between. A pinch makes the top
+    // and bottom shoulders meet at the centreline and cross into an X.
+    readonly property real shoulderOut: mouth * 0.62
+    readonly property real shoulderIn: flare * 0.55
+    readonly property real mouthTop: centreY - mouthHeight / 2
+    readonly property real mouthBottom: centreY + mouthHeight / 2
 
-    // One source of truth for the outline, so the accent wash cannot drift
-    // from the capsule it is washing. Split in three: a closed path for the
-    // fill (which has to span the throats, or the capsule would leak), and
-    // the top and bottom edges as separate OPEN paths for the stroke, so
-    // nothing is ever drawn across a throat.
     readonly property string topEdge: {
-        const f = flare, w = bodyWidth, r = radius, cy = pathCentreY, k = tipPull;
-        const th = throat / 2, rt = w + 2 * f;
-        return "M 0 " + (cy - th)
-            + " C " + k + " " + (cy - th) + " " + f + " " + ctrlTop + " " + f + " " + r
-            + " A " + r + " " + r + " 0 0 1 " + (f + r) + " 0"
-            + " L " + (f + w - r) + " 0"
-            + " A " + r + " " + r + " 0 0 1 " + (f + w) + " " + r
-            + " C " + (f + w) + " " + ctrlTop + " " + (rt - k) + " " + (cy - th) + " " + rt + " " + (cy - th);
+        const i = inset, r = radius, bx = bodyX, br = bodyRight, bt = bodyY;
+        const lo = i, hi = width - i;
+        return "M " + lo + " " + mouthTop
+            + " C " + (lo + shoulderOut) + " " + mouthTop + " " + (bx - shoulderIn) + " " + (bt + r) + " " + bx + " " + (bt + r)
+            + " A " + r + " " + r + " 0 0 1 " + (bx + r) + " " + bt
+            + " L " + (br - r) + " " + bt
+            + " A " + r + " " + r + " 0 0 1 " + br + " " + (bt + r)
+            + " C " + (br + shoulderIn) + " " + (bt + r) + " " + (hi - shoulderOut) + " " + mouthTop + " " + hi + " " + mouthTop;
     }
     readonly property string bottomEdge: {
-        const f = flare, w = bodyWidth, h = bodyHeight, r = radius, cy = pathCentreY, k = tipPull;
-        const th = throat / 2, rt = w + 2 * f;
-        return "M 0 " + (cy + th)
-            + " C " + k + " " + (cy + th) + " " + f + " " + ctrlBottom + " " + f + " " + (h - r)
-            + " A " + r + " " + r + " 0 0 0 " + (f + r) + " " + h
-            + " L " + (f + w - r) + " " + h
-            + " A " + r + " " + r + " 0 0 0 " + (f + w) + " " + (h - r)
-            + " C " + (f + w) + " " + ctrlBottom + " " + (rt - k) + " " + (cy + th) + " " + rt + " " + (cy + th);
+        const i = inset, r = radius, bx = bodyX, br = bodyRight, bb = bodyY + bodyHeight;
+        const lo = i, hi = width - i;
+        return "M " + lo + " " + mouthBottom
+            + " C " + (lo + shoulderOut) + " " + mouthBottom + " " + (bx - shoulderIn) + " " + (bb - r) + " " + bx + " " + (bb - r)
+            + " A " + r + " " + r + " 0 0 0 " + (bx + r) + " " + bb
+            + " L " + (br - r) + " " + bb
+            + " A " + r + " " + r + " 0 0 0 " + br + " " + (bb - r)
+            + " C " + (br + shoulderIn) + " " + (bb - r) + " " + (hi - shoulderOut) + " " + mouthBottom + " " + hi + " " + mouthBottom;
     }
+
+    // The plate is simply the body: the shoulders are border, not plate.
     readonly property string pathData: {
-        const f = flare, w = bodyWidth, h = bodyHeight, r = radius, cy = pathCentreY, k = tipPull;
-        const th = throat / 2, rt = w + 2 * f;
-        return topEdge
-            + " L " + rt + " " + (cy + th)
-            + " C " + (rt - k) + " " + (cy + th) + " " + (f + w) + " " + ctrlBottom + " " + (f + w) + " " + (h - r)
-            + " A " + r + " " + r + " 0 0 1 " + (f + w - r) + " " + h
-            + " L " + (f + r) + " " + h
-            + " A " + r + " " + r + " 0 0 1 " + f + " " + (h - r)
-            + " C " + f + " " + ctrlBottom + " " + k + " " + (cy + th) + " 0 " + (cy + th)
+        const r = radius, bx = bodyX, br = bodyRight, bt = bodyY, bb = bodyY + bodyHeight;
+        return "M " + bx + " " + (bt + r)
+            + " A " + r + " " + r + " 0 0 1 " + (bx + r) + " " + bt
+            + " L " + (br - r) + " " + bt
+            + " A " + r + " " + r + " 0 0 1 " + br + " " + (bt + r)
+            + " L " + br + " " + (bb - r)
+            + " A " + r + " " + r + " 0 0 1 " + (br - r) + " " + bb
+            + " L " + (bx + r) + " " + bb
+            + " A " + r + " " + r + " 0 0 1 " + bx + " " + (bb - r)
             + " Z";
     }
 
     Shape {
-        x: root.inset
-        y: root.inset
-        width: root.bodyWidth + 2 * root.flare
-        height: root.bodyHeight
+        anchors.fill: parent
         antialiasing: true
         preferredRendererType: Shape.CurveRenderer
-
         ShapePath {
             fillColor: root.fillColor
             strokeColor: "transparent"
@@ -133,19 +138,19 @@ Item {
         }
     }
 
-    // Accent wash, between fill and outline so the stroke still caps it.
+    // Accent wash over part of the plate - the focused workspace cell.
     Item {
-        x: root.inset + root.accentFromX
+        x: root.accentFromX
         width: Math.max(0, root.accentToX - root.accentFromX)
-        y: root.inset
-        height: root.bodyHeight
+        y: 0
+        height: root.height
         clip: true
         visible: width > 0
 
         Shape {
-            x: -(root.accentFromX)
-            width: root.bodyWidth + 2 * root.flare
-            height: root.bodyHeight
+            x: -root.accentFromX
+            width: root.width
+            height: root.height
             antialiasing: true
             preferredRendererType: Shape.CurveRenderer
             ShapePath {
@@ -160,10 +165,7 @@ Item {
     // Outline, as two open edges so nothing is drawn across a throat: the
     // dark border first, then the filament down the middle of it.
     Shape {
-        x: root.inset
-        y: root.inset
-        width: root.bodyWidth + 2 * root.flare
-        height: root.bodyHeight
+        anchors.fill: parent
         antialiasing: true
         preferredRendererType: Shape.CurveRenderer
 
@@ -211,10 +213,10 @@ Item {
         clip: true
 
         Shape {
-            x: root.inset - root.seamX
-            y: root.inset
-            width: root.bodyWidth + 2 * root.flare
-            height: root.bodyHeight
+            x: -root.seamX
+            y: 0
+            width: root.width
+            height: root.height
             antialiasing: true
             preferredRendererType: Shape.CurveRenderer
 

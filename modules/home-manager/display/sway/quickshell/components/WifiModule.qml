@@ -75,7 +75,7 @@ Components.RevealMask {
                 readonly property real barHeight: 6 + index * 4
 
                 x: shell.bodyX + 100 + index * 9
-                y: shell.inset + root.cellBaseline - barHeight
+                y: shell.bodyY + root.cellBaseline - barHeight
                 width: 5.2
                 height: barHeight
                 radius: 1.4
