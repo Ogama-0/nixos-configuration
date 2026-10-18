@@ -50,18 +50,18 @@ Scope {
                 slotSide: "left"
                 railColor: "#FF27D796"
 
-                workspaces: [{ number: 1, focused: true, icon: "code" }]
+                workspaces: [{ id: 1, number: 1, focused: true, icon: "code" }]
 
                 Timer {
                     interval: 700
                     running: true
                     repeat: false
                     onTriggered: ws.workspaces = [
-                        { number: 1, focused: true,  icon: "code"  },
-                        { number: 2, focused: false, icon: "code"  },
-                        { number: 3, focused: false, icon: "web"   },
-                        { number: 5, focused: false, icon: "music" },
-                        { number: 10, focused: false, icon: "term" }
+                        { id: 1, number: 1, focused: true,  icon: "code"  },
+                        { id: 2, number: 2, focused: false, icon: "code"  },
+                        { id: 3, number: 3, focused: false, icon: "web"   },
+                        { id: 5, number: 5, focused: false, icon: "music" },
+                        { id: 10, number: 10, focused: false, icon: "term" }
                     ]
                 }
             }

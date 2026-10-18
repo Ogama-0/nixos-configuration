@@ -30,15 +30,15 @@ Scope {
             transitionDuration: 6000
 
             property var before: [
-                { number: 1, focused: false, icon: "code" },
-                { number: 2, focused: false, icon: "code" },
-                { number: 3, focused: true,  icon: "web"  }
+                { id: 1, number: 1, focused: false, icon: "code" },
+                { id: 2, number: 2, focused: false, icon: "code" },
+                { id: 3, number: 3, focused: true,  icon: "web"  }
             ]
             property var after: [
-                { number: 1, focused: false, icon: "code" },
-                { number: 2, focused: false, icon: "code" },
-                { number: 3, focused: false, icon: "web"  },
-                { number: 7, focused: true,  icon: "chat" }
+                { id: 1, number: 1, focused: false, icon: "code" },
+                { id: 2, number: 2, focused: false, icon: "code" },
+                { id: 3, number: 3, focused: false, icon: "web"  },
+                { id: 7, number: 7, focused: true,  icon: "chat" }
             ]
 
             workspaces: before

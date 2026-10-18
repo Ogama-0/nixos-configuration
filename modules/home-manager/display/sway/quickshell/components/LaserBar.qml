@@ -22,12 +22,26 @@ Scope {
     // and no polling. Sway destroys a workspace as soon as its last window
     // closes, so "the workspaces it reports" is already "the workspaces with
     // windows" - the swaybar question.
-    readonly property var workspaceList: {
+    //
+    // Takes the screen, because each bar shows its own output's workspaces.
+    function workspacesFor(screenName) {
         const out = [];
         const all = I3.workspaces ? I3.workspaces.values : [];
         for (let i = 0; i < all.length; i++) {
             const w = all[i];
-            out.push({ number: w.number, focused: w.focused, icon: root.iconFor(w.number) });
+            if (screenName && w.monitor && w.monitor.name !== screenName) continue;
+            out.push({
+                // Keyed on id, not number: sway reports number -1 for every
+                // named workspace, so two of those collide on one key and the
+                // strip loses track of which cell is which.
+                id: w.id,
+                number: w.number,
+                // `active`, not `focused`: focused means active AND on the
+                // focused monitor, so the bar on a second screen would never
+                // highlight anything.
+                focused: w.active,
+                icon: root.iconFor(w.number)
+            });
         }
         return out;
     }
@@ -42,12 +56,10 @@ Scope {
             const nets = d.networks ? d.networks.values : [];
             for (let j = 0; j < nets.length; j++) {
                 const n = nets[j];
-                if (!n.active && !n.connected) continue;
-                // Reported as a fraction by some backends and a percentage by
-                // others; neither may reach the bar arithmetic as a NaN.
+                if (!n.connected) continue;
+                // Absent or NaN must not reach the bar arithmetic.
                 let strength = n.signalStrength;
                 if (strength === undefined || isNaN(strength)) strength = 0;
-                if (strength > 1) strength = strength / 100;
                 return { ssid: n.name, strength: strength, connected: true };
             }
             return blank;
@@ -172,6 +184,10 @@ Scope {
             readonly property real bottomPadding: 3
             readonly property real beamY: implicitHeight - bottomPadding - 22
 
+            // This output's workspaces.
+            readonly property var workspaceList:
+                root.workspacesFor(modelData ? modelData.name : "")
+
             // Where the two beams collide: the battery percentage.
             readonly property real batteryMeetX: root.batteryFraction * width
 
@@ -238,7 +254,7 @@ Scope {
                 ink: "@capsuleInk@"
                 meetX: panel.batteryMeetX
 
-                WorkspaceModule { workspaces: root.workspaceList }
+                WorkspaceModule { workspaces: panel.workspaceList }
 
                 ClockModule {}
 

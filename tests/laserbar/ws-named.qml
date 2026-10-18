@@ -26,7 +26,7 @@ Scope {
             railColor: "#FF27D796"
             // Sway allows `workspace web`: no number at all, reported as -1.
             workspaces: [
-                { number: -1, focused: true, icon: "plain" }
+                { id: -1, number: -1, focused: true, icon: "plain" }
             ]
         }
     }

@@ -25,9 +25,9 @@ Scope {
             active: true
             railColor: "#FF27D796"
             workspaces: [
-                { number: 1, focused: false, icon: "code" },
-                { number: 2, focused: false, icon: "code" },
-                { number: 3, focused: true,  icon: "web"  }
+                { id: 1, number: 1, focused: false, icon: "code" },
+                { id: 2, number: 2, focused: false, icon: "code" },
+                { id: 3, number: 3, focused: true,  icon: "web"  }
             ]
         }
     }

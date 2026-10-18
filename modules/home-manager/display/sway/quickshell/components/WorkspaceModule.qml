@@ -104,7 +104,7 @@ Components.BarModule {
         }
         if (target.length !== incoming.length) return false;
         for (let i = 0; i < target.length; i++) {
-            if (target[i].number !== incoming[i].number) return false;
+            if (target[i].id !== incoming[i].id) return false;
             if (target[i].focused !== incoming[i].focused) return false;
             if (target[i].icon !== incoming[i].icon) return false;
         }
@@ -118,31 +118,31 @@ Components.BarModule {
         for (let i = 0; i < cells.length; i++) held.push(widthAt(i));
 
         const present = {};
-        for (let i = 0; i < incoming.length; i++) present[incoming[i].number] = true;
+        for (let i = 0; i < incoming.length; i++) present[incoming[i].id] = true;
 
         const next = [];
         for (let i = 0; i < incoming.length; i++) {
             const w = incoming[i];
-            next.push({ number: w.number, focused: w.focused, icon: w.icon, dying: false });
+            next.push({ id: w.id, number: w.number, focused: w.focused, icon: w.icon, dying: false });
         }
 
         let membershipChanged = false;
         for (let i = 0; i < cells.length; i++) {
             const c = cells[i];
-            if (c.dying || present[c.number]) continue;
+            if (c.dying || present[c.id]) continue;
             membershipChanged = true;
             next.splice(Math.min(i, next.length), 0,
-                        { number: c.number, focused: false, icon: c.icon, dying: true });
+                        { id: c.id, number: c.number, focused: false, icon: c.icon, dying: true });
         }
 
-        const heldByNumber = {};
-        for (let i = 0; i < cells.length; i++) heldByNumber[cells[i].number] = held[i];
+        const heldById = {};
+        for (let i = 0; i < cells.length; i++) heldById[cells[i].id] = held[i];
 
         const nf = [];
         const nt = [];
         for (let i = 0; i < next.length; i++) {
             const c = next[i];
-            const had = heldByNumber[c.number];
+            const had = heldById[c.id];
             if (had === undefined) membershipChanged = true;
             nf.push(had === undefined ? 0 : had);
             nt.push(c.dying ? 0 : cellWidth(c));
