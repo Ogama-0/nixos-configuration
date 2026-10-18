@@ -26,7 +26,6 @@ Item {
 
     required property real bodyWidth
     required property real bodyHeight
-    property real radius: 9
     // Long and shallow: the taper reads as the beam narrowing into the module
     // rather than a bracket stuck on its end.
     property real flare: 32
@@ -64,65 +63,57 @@ Item {
 
     readonly property real inset: outline / 2
 
-    // How far out the mouth opens, past the pinch point, and how tall it gets
-    // there. The border leaves the capsule, pinches to a point, then opens to
-    // the full height of the beam band - so the border itself forms the
-    // funnel the beam pours through, instead of stopping at a tip.
-    property real mouth: 30
-    property real mouthHeight: 44
+    // The lip: the plate's end drawn out into an S that pinches to a narrow
+    // waist and tapers into the wave. Not a shoulder reaching the band's
+    // edges - that reads as two struts bolted on rather than the plate
+    // flowing into the beam.
+    property real neck: 7
 
-    width: bodyWidth + 2 * (flare + mouth) + outline
-    height: Math.max(bodyHeight, mouthHeight) + outline
+    width: bodyWidth + 2 * flare + outline
+    height: bodyHeight + outline
 
     readonly property real centreY: height / 2
-    readonly property real bodyX: inset + mouth + flare
-    readonly property real bodyY: (height - bodyHeight) / 2
+    readonly property real bodyX: inset + flare
+    readonly property real bodyY: inset
     readonly property real bodyRight: bodyX + bodyWidth
 
     // Module content goes here. Children are positioned against the item, so
     // a consumer offsets by bodyX / bodyY to work in body coordinates.
     default property alias content: slot.data
 
-    // Shoulder control points. Each shoulder is ONE smooth S from the band's
-    // lip to the body's corner - no pinch in between. A pinch makes the top
-    // and bottom shoulders meet at the centreline and cross into an X.
-    readonly property real shoulderOut: mouth * 0.62
-    readonly property real shoulderIn: flare * 0.55
-    readonly property real mouthTop: centreY - mouthHeight / 2
-    readonly property real mouthBottom: centreY + mouthHeight / 2
+    // Control handles for the lip's S. Symmetric - horizontal where it leaves
+    // the panel's flat edge and horizontal again at the waist, steepest in
+    // between - so there is no corner anywhere along it. An asymmetric pair
+    // leaves the lip flat for most of its length and then turning sharply.
+    readonly property real lipPull: flare * 0.55
+    readonly property real neckTop: centreY - neck / 2
+    readonly property real neckBottom: centreY + neck / 2
 
     readonly property string topEdge: {
-        const i = inset, r = radius, bx = bodyX, br = bodyRight, bt = bodyY;
-        const lo = i, hi = width - i;
-        return "M " + lo + " " + mouthTop
-            + " C " + (lo + shoulderOut) + " " + mouthTop + " " + (bx - shoulderIn) + " " + (bt + r) + " " + bx + " " + (bt + r)
-            + " A " + r + " " + r + " 0 0 1 " + (bx + r) + " " + bt
-            + " L " + (br - r) + " " + bt
-            + " A " + r + " " + r + " 0 0 1 " + br + " " + (bt + r)
-            + " C " + (br + shoulderIn) + " " + (bt + r) + " " + (hi - shoulderOut) + " " + mouthTop + " " + hi + " " + mouthTop;
+        const i = inset, bx = bodyX, br = bodyRight, bt = bodyY, hi = width - i;
+        return "M " + i + " " + neckTop
+            + " C " + (i + lipPull) + " " + neckTop + " " + (bx - lipPull) + " " + bt + " " + bx + " " + bt
+            + " L " + br + " " + bt
+            + " C " + (br + lipPull) + " " + bt + " " + (hi - lipPull) + " " + neckTop + " " + hi + " " + neckTop;
     }
     readonly property string bottomEdge: {
-        const i = inset, r = radius, bx = bodyX, br = bodyRight, bb = bodyY + bodyHeight;
-        const lo = i, hi = width - i;
-        return "M " + lo + " " + mouthBottom
-            + " C " + (lo + shoulderOut) + " " + mouthBottom + " " + (bx - shoulderIn) + " " + (bb - r) + " " + bx + " " + (bb - r)
-            + " A " + r + " " + r + " 0 0 0 " + (bx + r) + " " + bb
-            + " L " + (br - r) + " " + bb
-            + " A " + r + " " + r + " 0 0 0 " + br + " " + (bb - r)
-            + " C " + (br + shoulderIn) + " " + (bb - r) + " " + (hi - shoulderOut) + " " + mouthBottom + " " + hi + " " + mouthBottom;
+        const i = inset, bx = bodyX, br = bodyRight, bb = bodyY + bodyHeight, hi = width - i;
+        return "M " + i + " " + neckBottom
+            + " C " + (i + lipPull) + " " + neckBottom + " " + (bx - lipPull) + " " + bb + " " + bx + " " + bb
+            + " L " + br + " " + bb
+            + " C " + (br + lipPull) + " " + bb + " " + (hi - lipPull) + " " + neckBottom + " " + hi + " " + neckBottom;
     }
 
-    // The plate is simply the body: the shoulders are border, not plate.
+    // The plate follows the same two curves and closes across the waists, so
+    // the white narrows with the lips instead of ending in a blunt rectangle.
     readonly property string pathData: {
-        const r = radius, bx = bodyX, br = bodyRight, bt = bodyY, bb = bodyY + bodyHeight;
-        return "M " + bx + " " + (bt + r)
-            + " A " + r + " " + r + " 0 0 1 " + (bx + r) + " " + bt
-            + " L " + (br - r) + " " + bt
-            + " A " + r + " " + r + " 0 0 1 " + br + " " + (bt + r)
-            + " L " + br + " " + (bb - r)
-            + " A " + r + " " + r + " 0 0 1 " + (br - r) + " " + bb
-            + " L " + (bx + r) + " " + bb
-            + " A " + r + " " + r + " 0 0 1 " + bx + " " + (bb - r)
+        const i = inset, bx = bodyX, br = bodyRight;
+        const bt = bodyY, bb = bodyY + bodyHeight, hi = width - i;
+        return topEdge
+            + " L " + hi + " " + neckBottom
+            + " C " + (hi - lipPull) + " " + neckBottom + " " + (br + lipPull) + " " + bb + " " + br + " " + bb
+            + " L " + bx + " " + bb
+            + " C " + (bx - lipPull) + " " + bb + " " + (i + lipPull) + " " + neckBottom + " " + i + " " + neckBottom
             + " Z";
     }
 
