@@ -28,7 +28,7 @@ Item {
     required property real bodyHeight
     // Long and shallow: the taper reads as the beam narrowing into the module
     // rather than a bracket stuck on its end.
-    property real flare: 32
+    property real flare: 20
     property real outline: 4.6
     property color fillColor: "@capsuleFill@"
     // A dark border with a thin filament of the rail's colour running down
