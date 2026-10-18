@@ -144,11 +144,12 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             mask: Region {}
 
-            // Vertical center of the whole bar, pinned near the panel's bottom
-            // edge rather than the window's own vertical center, so the bar
-            // hugs the very bottom of the screen. Mirrors the old top-anchored
-            // 34: the beam sits the same 36px in from the screen edge.
-            readonly property real beamY: implicitHeight - 34
+            // Vertical centre of the whole bar. The beam band is 44px tall
+            // (BeamSide draws it symmetrically about this line) and the
+            // capsules are shorter than that, so the band's lower edge is
+            // what sets the gap to the screen edge.
+            readonly property real bottomPadding: 3
+            readonly property real beamY: implicitHeight - bottomPadding - 22
 
             // Where the two beams collide: the battery percentage.
             readonly property real batteryMeetX: root.batteryFraction * width
