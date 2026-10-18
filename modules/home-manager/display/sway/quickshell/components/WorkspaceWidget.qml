@@ -190,12 +190,18 @@ Item {
             nt.push(c.dying ? 0 : cellWidth(c.focused, c.number));
         }
 
-        reconcile(next);
+        // Widths first, model second. A delegate created by reconcile() reads
+        // its width immediately, so mutating the model while fromW/toW still
+        // describe the OLD row positions makes a new cell appear at its
+        // neighbour's width for a frame before snapping to zero - a visible
+        // pop. Assigned first, the arrays already describe `next`, which is
+        // exactly the order reconcile is about to produce.
+        phaseAnim.stop();
         fromW = nf;
         toW = nt;
-
-        phaseAnim.stop();
         phase = 0;
+
+        reconcile(next);
         phaseAnim.duration = transitionDuration > 0
             ? transitionDuration
             : (membershipChanged ? lifeDuration : switchDuration);
@@ -225,12 +231,15 @@ Item {
         for (let i = 0; i < cellModel.count; i++) {
             if (!cellModel.get(i).dying) w.push(toW[i]);
         }
-        for (let i = cellModel.count - 1; i >= 0; i--) {
-            if (cellModel.get(i).dying) cellModel.remove(i);
-        }
+        // Same ordering rule as sync(): the arrays go first, describing the
+        // rows that are about to survive, so the rows shifting down during
+        // the removal already read the right width.
         fromW = w;
         toW = w;
         phase = 1;
+        for (let i = cellModel.count - 1; i >= 0; i--) {
+            if (cellModel.get(i).dying) cellModel.remove(i);
+        }
         revision++;
     }
 
