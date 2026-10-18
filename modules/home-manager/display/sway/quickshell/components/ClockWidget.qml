@@ -21,13 +21,34 @@ Item {
     implicitWidth: 128
     width: implicitWidth
 
-    Text {
-        id: clockText
+    // Three pieces rather than one string, so the gap either side of the
+    // colon is exact. Orbitron sets HH:MM tight, and a thin-space character
+    // would depend on the font actually having one.
+    Row {
         anchors.centerIn: parent
-        color: "@capsuleInk@"
-        font.family: "Orbitron"
-        font.pixelSize: 19
-        font.bold: true
+        spacing: 2
+
+        Text {
+            id: hoursText
+            color: "@capsuleInk@"
+            font.family: "Orbitron"
+            font.pixelSize: 19
+            font.bold: true
+        }
+        Text {
+            text: ":"
+            color: "@capsuleInk@"
+            font.family: "Orbitron"
+            font.pixelSize: 19
+            font.bold: true
+        }
+        Text {
+            id: minutesText
+            color: "@capsuleInk@"
+            font.family: "Orbitron"
+            font.pixelSize: 19
+            font.bold: true
+        }
     }
 
     Timer {
@@ -38,6 +59,10 @@ Item {
         running: root.active
         repeat: true
         triggeredOnStart: true
-        onTriggered: clockText.text = Qt.formatDateTime(new Date(), "HH:mm")
+        onTriggered: {
+            const now = new Date();
+            hoursText.text = Qt.formatDateTime(now, "HH");
+            minutesText.text = Qt.formatDateTime(now, "mm");
+        }
     }
 }

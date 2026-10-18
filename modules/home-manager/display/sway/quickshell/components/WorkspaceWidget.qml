@@ -215,11 +215,18 @@ Item {
     // Drop the rows that have finished shrinking and rebase the widths, so
     // the next transition starts from where this one ended.
     function settle() {
+        // Collect the survivors' widths BEFORE removing anything: toW is
+        // indexed by the row positions as they are now, and removing a dying
+        // row shifts every row after it. Reading toW afterwards hands each
+        // survivor its neighbour's width and the last one the dying row's
+        // zero - which is a workspace silently vanishing.
         const w = [];
+        for (let i = 0; i < cellModel.count; i++) {
+            if (!cellModel.get(i).dying) w.push(toW[i]);
+        }
         for (let i = cellModel.count - 1; i >= 0; i--) {
             if (cellModel.get(i).dying) cellModel.remove(i);
         }
-        for (let i = 0; i < cellModel.count; i++) w.push(toW[i]);
         fromW = w;
         toW = w;
         phase = 1;
