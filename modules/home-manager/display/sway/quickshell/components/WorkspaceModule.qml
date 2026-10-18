@@ -29,14 +29,22 @@ Components.RevealMask {
     property bool slotWired: false
     property bool active: false
 
+    // A dark tint of the rail covering this module, so the outline reads as
+    // the beam continuing through it rather than as a black box laid on top.
+    property color strokeColor: "@capsuleInk@"
+    // Item-local x of the beams' meeting point when it lands inside this
+    // module, or -1. See BarShell.
+    property real seamX: -1
+    property color strokeColorAfterSeam: "@capsuleInk@"
+
     readonly property real cellHeight: 38
     readonly property real cellWidthPlain: 27
     readonly property real cellWidthFocused: 37
 
     // Focus moves faster than a workspace opening or closing: a switch answers
     // a keypress, a life event changes what exists.
-    property int switchDuration: 170
-    property int lifeDuration: 200
+    property int switchDuration: 110
+    property int lifeDuration: 130
     // Overrides both when positive. For slowing a transition down to look at
     // it, which is also how the render test catches a cell mid-growth.
     property int transitionDuration: 0

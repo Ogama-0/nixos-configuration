@@ -16,7 +16,10 @@ Item {
     required property real meetX
     required property real panelWidth
     required property real beamY
-    property int collisionDelay: 150
+    // The beams finish travelling in 90ms (see LaserBar's Behavior), so this
+    // is just past the moment they actually meet. It used to be 150, which
+    // left a visible gap between the collision and its payoff.
+    property int collisionDelay: 95
 
     property bool collided: false
 
@@ -48,7 +51,7 @@ Item {
         color: "#FFFFFF"
         opacity: root.collided ? 1.0 : 0.0
         Behavior on opacity {
-            NumberAnimation { duration: 80 }
+            NumberAnimation { duration: 45 }
         }
         layer.enabled: true
         layer.effect: MultiEffect {
@@ -66,7 +69,7 @@ Item {
         x: flare.x + flare.width / 2 - width / 2
         opacity: root.collided ? 0.5 : 0.0
         Behavior on opacity {
-            NumberAnimation { duration: 80 }
+            NumberAnimation { duration: 45 }
         }
         gradient: Gradient {
             orientation: Gradient.Horizontal
@@ -92,7 +95,7 @@ Item {
         x: flare.x + flare.width / 2 - width / 2
         opacity: root.collided ? 1.0 : 0.0
         Behavior on opacity {
-            NumberAnimation { duration: 80 }
+            NumberAnimation { duration: 45 }
         }
         gradient: Gradient {
             orientation: Gradient.Horizontal

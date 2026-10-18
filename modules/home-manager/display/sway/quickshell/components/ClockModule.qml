@@ -14,6 +14,14 @@ Components.RevealMask {
 
     property bool active: false
 
+    // A dark tint of the rail covering this module, so the outline reads as
+    // the beam continuing through it rather than as a black box laid on top.
+    property color strokeColor: "@capsuleInk@"
+    // Item-local x of the beams' meeting point when it lands inside this
+    // module, or -1. See BarShell.
+    property real seamX: -1
+    property color strokeColorAfterSeam: "@capsuleInk@"
+
     // Read by BarSlots, which does the placing. See BarSlots.qml.
     property string slotSide: "centre"
     property int slotOrder: 0
@@ -33,6 +41,9 @@ Components.RevealMask {
         id: shell
         bodyWidth: 128
         bodyHeight: 38
+        strokeColor: root.strokeColor
+        seamX: root.seamX
+        strokeColorAfterSeam: root.strokeColorAfterSeam
 
         Text {
             id: clockText

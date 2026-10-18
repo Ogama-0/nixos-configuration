@@ -99,7 +99,11 @@ Item {
 
     onWavePhaseChanged: rebuildStrands()
     onExtentChanged: rebuildStrands()
-    onPinchSpansChanged: rebuildStrands()
+    // Deliberately NOT rebuilt here. A module animating its width changes its
+    // span every frame, and rebuilding five strands across the whole screen
+    // at display rate on top of the wave's own 30fps saturates the loop - the
+    // wave visibly stalls while a workspace opens. The next wave tick picks
+    // the new spans up, at most 33ms later.
     Component.onCompleted: rebuildStrands()
 
     function corePoints(midY) {

@@ -153,6 +153,12 @@ Scope {
             // Where the two beams collide: the battery percentage.
             readonly property real batteryMeetX: root.batteryFraction * width
 
+            // -1 unless the collision falls inside this module's own box.
+            function seamFor(item) {
+                const local = batteryMeetX - item.x;
+                return (local >= 0 && local <= item.width) ? local : -1;
+            }
+
             // Current travel distance of each beam from its screen edge,
             // shared by the beams, the collision meeting point, and every
             // module's reveal-mask sync.
@@ -213,17 +219,28 @@ Scope {
 
                 WorkspaceModule {
                     slotSide: "left"
+                    strokeColor: Qt.darker(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 7)
+                    strokeColorAfterSeam: Qt.darker("@redColor@", 7)
+                    seamX: panel.seamFor(this)
                     workspaces: root.workspaceList
                     // The rail covering this module, so the focused cell
                     // drifts green to red with the battery.
                     accent: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
                 }
 
-                ClockModule { slotSide: "centre" }
+                ClockModule {
+                    slotSide: "centre"
+                    strokeColor: Qt.darker(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 7)
+                    strokeColorAfterSeam: Qt.darker("@redColor@", 7)
+                    seamX: panel.seamFor(this)
+                }
 
                 WifiModule {
                     id: wifi
                     slotSide: "right"
+                    strokeColor: Qt.darker(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 7)
+                    strokeColorAfterSeam: Qt.darker("@redColor@", 7)
+                    seamX: panel.seamFor(this)
                     ssid: root.wifiState.ssid
                     strength: root.wifiState.strength
                     connected: root.wifiState.connected
