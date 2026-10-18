@@ -41,7 +41,11 @@ Item {
     property color ink: "#FF000000"
     property real meetX: 0
 
-    property real edgeMargin: 24
+    // Far enough in that there is real beam before the first module. The
+    // strand pinch reaches 20px either side of a module, so a 24px margin
+    // left nothing but ramp between the screen edge and the capsule - the bar
+    // began as a flat line rather than a wave.
+    property real edgeMargin: 90
     property real spacing: 16
 
     // Where the placed modules actually draw, in panel coordinates, for
