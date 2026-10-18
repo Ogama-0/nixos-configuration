@@ -220,8 +220,11 @@ Scope {
 
                 WorkspaceModule {
                     slotSide: "left"
-                    wireColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
-                    wireColorAfterSeam: "@redColor@"
+                    // Lightened, not the rail colour itself: a filament the same colour
+                    // as the band disappears where the shoulder crosses the beam, and
+                    // the dark border reads as two parallel lines with a gap.
+                    wireColor: Qt.lighter(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 1.5)
+                    wireColorAfterSeam: Qt.lighter("@redColor@", 1.5)
                     seamX: panel.seamFor(this)
                     workspaces: root.workspaceList
                     // The rail covering this module, so the focused cell
@@ -231,16 +234,22 @@ Scope {
 
                 ClockModule {
                     slotSide: "centre"
-                    wireColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
-                    wireColorAfterSeam: "@redColor@"
+                    // Lightened, not the rail colour itself: a filament the same colour
+                    // as the band disappears where the shoulder crosses the beam, and
+                    // the dark border reads as two parallel lines with a gap.
+                    wireColor: Qt.lighter(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 1.5)
+                    wireColorAfterSeam: Qt.lighter("@redColor@", 1.5)
                     seamX: panel.seamFor(this)
                 }
 
                 WifiModule {
                     id: wifi
                     slotSide: "right"
-                    wireColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
-                    wireColorAfterSeam: "@redColor@"
+                    // Lightened, not the rail colour itself: a filament the same colour
+                    // as the band disappears where the shoulder crosses the beam, and
+                    // the dark border reads as two parallel lines with a gap.
+                    wireColor: Qt.lighter(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 1.5)
+                    wireColorAfterSeam: Qt.lighter("@redColor@", 1.5)
                     seamX: panel.seamFor(this)
                     ssid: root.wifiState.ssid
                     strength: root.wifiState.strength
