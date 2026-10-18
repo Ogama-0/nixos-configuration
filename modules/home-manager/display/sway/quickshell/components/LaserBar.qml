@@ -254,14 +254,36 @@ Scope {
                 ink: "@capsuleInk@"
                 meetX: panel.batteryMeetX
 
-                WorkspaceModule { workspaces: panel.workspaceList }
+                // Three groups, each a capsule. A widget says which group it
+                // is in and where in that group it sits, so adding one - a
+                // DND button left of the clock, say - is a line here and a
+                // file in components/.
+                BarGroup {
+                    slotSide: "left"
+                    reservedBodyWidth: wsWidget.reservedWidth
 
-                ClockModule {}
+                    WorkspaceWidget {
+                        id: wsWidget
+                        pos: 1
+                        workspaces: panel.workspaceList
+                    }
+                }
 
-                WifiModule {
-                    ssid: root.wifiState.ssid
-                    strength: root.wifiState.strength
-                    connected: root.wifiState.connected
+                BarGroup {
+                    slotSide: "centre"
+
+                    ClockWidget { pos: 1 }
+                }
+
+                BarGroup {
+                    slotSide: "right"
+
+                    WifiWidget {
+                        pos: 1
+                        ssid: root.wifiState.ssid
+                        strength: root.wifiState.strength
+                        connected: root.wifiState.connected
+                    }
                 }
             }
         }

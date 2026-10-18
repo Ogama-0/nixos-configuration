@@ -2,8 +2,7 @@ import Quickshell
 import Quickshell.Wayland
 import "components"
 
-// Three clocks, one per slot side, to prove placement. Blue field so the gap
-// between two left-slot modules is distinguishable from the capsules.
+// Four groups across the three sides, to prove placement and spacing.
 Scope {
     PanelWindow {
         id: panel
@@ -21,11 +20,13 @@ Scope {
             coverLeft: panel.width
             coverRight: panel.width
             active: true
+            leftRail: "#FF27D796"
+            rightRail: "#FFFF273F"
 
-            ClockModule { slotSide: "left"; slotOrder: 0 }
-            ClockModule { slotSide: "left"; slotOrder: 1 }
-            ClockModule { slotSide: "centre" }
-            ClockModule { slotSide: "right" }
+            BarGroup { slotSide: "left";   slotOrder: 0; ClockWidget { pos: 1 } }
+            BarGroup { slotSide: "left";   slotOrder: 1; ClockWidget { pos: 1 } }
+            BarGroup { slotSide: "centre"; ClockWidget { pos: 1 } }
+            BarGroup { slotSide: "right";  ClockWidget { pos: 1 } }
         }
     }
 }

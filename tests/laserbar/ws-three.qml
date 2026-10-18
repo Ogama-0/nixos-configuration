@@ -1,10 +1,9 @@
+import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "components"
 
-// Three cells, settled. Paired with workspaces.qml (five cells) to prove the
-// capsule opens out to BOTH sides as cells are added, rather than only growing
-// rightward from a fixed left edge.
+// Three cells. Paired with workspaces.qml to show the capsule opening both ways.
 Scope {
     PanelWindow {
         id: panel
@@ -16,7 +15,7 @@ Scope {
         mask: Region {}
         WlrLayershell.layer: WlrLayer.Overlay
 
-        WorkspaceModule {
+        BarGroup {
             x: 100
             y: 34 - height / 2
             coverLeft: panel.width
@@ -24,11 +23,16 @@ Scope {
             panelWidth: panel.width
             active: true
             railColor: "#FF27D796"
-            workspaces: [
-                { id: 1, number: 1, focused: false, icon: "code" },
-                { id: 2, number: 2, focused: false, icon: "code" },
-                { id: 3, number: 3, focused: true,  icon: "web"  }
-            ]
+            reservedBodyWidth: ws.reservedWidth
+            WorkspaceWidget {
+                id: ws
+                pos: 1
+                workspaces: [
+                    { id: 1, number: 1, focused: false, icon: "code" },
+                    { id: 2, number: 2, focused: false, icon: "code" },
+                    { id: 3, number: 3, focused: true, icon: "web" }
+                ]
+            }
         }
     }
 }

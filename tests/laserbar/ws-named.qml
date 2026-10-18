@@ -1,10 +1,9 @@
+import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "components"
 
-// The workspace strip with a pinned list, so the render is the same every
-// time. The live Quickshell.I3 path is wired in LaserBar.qml and exercised by
-// the whole-bar fixture.
+// A named workspace: sway reports -1 and there is no number to show.
 Scope {
     PanelWindow {
         id: panel
@@ -16,7 +15,7 @@ Scope {
         mask: Region {}
         WlrLayershell.layer: WlrLayer.Overlay
 
-        WorkspaceModule {
+        BarGroup {
             x: 100
             y: 34 - height / 2
             coverLeft: panel.width
@@ -24,10 +23,14 @@ Scope {
             panelWidth: panel.width
             active: true
             railColor: "#FF27D796"
-            // Sway allows `workspace web`: no number at all, reported as -1.
-            workspaces: [
-                { id: -1, number: -1, focused: true, icon: "plain" }
-            ]
+            reservedBodyWidth: ws.reservedWidth
+            WorkspaceWidget {
+                id: ws
+                pos: 1
+                workspaces: [
+                    { id: 1, number: -1, focused: true, icon: "plain" }
+                ]
+            }
         }
     }
 }

@@ -1,18 +1,18 @@
 import QtQuick
-import "." as Components
 
-// Wi-Fi: the network's name and a four-bar strength readout.
+// Network name and a four-bar strength readout.
 //
-// The values are properties and LaserBar.qml wires the live
-// Quickshell.Networking source. An earlier version also drove the right
-// rail's wave amplitude from the strength, which made the two rails visibly
-// different; that was dropped on purpose, so both sides share one wave
-// equation and the strength is shown only here.
-Components.BarModule {
+// An earlier version also drove the right rail's wave amplitude from the
+// strength, which made the two rails visibly different; that was dropped on
+// purpose, so both sides share one wave equation and the strength is shown
+// only here.
+Item {
     id: root
 
-    slotSide: "right"
-    bodyWidth: 148
+    property int pos: 1
+    property bool groupWired: false
+    property bool active: false
+    property real bodyHeight: 38
 
     property string ssid: ""
     property real strength: 0
@@ -24,10 +24,12 @@ Components.BarModule {
     readonly property real safeStrength:
         connected && !isNaN(strength) ? Math.max(0, Math.min(1, strength)) : 0
     // Ceil, not round: rounding leaves a connected network below 12% signal
-    // showing zero lit bars, which is pixel-identical to being offline.
-    readonly property int litBars: connected ? Math.max(1, Math.ceil(safeStrength * bars)) : 0
+    // showing zero lit bars, pixel-identical to being offline.
+    readonly property int litBars:
+        connected ? Math.max(1, Math.ceil(safeStrength * bars)) : 0
 
-    readonly property real barBaseline: 26
+    implicitWidth: 148
+    width: implicitWidth
 
     Text {
         // An empty capsule says nothing useful. Name the state instead.
@@ -39,7 +41,7 @@ Components.BarModule {
         font.weight: Font.DemiBold
         elide: Text.ElideRight
 
-        x: root.shell.bodyX + 12
+        x: 12
         width: 78
         anchors.verticalCenter: parent.verticalCenter
     }
@@ -52,8 +54,8 @@ Components.BarModule {
 
             readonly property real barHeight: 6 + index * 4
 
-            x: root.shell.bodyX + 100 + index * 9
-            y: root.shell.bodyY + root.barBaseline - barHeight
+            x: 100 + index * 9
+            y: root.bodyHeight - 12 - barHeight
             width: 5.2
             height: barHeight
             radius: 1.4

@@ -1,10 +1,9 @@
+import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "components"
 
-// The workspace strip with a pinned list, so the render is the same every
-// time. The live Quickshell.I3 path is wired in LaserBar.qml and exercised by
-// the whole-bar fixture.
+// Five workspaces, the third focused.
 Scope {
     PanelWindow {
         id: panel
@@ -16,7 +15,7 @@ Scope {
         mask: Region {}
         WlrLayershell.layer: WlrLayer.Overlay
 
-        WorkspaceModule {
+        BarGroup {
             x: 100
             y: 34 - height / 2
             coverLeft: panel.width
@@ -24,13 +23,18 @@ Scope {
             panelWidth: panel.width
             active: true
             railColor: "#FF27D796"
-            workspaces: [
-                { id: 1, number: 1,  focused: false, icon: "code"  },
-                { id: 2, number: 2,  focused: false, icon: "code"  },
-                { id: 3, number: 3,  focused: true,  icon: "web"   },
-                { id: 5, number: 5,  focused: false, icon: "music" },
-                { id: 10, number: 10, focused: false, icon: "term"  }
-            ]
+            reservedBodyWidth: ws.reservedWidth
+            WorkspaceWidget {
+                id: ws
+                pos: 1
+                workspaces: [
+                    { id: 1, number: 1, focused: false, icon: "code" },
+                    { id: 2, number: 2, focused: false, icon: "code" },
+                    { id: 3, number: 3, focused: true, icon: "web" },
+                    { id: 5, number: 5, focused: false, icon: "music" },
+                    { id: 10, number: 10, focused: false, icon: "term" }
+                ]
+            }
         }
     }
 }

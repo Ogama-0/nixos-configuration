@@ -1,8 +1,9 @@
+import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "components"
 
-// The wifi module, connected, three bars' worth of signal.
+// Wifi, connected, most of the signal.
 Scope {
     PanelWindow {
         id: panel
@@ -14,16 +15,21 @@ Scope {
         mask: Region {}
         WlrLayershell.layer: WlrLayer.Overlay
 
-        WifiModule {
+        BarGroup {
             x: 875
             y: 34 - height / 2
             coverLeft: panel.width
             coverRight: panel.width
             panelWidth: panel.width
             active: true
-            ssid: "orano"
-            strength: 0.8
-            connected: true
+            railColor: "#FF27D796"
+
+            WifiWidget {
+                pos: 1
+                ssid: "orano"
+                strength: 0.8
+                connected: true
+            }
         }
     }
 }

@@ -1,8 +1,9 @@
+import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "components"
 
-// The wifi module, with no device or no association.
+// Wifi with no device or no association.
 Scope {
     PanelWindow {
         id: panel
@@ -14,16 +15,21 @@ Scope {
         mask: Region {}
         WlrLayershell.layer: WlrLayer.Overlay
 
-        WifiModule {
+        BarGroup {
             x: 875
             y: 34 - height / 2
             coverLeft: panel.width
             coverRight: panel.width
             panelWidth: panel.width
             active: true
-            ssid: ""
-            strength: 0
-            connected: false
+            railColor: "#FF27D796"
+
+            WifiWidget {
+                pos: 1
+                ssid: ""
+                strength: 0
+                connected: false
+            }
         }
     }
 }

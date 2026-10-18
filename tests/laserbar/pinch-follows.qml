@@ -4,9 +4,9 @@ import Quickshell.Wayland
 import Quickshell.Io
 import "components"
 
-// The workspace strip grows after the bar has already laid out, with a real
-// beam behind it. The strands must collapse around the capsule's NEW extent,
-// not the one it had when the bar started.
+// The strip grows after the bar has laid out, with a real beam behind it.
+// The strands must collapse around the capsule's NEW extent, not the one it
+// had when the bar started.
 Scope {
     id: root
     property bool active: false
@@ -44,25 +44,30 @@ Scope {
             coverLeft: panel.width
             coverRight: panel.width
             active: true
+            leftRail: "#FF27D796"
+            rightRail: "#FFFF273F"
 
-            WorkspaceModule {
-                id: ws
+            BarGroup {
                 slotSide: "left"
-                railColor: "#FF27D796"
+                reservedBodyWidth: ws.reservedWidth
 
-                workspaces: [{ id: 1, number: 1, focused: true, icon: "code" }]
+                WorkspaceWidget {
+                    id: ws
+                    pos: 1
+                    workspaces: [{ id: 1, number: 1, focused: true, icon: "code" }]
 
-                Timer {
-                    interval: 700
-                    running: true
-                    repeat: false
-                    onTriggered: ws.workspaces = [
-                        { id: 1, number: 1, focused: true,  icon: "code"  },
-                        { id: 2, number: 2, focused: false, icon: "code"  },
-                        { id: 3, number: 3, focused: false, icon: "web"   },
-                        { id: 5, number: 5, focused: false, icon: "music" },
-                        { id: 10, number: 10, focused: false, icon: "term" }
-                    ]
+                    Timer {
+                        interval: 700
+                        running: true
+                        repeat: false
+                        onTriggered: ws.workspaces = [
+                            { id: 1, number: 1,  focused: true,  icon: "code"  },
+                            { id: 2, number: 2,  focused: false, icon: "code"  },
+                            { id: 3, number: 3,  focused: false, icon: "web"   },
+                            { id: 5, number: 5,  focused: false, icon: "music" },
+                            { id: 10, number: 10, focused: false, icon: "term" }
+                        ]
+                    }
                 }
             }
         }
