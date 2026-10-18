@@ -17,8 +17,9 @@ Item {
     // Bound by BarGroup.
     property bool active: false
     property real bodyHeight: 38
+    property real uiScale: 1
 
-    implicitWidth: 128
+    implicitWidth: 128 * uiScale
     width: implicitWidth
 
     // Three pieces rather than one string, so the gap either side of the
@@ -26,27 +27,27 @@ Item {
     // would depend on the font actually having one.
     Row {
         anchors.centerIn: parent
-        spacing: 2
+        spacing: 2 * root.uiScale
 
         Text {
             id: hoursText
             color: "@capsuleInk@"
             font.family: "Orbitron"
-            font.pixelSize: 19
+            font.pixelSize: Math.round(19 * root.uiScale)
             font.bold: true
         }
         Text {
             text: ":"
             color: "@capsuleInk@"
             font.family: "Orbitron"
-            font.pixelSize: 19
+            font.pixelSize: Math.round(19 * root.uiScale)
             font.bold: true
         }
         Text {
             id: minutesText
             color: "@capsuleInk@"
             font.family: "Orbitron"
-            font.pixelSize: 19
+            font.pixelSize: Math.round(19 * root.uiScale)
             font.bold: true
         }
     }

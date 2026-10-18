@@ -20,11 +20,16 @@ Item {
 
     readonly property bool isLeft: side === "left"
 
+    // Everything here is written in 1080p-equivalent pixels and multiplied by
+    // this. The sampling step scales with it too, so a bigger screen costs the
+    // same number of points rather than twice as many.
+    property real uiScale: 1
+
     // Spans of panel x where a module clamps the wire. Amplitude ramps to zero
     // inside each, over `pinchPad` either side, so the strands flatten into a
     // capsule rather than crossing it. Same coordinate space as `extent`.
     property var pinchSpans: []
-    readonly property real pinchPad: 20
+    readonly property real pinchPad: 20 * uiScale
 
     function pinchScale(px) {
         if (!pinchSpans || pinchSpans.length === 0) return 1
@@ -70,8 +75,8 @@ Item {
         if (root.extent <= 0) return []
         const phaseOffset = s * 1.05
         const speedFactor = 1 + s * 0.08
-        const baseAmplitude = 8 + (s % 3) * 4
-        const wavelength = 11 + s * 1
+        const baseAmplitude = (8 + (s % 3) * 4) * root.uiScale
+        const wavelength = (11 + s * 1) * root.uiScale
         const pts = []
         for (let t = 0; t <= root.extent; t += 3) {
             const px = root.isLeft ? t : root.panelWidth - t
@@ -113,10 +118,11 @@ Item {
     function corePoints(midY) {
         if (root.extent <= 0) return []
         const pts = []
-        for (let t = 0; t <= root.extent; t += 3) {
+        const step = 3 * root.uiScale
+        for (let t = 0; t <= root.extent; t += step) {
             const px = root.isLeft ? t : root.panelWidth - t
-            const ramp = Math.min(1, t / 20, (root.extent - t) / 20)
-            const y = midY + 1.5 * ramp * Math.sin(t / 12 + root.wavePhase * 1.2)
+            const ramp = Math.min(1, (root.extent - t) / (20 * root.uiScale))
+            const y = midY + 1.5 * root.uiScale * ramp * Math.sin(t / (12 * root.uiScale) + root.wavePhase * 1.2)
             pts.push(Qt.point(px, y))
         }
         return pts
@@ -154,8 +160,8 @@ Item {
         anchors.left: root.isLeft ? parent.left : undefined
         anchors.right: root.isLeft ? undefined : parent.right
         y: root.beamY - height / 2
-        height: 44
-        width: 160
+        height: 44 * root.uiScale
+        width: 160 * root.uiScale
         color: root.accentColor
         opacity: (root.active ? 1.0 : 0.0) * root.hum
         Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -170,7 +176,7 @@ Item {
         anchors.left: root.isLeft ? parent.left : undefined
         anchors.right: root.isLeft ? undefined : parent.right
         y: root.beamY - height / 2
-        height: 44
+        height: 44 * root.uiScale
         width: root.extent
         gradient: Gradient {
             orientation: Gradient.Horizontal
@@ -208,16 +214,16 @@ Item {
     Rectangle {
         anchors.left: tipHighlight.left
         anchors.right: tipHighlight.right
-        y: root.beamY - 22
-        height: 1.6
+        y: root.beamY - 22 * root.uiScale
+        height: 1.6 * root.uiScale
         color: "#CC000000"
         opacity: root.hum
     }
     Rectangle {
         anchors.left: tipHighlight.left
         anchors.right: tipHighlight.right
-        y: root.beamY + 22 - 1.6
-        height: 1.6
+        y: root.beamY + (22 - 1.6) * root.uiScale
+        height: 1.6 * root.uiScale
         color: "#CC000000"
         opacity: root.hum
     }
@@ -237,7 +243,7 @@ Item {
         anchors.left: parent.left
         y: root.beamY - height / 2
         width: root.panelWidth
-        height: 40
+        height: 40 * root.uiScale
 
         readonly property color strandColor: root.alphaColor(colorUtils.lightenColor(root.accentColor, 0.6), 1.0)
         readonly property int strandCount: 5
@@ -258,7 +264,7 @@ Item {
                 readonly property real baseAlpha: 0.85 + (index % 2) * 0.15
                 property ShapePath shapePath: ShapePath {
                     strokeColor: Qt.rgba(waveShape.strandColor.r, waveShape.strandColor.g, waveShape.strandColor.b, baseAlpha * 0.22)
-                    strokeWidth: 9
+                    strokeWidth: 9 * root.uiScale
                     fillColor: "transparent"
                     capStyle: ShapePath.RoundCap
                     joinStyle: ShapePath.RoundJoin
@@ -273,7 +279,7 @@ Item {
                 readonly property real baseAlpha: 0.85 + (index % 2) * 0.15
                 property ShapePath shapePath: ShapePath {
                     strokeColor: Qt.rgba(waveShape.strandColor.r, waveShape.strandColor.g, waveShape.strandColor.b, baseAlpha)
-                    strokeWidth: 4
+                    strokeWidth: 4 * root.uiScale
                     fillColor: "transparent"
                     capStyle: ShapePath.RoundCap
                     joinStyle: ShapePath.RoundJoin
@@ -285,7 +291,7 @@ Item {
 
         ShapePath {
             strokeColor: root.alphaColor("#EEEEEE", 0.25)
-            strokeWidth: 8
+            strokeWidth: 8 * root.uiScale
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap
             joinStyle: ShapePath.RoundJoin
@@ -293,7 +299,7 @@ Item {
         }
         ShapePath {
             strokeColor: root.alphaColor("#EEEEEE", 0.9)
-            strokeWidth: 3
+            strokeWidth: 3 * root.uiScale
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap
             joinStyle: ShapePath.RoundJoin

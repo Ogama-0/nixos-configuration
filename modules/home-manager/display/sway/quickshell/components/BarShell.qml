@@ -24,12 +24,15 @@ import QtQuick.Shapes
 Item {
     id: root
 
+    // 1080p-equivalent pixels, multiplied by this. See LaserBar.uiScale.
+    property real uiScale: 1
+
     required property real bodyWidth
     required property real bodyHeight
     // Long and shallow: the taper reads as the beam narrowing into the module
     // rather than a bracket stuck on its end.
     property real flare: 20
-    property real outline: 4.6
+    property real outline: 4.6 * uiScale
     property color fillColor: "@capsuleFill@"
     // A dark border with a thin filament of the rail's colour running down
     // the middle of it. When the beams' meeting point falls inside this
@@ -38,7 +41,7 @@ Item {
     property color strokeColor: "@capsuleInk@"
     property color wireColor: "@capsuleInk@"
     property color wireColorAfterSeam: "@capsuleInk@"
-    property real wireWidth: 1.5
+    property real wireWidth: 1.5 * uiScale
 
     // Where the two beams collide, if that happens to fall inside this
     // module. Item-local x, or -1 for not here. The capsule then carries the
@@ -62,7 +65,7 @@ Item {
     // waist and tapers into the wave. Not a shoulder reaching the band's
     // edges - that reads as two struts bolted on rather than the plate
     // flowing into the beam.
-    property real neck: 7
+    property real neck: 7 * uiScale
 
     width: bodyWidth + 2 * flare + outline
     height: bodyHeight + outline

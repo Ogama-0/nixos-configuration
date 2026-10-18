@@ -17,6 +17,7 @@ Item {
     // Bound by BarGroup.
     property bool active: false
     property real bodyHeight: 38
+    property real uiScale: 1
     property color railColor: "@capsuleInk@"
 
     property var workspaces: []
@@ -27,8 +28,8 @@ Item {
     // the width of their neighbours.
     readonly property bool boundedEnds: true
 
-    readonly property real cellWidthPlain: 27
-    readonly property real cellWidthFocused: 37
+    readonly property real cellWidthPlain: 27 * uiScale
+    readonly property real cellWidthFocused: 37 * uiScale
 
     // Focus moves faster than a workspace opening or closing: a switch
     // answers a keypress, a life event changes what exists.
@@ -41,7 +42,7 @@ Item {
     property real maxCells: 10
     // What the group should reserve, so its item never resizes mid-animation.
     readonly property real reservedWidth:
-        maxCells * (cellWidthPlain + 6) + (cellWidthFocused - cellWidthPlain)
+        maxCells * (cellWidthPlain + 6 * uiScale) + (cellWidthFocused - cellWidthPlain)
 
     // Identity and display live in the model; the widths live in plain
     // arrays beside it, indexed by row. Reading roles sixty times a second
@@ -55,11 +56,11 @@ Item {
     // does.
     property int revision: 0
 
-    readonly property real dividerWidth: 2.3
-    readonly property real dividerInset: 5
+    readonly property real dividerWidth: 2.3 * uiScale
+    readonly property real dividerInset: 5 * uiScale
 
     function cellWidth(focused, number) {
-        return (focused ? cellWidthFocused : cellWidthPlain) + (number > 9 ? 6 : 0);
+        return (focused ? cellWidthFocused : cellWidthPlain) + (number > 9 ? 6 * uiScale : 0);
     }
 
     // One interpolated phase drives every cell, so they move in lockstep and
@@ -264,8 +265,9 @@ Item {
             Components.WorkspaceIcon {
                 name: cell.icon
                 color: "@capsuleInk@"
+                uiScale: root.uiScale
                 x: (cell.cw - width) / 2
-                y: 3
+                y: 3 * root.uiScale
             }
 
             Text {
@@ -274,10 +276,10 @@ Item {
                 text: cell.number > 0 ? String(cell.number) : ""
                 color: "@capsuleInk@"
                 font.family: "Orbitron"
-                font.pixelSize: 12
+                font.pixelSize: Math.round(12 * root.uiScale)
                 font.weight: cell.focused ? Font.Bold : Font.DemiBold
                 x: (cell.cw - width) / 2
-                y: 21
+                y: 21 * root.uiScale
             }
         }
     }

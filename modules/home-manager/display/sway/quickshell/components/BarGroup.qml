@@ -42,7 +42,8 @@ Components.RevealMask {
     property real seamX: -1
     property color railColor: "@capsuleInk@"
 
-    property real bodyHeight: 38
+    property real uiScale: 1
+    property real bodyHeight: 38 * uiScale
     // Width the item reserves. The capsule is centred in it and may be any
     // width up to this. Defaults to "whatever the widgets need right now",
     // which is right for a group whose widgets do not change size.
@@ -51,10 +52,10 @@ Components.RevealMask {
     // --- Separators, drawn by the group between its widgets and at the
     //     capsule's two ends. A widget draws its own internal divisions. ---
     readonly property real dividerWidth: shell.outline * 0.5
-    readonly property real dividerInset: 5
+    readonly property real dividerInset: 5 * uiScale
     // The end ones sit where the lip is already narrowing, so a full-length
     // bar there crowds the curve.
-    readonly property real endDividerInset: 10
+    readonly property real endDividerInset: 10 * uiScale
 
     // Bumped whenever the widget layout changes, so bindings that read it
     // re-evaluate. Child widths are plain properties, not a model.
@@ -118,6 +119,7 @@ Components.RevealMask {
             if (w.active !== undefined) w.active = Qt.binding(() => root.active);
             if (w.railColor !== undefined) w.railColor = Qt.binding(() => root.railColor);
             if (w.bodyHeight !== undefined) w.bodyHeight = Qt.binding(() => root.bodyHeight);
+            if (w.uiScale !== undefined) w.uiScale = Qt.binding(() => root.uiScale);
             w.groupWired = true;
         }
         layoutWidgets();
@@ -152,6 +154,7 @@ Components.RevealMask {
         x: (root.width - width) / 2
         bodyWidth: Math.max(1, Math.min(root.contentWidth, root.reservedBodyWidth))
         bodyHeight: root.bodyHeight
+        uiScale: root.uiScale
         strokeColor: root.strokeColor
         wireColor: root.wireColor
         wireColorAfterSeam: root.wireColorAfterSeam

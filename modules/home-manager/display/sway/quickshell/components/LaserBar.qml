@@ -171,7 +171,7 @@ Scope {
                 left: true
                 right: true
             }
-            implicitHeight: 70
+            implicitHeight: 70 * uiScale
             color: "transparent"
             focusable: false
             exclusionMode: ExclusionMode.Ignore
@@ -181,8 +181,23 @@ Scope {
             // (BeamSide draws it symmetrically about this line) and the
             // capsules are shorter than that, so the band's lower edge is
             // what sets the gap to the screen edge.
-            readonly property real bottomPadding: 3
-            readonly property real beamY: implicitHeight - bottomPadding - 22
+            readonly property real bottomPadding: 3 * uiScale
+
+            // Everything on the bar is sized in 1080p-equivalent pixels and
+            // multiplied by this. A compositor that scales a HiDPI output
+            // hands us logical pixels and this stays 1; an unscaled 4K output
+            // reports its full height, where without this the bar would be
+            // correct but half the size it should be.
+            //
+            // Set LASERBAR_UI_SCALE to pin it, which is how the render tests
+            // check a size without needing that display.
+            readonly property real uiScale: {
+                const forced = parseFloat(Quickshell.env("LASERBAR_UI_SCALE"));
+                if (!isNaN(forced) && forced > 0) return forced;
+                const h = screen ? screen.height : 1080;
+                return Math.max(1, Math.min(3, h / 1080));
+            }
+            readonly property real beamY: implicitHeight - bottomPadding - 22 * uiScale
 
             // This output's workspaces.
             readonly property var workspaceList:
@@ -215,6 +230,7 @@ Scope {
                 extent: panel.leftExtent
                 panelWidth: panel.width
                 beamY: panel.beamY
+                uiScale: panel.uiScale
                 pinchSpans: slots.moduleSpans
             }
 
@@ -225,6 +241,7 @@ Scope {
                 extent: panel.rightExtent
                 panelWidth: panel.width
                 beamY: panel.beamY
+                uiScale: panel.uiScale
                 pinchSpans: slots.moduleSpans
             }
 
@@ -233,6 +250,7 @@ Scope {
                 meetX: root.batteryFraction * panel.width
                 panelWidth: panel.width
                 beamY: panel.beamY
+                uiScale: panel.uiScale
             }
 
             // ── Modules ──────────────────────────────────────────────
@@ -246,6 +264,7 @@ Scope {
                 id: slots
                 panelWidth: panel.width
                 beamY: panel.beamY
+                uiScale: panel.uiScale
                 coverLeft: panel.leftExtent
                 coverRight: panel.rightExtent
                 active: root.active

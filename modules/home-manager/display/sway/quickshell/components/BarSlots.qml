@@ -33,6 +33,7 @@ Item {
     required property real coverLeft
     required property real coverRight
     required property bool active
+    property real uiScale: 1
 
     // The two rails and where they meet, so modules can be coloured from one
     // place rather than each repeating the same conditional.
@@ -45,8 +46,8 @@ Item {
     // strand pinch reaches 20px either side of a module, so a 24px margin
     // left nothing but ramp between the screen edge and the capsule - the bar
     // began as a flat line rather than a wave.
-    property real edgeMargin: 90
-    property real spacing: 16
+    property real edgeMargin: 90 * uiScale
+    property real spacing: 16 * uiScale
 
     // Where the placed modules actually draw, in panel coordinates, for
     // BeamSide.pinchSpans. Recomputed with the layout, since a module that
@@ -140,6 +141,7 @@ Item {
         bind(c, "coverRight", () => root.coverRight);
         bind(c, "panelWidth", () => root.panelWidth);
         bind(c, "active", () => root.active);
+        bind(c, "uiScale", () => root.uiScale);
         bind(c, "strokeColor", () => root.ink);
         bind(c, "railColor", () => c.x < root.meetX ? root.leftRail : root.rightRail);
         // Lightened: a filament the exact colour of the rail disappears where

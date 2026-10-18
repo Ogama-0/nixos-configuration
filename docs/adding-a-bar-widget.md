@@ -109,6 +109,7 @@ write is guarded, so a widget that omits one is not broken by its absence:
 |---|---|
 | `active` | True while the bar is revealed. Gate timers and animations on it. |
 | `bodyHeight` | The capsule's inner height. |
+| `uiScale` | Multiply every dimension by this. See *Sizes and screens*. |
 | `railColor` | Green or red, depending on which rail covers this group. |
 
 `BarSlots` binds the same way into a *group*: `coverLeft`, `coverRight`,
@@ -145,6 +146,34 @@ These are scars. Each one cost a debugging session.
 
 6. **One `BeamSide` per side.** Two leave a visible seam where they meet and
    duplicate the blurred glow layer.
+
+## Sizes and screens
+
+**Every dimension on the bar is written in 1080p-equivalent pixels and
+multiplied by `uiScale`.** Write `implicitWidth: 40 * uiScale`, not
+`implicitWidth: 40`. Declare `property real uiScale: 1` and `BarGroup` binds
+the real value in, the same way it binds `active`.
+
+`LaserBar` derives it from the output's logical height, clamped to 1..3. A
+compositor that scales a HiDPI output hands the bar logical pixels and it
+stays 1; an unscaled 4K output reports its full height and the bar doubles,
+which is the case it exists for.
+
+Two things follow from this that are easy to miss:
+
+- **Font sizes must be rounded**: `font.pixelSize: Math.round(19 * uiScale)`.
+  `pixelSize` is an int, and assigning a real to it is an error at load time,
+  not a warning.
+- **Anything that samples along a length must scale its step too**, or a
+  bigger screen silently costs proportionally more work. `BeamSide` walks the
+  beam in `3 * uiScale` increments so the point count stays constant.
+
+`LASERBAR_UI_SCALE` pins the factor, and `laserbar-preview.sh` takes a
+resolution as its fourth argument, so both can be checked without the display:
+
+```sh
+scripts/laserbar-preview.sh tests/laserbar/current-bar.qml /tmp/4k.png 0.5 3840x2160
+```
 
 ## Theming
 

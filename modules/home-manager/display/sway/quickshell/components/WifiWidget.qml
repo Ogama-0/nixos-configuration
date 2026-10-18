@@ -13,6 +13,7 @@ Item {
     property bool groupWired: false
     property bool active: false
     property real bodyHeight: 38
+    property real uiScale: 1
 
     property string ssid: ""
     property real strength: 0
@@ -28,7 +29,7 @@ Item {
     readonly property int litBars:
         connected ? Math.max(1, Math.ceil(safeStrength * bars)) : 0
 
-    implicitWidth: 148
+    implicitWidth: 148 * uiScale
     width: implicitWidth
 
     Text {
@@ -37,12 +38,12 @@ Item {
         color: "@capsuleInk@"
         opacity: root.connected ? 1 : 0.55
         font.family: "Orbitron"
-        font.pixelSize: 12
+        font.pixelSize: Math.round(12 * root.uiScale)
         font.weight: Font.DemiBold
         elide: Text.ElideRight
 
-        x: 12
-        width: 78
+        x: 12 * root.uiScale
+        width: 78 * root.uiScale
         anchors.verticalCenter: parent.verticalCenter
     }
 
@@ -52,13 +53,13 @@ Item {
         Rectangle {
             required property int index
 
-            readonly property real barHeight: 6 + index * 4
+            readonly property real barHeight: (6 + index * 4) * root.uiScale
 
-            x: 100 + index * 9
-            y: root.bodyHeight - 12 - barHeight
-            width: 5.2
+            x: (100 + index * 9) * root.uiScale
+            y: root.bodyHeight - 12 * root.uiScale - barHeight
+            width: 5.2 * root.uiScale
             height: barHeight
-            radius: 1.4
+            radius: 1.4 * root.uiScale
             color: "@capsuleInk@"
             opacity: index < root.litBars ? 0.9 : 0.2
         }

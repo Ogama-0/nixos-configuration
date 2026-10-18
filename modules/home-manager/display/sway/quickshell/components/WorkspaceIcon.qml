@@ -16,9 +16,10 @@ Item {
     required property string name
     property color color: "@capsuleInk@"
     property real thickness: 2.0
+    property real uiScale: 1
 
-    width: 16
-    height: 16
+    width: 16 * uiScale
+    height: 16 * uiScale
 
     readonly property var art: {
         switch (name) {
@@ -51,7 +52,12 @@ Item {
         // The art is drawn around the origin, so without this its top-left
         // quadrant lands at negative coordinates - outside the Shape, and
         // clipped away by the cell that holds it.
-        transform: Translate { x: root.width / 2; y: root.height / 2 }
+        // The art is drawn around the origin in a 16x16 box, so it is scaled
+        // into place and then shifted to the item's centre.
+        transform: [
+            Scale { xScale: root.uiScale; yScale: root.uiScale },
+            Translate { x: root.width / 2; y: root.height / 2 }
+        ]
         preferredRendererType: Shape.CurveRenderer
 
         ShapePath {

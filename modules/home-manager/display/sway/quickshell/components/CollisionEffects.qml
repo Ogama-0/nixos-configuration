@@ -16,6 +16,8 @@ Item {
     required property real meetX
     required property real panelWidth
     required property real beamY
+    // 1080p-equivalent pixels. See LaserBar.uiScale.
+    property real uiScale: 1
     // The beams finish travelling in 90ms (see LaserBar's Behavior), so this
     // is just past the moment they actually meet. It used to be 150, which
     // left a visible gap between the collision and its payoff.
@@ -43,9 +45,9 @@ Item {
 
     Rectangle {
         id: flare
-        width: 28
-        height: 28
-        radius: 14
+        width: 28 * root.uiScale
+        height: 28 * root.uiScale
+        radius: 14 * root.uiScale
         y: root.beamY - height / 2
         x: Math.max(0, Math.min(root.panelWidth - width, root.meetX - width / 2))
         color: "#FFFFFF"
@@ -57,14 +59,14 @@ Item {
         layer.effect: MultiEffect {
             blurEnabled: true
             blur: 1.0
-            blurMax: 24
+            blurMax: 24 * root.uiScale
         }
     }
 
     Rectangle {
         id: flareStreakGlow
-        width: 140
-        height: 20
+        width: 140 * root.uiScale
+        height: 20 * root.uiScale
         y: root.beamY - height / 2
         x: flare.x + flare.width / 2 - width / 2
         opacity: root.collided ? 0.5 : 0.0
@@ -83,13 +85,13 @@ Item {
         layer.effect: MultiEffect {
             blurEnabled: true
             blur: 1.0
-            blurMax: 20
+            blurMax: 20 * root.uiScale
         }
     }
 
     Rectangle {
         id: flareStreak
-        width: 110
+        width: 110 * root.uiScale
         height: 5
         y: root.beamY - height / 2
         x: flare.x + flare.width / 2 - width / 2

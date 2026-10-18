@@ -11,9 +11,12 @@
 # over the same `laserbar` IPC the Insert binding uses, then grims the output.
 set -euo pipefail
 
-ENTRY="${1:?usage: laserbar-preview.sh <entry.qml> <out.png> [battery-fraction]}"
+ENTRY="${1:?usage: laserbar-preview.sh <entry.qml> <out.png> [battery-fraction] [WxH]}"
 OUT="${2:?missing output png}"
 BATTERY="${3:-0.5}"
+# Output size, so the bar can be checked at a resolution it would have to
+# scale itself up for.
+RESOLUTION="${4:-1920x1080}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 [ -f "$ENTRY" ] || { echo "no such fixture: $ENTRY" >&2; exit 2; }
@@ -74,7 +77,7 @@ LASERBAR_FAKE_BATTERY="$(awk -v f="$BATTERY" 'BEGIN { printf "%d", f * 100 }')"
 export LASERBAR_FAKE_BATTERY
 
 cat > "$RT/sway.conf" <<CONF
-output HEADLESS-1 resolution 1920x1080
+output HEADLESS-1 resolution $RESOLUTION
 exec sleep infinity
 CONF
 
