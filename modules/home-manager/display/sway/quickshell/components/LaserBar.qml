@@ -92,13 +92,34 @@ Scope {
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: line => {
+                // A line arriving means the subscription is healthy.
+                watchRestart.attempt = 0;
                 if (line.indexOf("visible_by_modifier") === -1) return;
                 root.active = JSON.parse(line).visible_by_modifier === true;
             }
         }
-        // If the subscription ever dies the bar would be stuck at whatever it
-        // was last told, so it goes down with it.
-        onExited: root.active = false
+        // If the subscription dies the bar would be stuck at whatever it was
+        // last told, so it goes down with it - and comes straight back up.
+        // `running: true` is a one-off assignment, not a binding, so without
+        // this relaunch a single exit leaves the bar unreachable for the whole
+        // session. That is a real risk here: the service is restarted from
+        // sway's own startup and can beat SWAYSOCK into the user environment.
+        onExited: {
+            root.active = false;
+            watchRestart.restart();
+        }
+    }
+
+    Timer {
+        id: watchRestart
+        // Backs off so a swaymsg that cannot connect at all does not spin.
+        property int attempt: 0
+        interval: Math.min(8000, 250 * Math.pow(2, attempt))
+        repeat: false
+        onTriggered: {
+            attempt = Math.min(attempt + 1, 5);
+            modifierWatch.running = true;
+        }
     }
 
     Process {

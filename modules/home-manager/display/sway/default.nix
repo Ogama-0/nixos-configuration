@@ -163,7 +163,14 @@ in
       # cannot do this - sway stops firing a modifier's --release binding once
       # it has been used as a modifier, so mod+key leaves the hide unsent.
       #
-      # LaserBar.qml subscribes to that event and follows visible_by_modifier.
+      # Fallback: the bar is otherwise reachable only through that
+      # subscription, so if it ever dies there is no way to show the bar at
+      # all until the service is restarted.
+      bindsym --no-repeat Insert exec quickshell ipc -c widgets call laserbar reveal
+      bindsym --release Insert exec quickshell ipc -c widgets call laserbar hide
+
+      # LaserBar.qml subscribes to bar_state_update and follows
+      # visible_by_modifier.
       bar {
           swaybar_command ${pkgs.coreutils}/bin/true
           mode hide

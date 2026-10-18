@@ -212,7 +212,12 @@ Components.RevealMask {
         strokeColor: root.strokeColor
         wireColor: root.wireColor
         wireColorAfterSeam: root.wireColorAfterSeam
-        seamX: root.seamX
+        // Minus shell.x: seamX arrives in the module's coordinates and
+        // BarShell reads it in its own. They differ wherever the shell is not
+        // at the module's origin - the workspace strip centres its capsule in
+        // a fixed box, so the seam was drawn ~100px from the collision there,
+        // or suppressed entirely.
+        seamX: root.seamX < 0 ? -1 : root.seamX - shell.x
 
         // The focused cell's wash. Running it to the item's edge when the cell
         // is first or last carries the colour out into the flare and tapers it

@@ -43,7 +43,12 @@ Components.RevealMask {
         bodyWidth: 128
         bodyHeight: 38
         strokeColor: root.strokeColor
-        seamX: root.seamX
+        // Minus shell.x: seamX arrives in the module's coordinates and
+        // BarShell reads it in its own. They differ wherever the shell is not
+        // at the module's origin - the workspace strip centres its capsule in
+        // a fixed box, so the seam was drawn ~100px from the collision there,
+        // or suppressed entirely.
+        seamX: root.seamX < 0 ? -1 : root.seamX - shell.x
         wireColor: root.wireColor
         wireColorAfterSeam: root.wireColorAfterSeam
 
