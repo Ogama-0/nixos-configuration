@@ -165,7 +165,10 @@ Item {
             strokeColor: root.strokeColor
             strokeWidth: root.outline
             joinStyle: ShapePath.RoundJoin
-            capStyle: ShapePath.RoundCap
+            // Flat, not round: a round cap on a 4.6px dark stroke leaves a
+            // dark blob closing off the tip of each lip. Flat lets the wire
+            // run out open.
+            capStyle: ShapePath.FlatCap
             PathSvg { path: root.topEdge }
         }
         ShapePath {
@@ -173,7 +176,10 @@ Item {
             strokeColor: root.strokeColor
             strokeWidth: root.outline
             joinStyle: ShapePath.RoundJoin
-            capStyle: ShapePath.RoundCap
+            // Flat, not round: a round cap on a 4.6px dark stroke leaves a
+            // dark blob closing off the tip of each lip. Flat lets the wire
+            // run out open.
+            capStyle: ShapePath.FlatCap
             PathSvg { path: root.bottomEdge }
         }
         ShapePath {

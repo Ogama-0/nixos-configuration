@@ -203,6 +203,10 @@ Components.RevealMask {
         bodyWidth: Math.max(1, root.bodyW)
         bodyHeight: root.cellHeight
         accentColor: root.accent
+        strokeColor: root.strokeColor
+        wireColor: root.wireColor
+        wireColorAfterSeam: root.wireColorAfterSeam
+        seamX: root.seamX
 
         // The focused cell's wash. Running it to the item's edge when the cell
         // is first or last carries the colour out into the flare and tapers it
@@ -272,19 +276,26 @@ Components.RevealMask {
         // Dividers are siblings of the cells, not children: a cell clips its
         // own content, which would cut a divider straddling the boundary down
         // to half its width.
+        //
+        // One at each end too, not just between cells. The plate runs out
+        // into a lip past the first and last cell, and without a divider that
+        // white is read as part of those cells - which makes them look around
+        // twice the width of their neighbours.
         Repeater {
-            model: Math.max(0, root.cells.length - 1)
+            model: root.cells.length > 0 ? root.cells.length + 1 : 0
 
             Rectangle {
                 required property int index
 
-                x: shell.bodyX + root.cellOffset(index + 1) - root.dividerWidth / 2
+                x: shell.bodyX + root.cellOffset(index) - root.dividerWidth / 2
                 y: shell.bodyY
                 width: root.dividerWidth
                 height: root.cellHeight
                 // A divider whose cell has shrunk to nothing would otherwise
-                // sit on top of its neighbour's edge.
-                opacity: Math.min(1, root.widthAt(index) / root.cellWidthPlain)
+                // sit on top of its neighbour's edge. The end ones are always
+                // present.
+                opacity: (index === 0 || index === root.cells.length) ? 1
+                       : Math.min(1, root.widthAt(index) / root.cellWidthPlain)
                 color: "@capsuleInk@"
             }
         }
