@@ -85,6 +85,9 @@ Components.RevealMask {
     // Dividers stop short of the outer wire rather than running into it: a
     // separator that touches the border reads as part of the frame.
     readonly property real dividerInset: 5
+    // The two at the plate's ends are shorter still: they sit where the lip
+    // is already narrowing, so a full-length bar there crowds the curve.
+    readonly property real endDividerInset: 10
 
     width: maxBodyWidth + 2 * shell.flare + shell.outline
     height: shell.height
@@ -290,10 +293,14 @@ Components.RevealMask {
             Rectangle {
                 required property int index
 
+                readonly property real inset:
+                    (index === 0 || index === root.cells.length)
+                        ? root.endDividerInset : root.dividerInset
+
                 x: shell.bodyX + root.cellOffset(index) - root.dividerWidth / 2
-                y: shell.bodyY + root.dividerInset
+                y: shell.bodyY + inset
                 width: root.dividerWidth
-                height: root.cellHeight - 2 * root.dividerInset
+                height: root.cellHeight - 2 * inset
                 radius: width / 2
                 // A divider whose cell has shrunk to nothing would otherwise
                 // sit on top of its neighbour's edge. The end ones are always
