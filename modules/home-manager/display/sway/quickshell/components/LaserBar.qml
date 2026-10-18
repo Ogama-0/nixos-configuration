@@ -187,18 +187,6 @@ Scope {
                 panelWidth: panel.width
                 beamY: panel.beamY
                 pinchSpans: slots.moduleSpans
-                // Signal strength, carried by the rail itself: full amplitude
-                // at the screen edge, falling to a calm baseline over the
-                // 180px before the wifi capsule. Done here rather than with a
-                // second BeamSide for that stretch - two rails leave a seam
-                // where they meet and duplicate the blurred glow layer.
-                amplitudeAt: function (px, s) {
-                    const calm = 3.5 + (s % 3) * 1.5;
-                    const full = 4 + 14 * root.wifiState.strength + (s % 3) * 4;
-                    const edge = wifi.x;
-                    const t = Math.max(0, Math.min(1, (edge - px) / 180));
-                    return full + (calm - full) * t;
-                }
             }
 
             CollisionEffects {

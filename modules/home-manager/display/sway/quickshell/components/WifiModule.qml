@@ -3,12 +3,10 @@ import "." as Components
 
 // Wi-Fi: the network's name and a four-bar strength readout.
 //
-// The strength is also carried by the beam itself - LaserBar.qml ramps the
-// right rail's amplitude from this value at the screen edge down to a calm
-// baseline past this capsule. That is done inside the one existing BeamSide,
-// through its amplitudeAt hook, never by instantiating a second one for the
-// varying stretch: two rails leave a visible seam where they meet and
-// duplicate the blurred glow layer.
+// The strength lives here and nowhere else. An earlier version also drove the
+// right rail's wave amplitude from it, which made the two rails visibly
+// different; that was dropped on purpose, so both sides now share one wave
+// equation.
 //
 // Like the workspace strip, the values are properties and LaserBar.qml wires
 // the live Quickshell.Networking source.

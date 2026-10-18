@@ -102,12 +102,6 @@ Item {
         bandPoints = top.concat(bottom);
     }
 
-    // Optional amplitude as a function of x, so one rail can carry a varying
-    // signal (Wi-Fi strength) along its length. Deliberately not a second
-    // BeamSide for the varying stretch: that would duplicate the blurred glow
-    // layer and leave a visible seam where the two met.
-    property var amplitudeAt: null
-
     function pinchScale(px) {
         if (!pinchSpans || pinchSpans.length === 0) return 1
         let scale = 1
@@ -158,7 +152,7 @@ Item {
         for (let t = 0; t <= root.extent; t += 3) {
             const px = root.isLeft ? t : root.panelWidth - t
             const ramp = Math.min(1, t / 20, (root.extent - t) / 20) * root.pinchScale(px)
-            const amplitude = root.amplitudeAt ? root.amplitudeAt(px, s) : baseAmplitude
+            const amplitude = baseAmplitude
             const y = midY + amplitude * ramp * Math.sin(t / wavelength + root.wavePhase * speedFactor + phaseOffset)
             pts.push(Qt.point(px, y))
         }
@@ -180,7 +174,6 @@ Item {
     }
 
     onWavePhaseChanged: rebuildStrands()
-    onAmplitudeAtChanged: rebuildStrands()
     // The band's silhouette depends on where the beam has reached and where
     // the modules are - not on the wave phase. Rebuilding it on every phase
     // tick re-triangulated a ~900-point polygon 30 times a second and cost

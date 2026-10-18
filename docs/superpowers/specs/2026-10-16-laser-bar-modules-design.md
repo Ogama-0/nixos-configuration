@@ -187,6 +187,12 @@ no seconds bar, no date line, no progress sliver.
 The same shell, 148 × 34: SSID on the left, four rising bars on the right
 filled to the measured strength.
 
+**Superseded 2026-10-17: dropped.** The owner did not want it - driving one
+rail's amplitude from the signal made the two rails visibly different from
+each other. Both rails now share one wave equation and the strength is shown
+only by the bars in the capsule. The rest of this section is kept as the
+record of what was built and why it went.
+
 The signal is also carried by the beam itself. The **right rail's amplitude
 ramps** from the signal level at the screen edge down to a calm baseline past
 the Wi-Fi capsule. This must be done as an amplitude that varies with `x`

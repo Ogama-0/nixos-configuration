@@ -13,7 +13,8 @@ let
 in
 {
   imports = [
-    ./barbar.nix
+    # ./barbar.nix
+    ./effects.nix
     ./mako.nix
     ./quickshell
     ./idle.nix
@@ -30,7 +31,17 @@ in
   wayland.windowManager.sway = {
     enable = true;
     xwayland = true;
-    wrapperFeatures.gtk = true; # Fixes common issues with GTK 3 apps
+    # SwayFX: sway plus rounded corners / shadows / blur, configured in
+    # ./effects.nix. Defined in modules/lib/swayfx.nix because greetd execs
+    # the very same binary to start the session.
+    package = import ../../../lib/swayfx.nix pkgs;
+    # Sway initialises a renderer even for `--validate` (swaywm/sway#4691),
+    # and swayfx's fx_renderer is GLES2-only: in the Nix sandbox it dies on
+    # "Cannot create GLES2 renderer: no DRM FD available" before it ever
+    # reads the config. Plain sway passed only because wlr_renderer falls
+    # back to pixman. Validate by hand instead:
+    #   swayfx --validate --config ~/.config/sway/config
+    checkConfig = false;
     config = {
       modifier = "${modifier}";
       terminal = "alacritty";
@@ -40,6 +51,11 @@ in
       left = "${left}";
       right = "${right}";
       defaultWorkspace = "workspace 10";
+
+      # No swaybar from the typed option - home-manager would otherwise ship
+      # its default one. The bar block in extraConfig below is not a bar: it
+      # exists only to make sway track the modifier for us.
+      bars = [ ];
 
       startup = [
         { command = "alacritty"; }
@@ -71,7 +87,12 @@ in
         "${modifier}+${down}" = "focus down";
         "${modifier}+Escape" = "exec quickshell ipc -c widgets call lock lock";
         "${modifier}+Shift+Escape" = "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
-        "${modifier}" = "exec swaymsg bar mode toggle";
+        # Was: "${modifier}" = "exec swaymsg bar mode toggle";
+        # Commented out because the laser bar now binds the same key (see
+        # extraConfig). Two bindings on the bare modifier compete, and the
+        # second one is the likely reason sway stopped firing the --release
+        # that collapses the bar. Restore it if you still want the swaybar
+        # toggle and would rather move the laser bar to another key.
         "${modifier}+Shift+z" = "exec makoctl dismiss";
         # "${modifier}+Shift+d" = "exec vesktop";
         "${modifier}+space" = "exec nautilus";
@@ -132,8 +153,23 @@ in
     };
 
     extraConfig = ''
-      bindsym --no-repeat Insert exec quickshell ipc -c widgets call laserbar reveal
-      bindsym --release Insert exec quickshell ipc -c widgets call laserbar hide
+      # Not a bar. swaybar_command is a no-op, so no bar process ever starts
+      # and nothing is drawn.
+      #
+      # It exists because `mode hide` + `modifier` is the only thing in sway
+      # that gives an exact correspondence between the modifier being held and
+      # a bar being shown: sway tracks the key in the compositor and
+      # broadcasts the result as the bar_state_update IPC event. Key bindings
+      # cannot do this - sway stops firing a modifier's --release binding once
+      # it has been used as a modifier, so mod+key leaves the hide unsent.
+      #
+      # LaserBar.qml subscribes to that event and follows visible_by_modifier.
+      bar {
+          swaybar_command ${pkgs.coreutils}/bin/true
+          mode hide
+          hidden_state hide
+          modifier ${modifier}
+      }
     '';
   };
 }
