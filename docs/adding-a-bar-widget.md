@@ -1,0 +1,226 @@
+# Adding a widget to the laser bar
+
+How to put something new on the bar — a DND toggle, a battery readout, a media
+button. Read this before writing the QML; several of the constraints below are
+non-obvious and two of them fail *silently*.
+
+All paths are relative to
+`modules/home-manager/display/sway/quickshell/components/` unless stated.
+
+## What the bar is
+
+The bar is a momentary overlay along the bottom of the screen, revealed only
+while the modifier key is held. Two beams travel in from the screen edges and
+collide at the battery percentage — green from the left, red from the right.
+Modules sit on that beam and the beam funnels into them.
+
+```
+LaserBar.qml                  the panel, one per screen, plus the data sources
+├── BeamSide.qml   ×2         the two rails: band, wave strands, core line
+├── CollisionEffects.qml      the payoff where they meet
+└── BarSlots.qml              places the groups and binds everything they take
+    └── BarGroup.qml  ×3      one capsule per side: left, centre, right
+        ├── BarShell.qml      the capsule's geometry - plate, lips, filament
+        └── your widget       one or more, side by side
+```
+
+A **group** is a capsule. A **widget** is a thing inside one. There are three
+groups — left, centre, right — and widgets within a group are ordered by `pos`.
+Today: `left: 1 workspaces`, `centre: 1 clock`, `right: 1 wifi`.
+
+## Adding a widget: three steps
+
+### 1. Write the widget
+
+A widget is a plain `Item` that sizes itself. It does not know about the
+capsule, the beam, the reveal or the battery.
+
+```qml
+import QtQuick
+
+// What this is and why it exists.
+Item {
+    id: root
+
+    // Read by BarGroup.
+    property int pos: 1
+    property bool groupWired: false
+    // Bound by BarGroup, if you declare them. Declare only what you use.
+    property bool active: false
+    property real bodyHeight: 38
+
+    implicitWidth: 40
+    width: implicitWidth
+
+    // ... your content, positioned from 0,0 ...
+}
+```
+
+`ClockWidget.qml` is the smallest real example; `WifiWidget.qml` shows a widget
+with inputs; `WorkspaceWidget.qml` is the complicated one (a model, an
+animation and its own internal dividers) and is not where to start.
+
+### 2. Declare it in `LaserBar.qml`
+
+Inside the `BarSlots` block, in the group you want:
+
+```qml
+BarGroup {
+    slotSide: "centre"
+
+    DndWidget   { pos: 1 }
+    ClockWidget { pos: 2 }
+}
+```
+
+That gives a DND button to the left of the clock, in the middle capsule. `pos`
+orders widgets within the group; the numbers need not be contiguous.
+
+### 3. Register the file in `treeFor`
+
+In `modules/home-manager/display/sway/quickshell/default.nix`:
+
+```nix
+"${d}/components/DndWidget.qml" = themedQmlFile variant ./components/DndWidget.qml;
+```
+
+**This one fails silently.** The QML tree is generated file-by-file; a
+component that is not listed simply does not exist at runtime, and the error
+you get is `DndWidget is not a type` with no hint that the file is sitting
+right there on disk.
+
+## The widget contract
+
+`BarGroup` reads these from a widget:
+
+| Property | Meaning |
+|---|---|
+| `pos` | Order within the group. Required — a child without it is ignored. |
+| `width` | What the widget occupies. The group sums these to size the capsule. |
+| `groupWired` | Scratch flag the group sets. Declare it, do not touch it. |
+| `boundedEnds` | Optional. `true` asks for a separator at the capsule's ends. |
+| `accentFromX` / `accentToX` | Optional. A span, in widget coordinates, to wash in the rail's colour. |
+| `reservedWidth` | Optional. See *Widgets that change width*. |
+
+`BarGroup` **binds** these into a widget, if the widget declares them. Every
+write is guarded, so a widget that omits one is not broken by its absence:
+
+| Property | Meaning |
+|---|---|
+| `active` | True while the bar is revealed. Gate timers and animations on it. |
+| `bodyHeight` | The capsule's inner height. |
+| `railColor` | Green or red, depending on which rail covers this group. |
+
+`BarSlots` binds the same way into a *group*: `coverLeft`, `coverRight`,
+`panelWidth`, `active`, `strokeColor`, `wireColor`, `wireColorAfterSeam`,
+`seamX`, `railColor`. A group does not set those itself.
+
+## Rules that are not negotiable
+
+These are scars. Each one cost a debugging session.
+
+1. **Nothing may run while the bar is closed.** It is shown only while a key
+   is held. Gate timers on `active`. The clock's 1 Hz tick was re-rendering a
+   layer FBO once a second, all session, for a clock nobody could see.
+
+2. **No `layer.effect` on an item whose size changes.** `RevealMask` wraps
+   every group in a layer whose texture is exactly the item's size, so an item
+   that resizes mid-animation reallocates and re-renders that texture every
+   frame. This is why a group whose widgets change width uses a fixed
+   reservation with the capsule centred inside it, rather than resizing.
+
+3. **No `Canvas`.** Qt rasterises it on the CPU and re-uploads a texture every
+   repaint — measured at 110% CPU here against 7% idle. Use `Shape` +
+   `ShapePath` with `preferredRendererType: Shape.CurveRenderer`.
+
+4. **No positioners (`Row`, `RowLayout`) for anything that animates.** Use
+   explicit `x` arithmetic. `StatusPanel.qml` documents a case where a
+   positioner silently stopped laying out and stacked every child at `y: 0`.
+
+5. **Do not make `BeamSide` rebuild its strands more often than its own tick.**
+   A module animating its width changes its pinch span every frame; rebuilding
+   five full-screen strand polylines at display rate on top of the wave's own
+   30fps saturates the loop and the wave visibly stalls. `pinchSpans` changes
+   are deliberately picked up on the next tick instead.
+
+6. **One `BeamSide` per side.** Two leave a visible seam where they meet and
+   duplicate the blurred glow layer.
+
+## Theming
+
+Colours come from `@token@` substitution — see `modules/lib/qml-theme.nix` for
+the table and `quickshell/default.nix` for the per-variant values. Use
+`@capsuleInk@` for marks on the plate. Never hardcode a colour that should
+follow the theme; there are two variants (dark and light) and they are
+generated into two separate trees.
+
+If you add a token, default it in `qml-theme.nix`. `modules/nixosconf/greetd.nix`
+and the lock-screen variant call the same function and render none of these
+components, so a required argument there breaks both.
+
+## Testing
+
+The repo has no unit-test framework. The bar is verified by rendering it for
+real and asserting on pixels.
+
+```sh
+scripts/laserbar-preview.sh tests/laserbar/<fixture>.qml /tmp/out.png 0.62
+scripts/laserbar-probe.sh /tmp/out.png <x> <y> <w> <h> --near '#rrggbb' 25
+```
+
+`laserbar-preview.sh` evaluates the themed tree out of the **working tree**
+with `nix eval` (not the installed `~/.config` copy), drops the fixture in as
+`shell.qml`, runs nested sway on the wlroots headless backend, reveals the bar
+over its IPC, and screenshots with `grim`. The third argument pins the battery
+so the collision always lands at the same x. `LASERBAR_RETRACT=1` captures the
+hidden state instead. A `<out>.log` is written next to the png.
+
+Probe modes: `--near` for flat areas, `--dominant r|g|b` for the beam (whose
+strands move every frame), `--darker-than` for "there is ink in this band",
+and `--diff` between two renders for anything whose claim *is* a difference.
+
+Write a fixture per thing you are testing — `tests/laserbar/` has one per
+component and several per behaviour. Fixtures use a blue background
+(`#FF2040A0`) precisely so the plate, the near-black outline and the
+background are all distinguishable from each other.
+
+**Check your probe actually fails without the fix.** Several probes in this
+repo's history passed against renders that never happened or landed on the
+wrong pixel. A probe whose coordinates you worked out on paper is a guess
+until you have seen it go red.
+
+`scripts/laserbar-cpu.sh <fixture> <seconds>` samples quickshell's CPU with the
+bar held open. Compare against the current commit, back to back, in the same
+session — the absolute number drifts with what else the machine is doing.
+
+## Before you call it done
+
+```sh
+git add -A            # nix ignores untracked files: an unadded .qml is invisible
+nix flake check
+```
+
+`nix flake check` does **not** force `xdg.configFile.*.text`, so it passes even
+when a generated QML file throws. Check the generated text directly, for both
+variants:
+
+```sh
+nix eval --raw '.#homeConfigurations.personal.config.xdg.configFile."quickshell/widgets-dark/components/DndWidget.qml".text'
+```
+
+Never discard its stderr: a failed eval returns an empty string, which then
+greps clean for leftover `@tokens@` and looks exactly like a pass. Check the
+exit status and the line count too.
+
+Then a real switch, which is the user's call to run:
+
+```sh
+home-manager switch --flake .#personal && systemctl --user restart quickshell-widgets
+```
+
+## Related
+
+- `docs/superpowers/specs/2026-10-16-laser-bar-modules-design.md` — the design
+  this was built from, including the behaviour that must not change.
+- `BeamSide.qml` — read its comments before touching the beam. They record two
+  separate performance regressions and why the current shape is what it is.
