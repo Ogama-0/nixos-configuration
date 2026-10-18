@@ -23,7 +23,7 @@ Scope {
             coverRight: panel.width
             panelWidth: panel.width
             active: true
-            accent: "#FF27D796"
+            railColor: "#FF27D796"
             workspaces: [
                 { number: 1, focused: false, icon: "code" },
                 { number: 2, focused: false, icon: "code" },

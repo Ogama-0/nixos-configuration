@@ -48,7 +48,7 @@ Scope {
             WorkspaceModule {
                 id: ws
                 slotSide: "left"
-                accent: "#FF27D796"
+                railColor: "#FF27D796"
 
                 workspaces: [{ number: 1, focused: true, icon: "code" }]
 

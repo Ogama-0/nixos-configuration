@@ -48,11 +48,6 @@ Item {
     property real seamX: -1
     readonly property bool seamed: seamX >= 0 && seamX <= width
 
-    // The flare ends at the beam's own thickness, not at a point, and that
-    // end is left unstroked. A flare closing to a point puts two strokes on
-    // top of each other and the beam dead-ends into the resulting blob; an
-    // open throat reads as two rails guiding the beam into the capsule.
-    property real throat: 0
 
     // An accent wash over part of the capsule - the focused workspace cell.
     // Clipped to an x range but drawn from the same path, so a cell at either

@@ -23,7 +23,7 @@ Scope {
             coverRight: panel.width
             panelWidth: panel.width
             active: true
-            accent: "#FF27D796"
+            railColor: "#FF27D796"
             // Sway allows `workspace web`: no number at all, reported as -1.
             workspaces: [
                 { number: -1, focused: true, icon: "plain" }

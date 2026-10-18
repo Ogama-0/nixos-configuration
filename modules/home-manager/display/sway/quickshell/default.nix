@@ -141,6 +141,7 @@ in
           "${d}/components/GlassPill.qml" = themedQmlFile variant ./components/GlassPill.qml;
           "${d}/components/ColorUtils.qml" = themedQmlFile variant ./components/ColorUtils.qml;
           "${d}/components/BarShell.qml" = themedQmlFile variant ./components/BarShell.qml;
+          "${d}/components/BarModule.qml" = themedQmlFile variant ./components/BarModule.qml;
           "${d}/components/BarSlots.qml" = themedQmlFile variant ./components/BarSlots.qml;
           "${d}/components/WorkspaceIcon.qml" = themedQmlFile variant ./components/WorkspaceIcon.qml;
           "${d}/components/WorkspaceModule.qml" = themedQmlFile variant ./components/WorkspaceModule.qml;

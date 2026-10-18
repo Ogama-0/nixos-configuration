@@ -17,26 +17,11 @@ import "." as Components
 // animation frame - the resizing-layer cost this design exists to avoid. And a
 // capsule centred in a fixed box opens out to both sides as it grows, which is
 // the behaviour asked for.
-Components.RevealMask {
+Components.BarModule {
     id: root
 
     property var workspaces: []
-    property color accent: "@capsuleInk@"
-
-    // Read by BarSlots, which does the placing. See BarSlots.qml.
-    property string slotSide: "left"
-    property int slotOrder: 0
-    property bool slotWired: false
-    property bool active: false
-
-    // A dark tint of the rail covering this module, so the outline reads as
-    // the beam continuing through it rather than as a black box laid on top.
-    property color strokeColor: "@capsuleInk@"
-    // Item-local x of the beams' meeting point when it lands inside this
-    // module, or -1. See BarShell.
-    property real seamX: -1
-    property color wireColor: "@capsuleInk@"
-    property color wireColorAfterSeam: "@capsuleInk@"
+    slotSide: "left"
 
     readonly property real cellHeight: 38
     readonly property real cellWidthPlain: 27
@@ -89,18 +74,18 @@ Components.RevealMask {
     // is already narrowing, so a full-length bar there crowds the curve.
     readonly property real endDividerInset: 10
 
+    // Wider than what it draws: a fixed ten-workspace reservation with the
+    // capsule centred in it, so the item never resizes while a cell animates
+    // (RevealMask's layer texture is the item's size) and the strip opens out
+    // to both sides as it grows.
     width: maxBodyWidth + 2 * shell.flare + shell.outline
-    height: shell.height
+    shellX: (width - shell.width) / 2
+    bodyWidth: Math.max(1, Math.min(root.bodyW, maxBodyWidth))
+    bodyHeight: cellHeight
+    accentColor: root.railColor
     // A capsule with no cells would be a zero-width body whose two flares meet
     // in a black dart. Nothing to show means nothing drawn.
     visible: cells.length > 0
-
-    // Where the capsule actually sits, in panel coordinates, for
-    // BeamSide.pinchSpans. The item's own box is the ten-workspace
-    // reservation, and pinching on that would flatten the strands over empty
-    // beam.
-    readonly property var occupiedSpan:
-        cells.length > 0 ? [x + shell.x, x + shell.x + shell.width] : []
 
     onWorkspacesChanged: sync()
     Component.onCompleted: sync()
@@ -202,118 +187,99 @@ Components.RevealMask {
         phase = 1;
     }
 
-    Components.BarShell {
-        id: shell
-
-        x: (root.width - width) / 2
-        bodyWidth: Math.max(1, root.bodyW)
-        bodyHeight: root.cellHeight
-        accentColor: root.accent
-        strokeColor: root.strokeColor
-        wireColor: root.wireColor
-        wireColorAfterSeam: root.wireColorAfterSeam
-        // Minus shell.x: seamX arrives in the module's coordinates and
-        // BarShell reads it in its own. They differ wherever the shell is not
-        // at the module's origin - the workspace strip centres its capsule in
-        // a fixed box, so the seam was drawn ~100px from the collision there,
-        // or suppressed entirely.
-        seamX: root.seamX < 0 ? -1 : root.seamX - shell.x
-
-        // The focused cell's wash. Running it to the item's edge when the cell
-        // is first or last carries the colour out into the flare and tapers it
-        // to the point.
-        accentFromX: {
-            for (let i = 0; i < root.cells.length; i++) {
-                if (!root.cells[i].focused) continue;
-                return i === 0 ? 0 : shell.bodyX + root.cellOffset(i);
-            }
-            return 0;
+    // Shell-local, not module-local: BarShell clips the wash in its own
+    // coordinate space.
+    accentFromX: {
+        for (let i = 0; i < root.cells.length; i++) {
+            if (!root.cells[i].focused) continue;
+            return i === 0 ? 0 : shell.bodyX + root.cellOffset(i);
         }
-        accentToX: {
-            for (let i = 0; i < root.cells.length; i++) {
-                if (!root.cells[i].focused) continue;
-                if (i === root.cells.length - 1) return shell.width;
-                return shell.bodyX + root.cellOffset(i) + root.widthAt(i);
-            }
-            return 0;
+        return 0;
+    }
+    accentToX: {
+        for (let i = 0; i < root.cells.length; i++) {
+            if (!root.cells[i].focused) continue;
+            if (i === root.cells.length - 1) return shell.width;
+            return shell.bodyX + root.cellOffset(i) + root.widthAt(i);
         }
+        return 0;
+    }
 
-        // Cells. Explicit x arithmetic, not a Row: the widths animate, and a
-        // positioner over a model reassigned on every sway event is the
-        // failure StatusPanel.qml documents.
-        Repeater {
-            model: root.cells
+    // Cells. Explicit x arithmetic, not a Row: the widths animate, and a
+    // positioner over a model reassigned on every sway event is the
+    // failure StatusPanel.qml documents.
+    Repeater {
+        model: root.cells
 
-            Item {
-                id: cell
-                required property var modelData
-                required property int index
+        Item {
+            id: cell
+            required property var modelData
+            required property int index
 
-                readonly property real cw: root.widthAt(index)
+            readonly property real cw: root.widthAt(index)
 
-                x: shell.bodyX + root.cellOffset(index)
-                y: shell.bodyY
-                width: cw
-                height: root.cellHeight
-                // A cell growing in from zero has a full-size icon and number
-                // from its first frame; without this they spill over its
-                // neighbours.
-                clip: true
-                // Fades up over the first few pixels of growth, so a cell
-                // opens rather than pops.
-                opacity: Math.min(1, cw / root.cellWidthPlain)
+            x: shell.bodyX + root.cellOffset(index)
+            y: shell.bodyY
+            width: cw
+            height: root.cellHeight
+            // A cell growing in from zero has a full-size icon and number
+            // from its first frame; without this they spill over its
+            // neighbours.
+            clip: true
+            // Fades up over the first few pixels of growth, so a cell
+            // opens rather than pops.
+            opacity: Math.min(1, cw / root.cellWidthPlain)
 
-                Components.WorkspaceIcon {
-                    name: cell.modelData.icon !== undefined ? cell.modelData.icon : "plain"
-                    color: "@capsuleInk@"
-                    x: (cell.cw - width) / 2
-                    y: 3
-                }
-
-                Text {
-                    // Sway allows named workspaces, where there is no number
-                    // to show. Blank rather than printing the -1 sway reports.
-                    text: cell.modelData.number > 0 ? String(cell.modelData.number) : ""
-                    color: "@capsuleInk@"
-                    font.family: "Orbitron"
-                    font.pixelSize: 12
-                    font.weight: cell.modelData.focused ? Font.Bold : Font.DemiBold
-                    x: (cell.cw - width) / 2
-                    y: 21
-                }
-            }
-        }
-
-        // Dividers are siblings of the cells, not children: a cell clips its
-        // own content, which would cut a divider straddling the boundary down
-        // to half its width.
-        //
-        // One at each end too, not just between cells. The plate runs out
-        // into a lip past the first and last cell, and without a divider that
-        // white is read as part of those cells - which makes them look around
-        // twice the width of their neighbours.
-        Repeater {
-            model: root.cells.length > 0 ? root.cells.length + 1 : 0
-
-            Rectangle {
-                required property int index
-
-                readonly property real inset:
-                    (index === 0 || index === root.cells.length)
-                        ? root.endDividerInset : root.dividerInset
-
-                x: shell.bodyX + root.cellOffset(index) - root.dividerWidth / 2
-                y: shell.bodyY + inset
-                width: root.dividerWidth
-                height: root.cellHeight - 2 * inset
-                radius: width / 2
-                // A divider whose cell has shrunk to nothing would otherwise
-                // sit on top of its neighbour's edge. The end ones are always
-                // present.
-                opacity: (index === 0 || index === root.cells.length) ? 1
-                       : Math.min(1, root.widthAt(index) / root.cellWidthPlain)
+            Components.WorkspaceIcon {
+                name: cell.modelData.icon !== undefined ? cell.modelData.icon : "plain"
                 color: "@capsuleInk@"
+                x: (cell.cw - width) / 2
+                y: 3
             }
+
+            Text {
+                // Sway allows named workspaces, where there is no number
+                // to show. Blank rather than printing the -1 sway reports.
+                text: cell.modelData.number > 0 ? String(cell.modelData.number) : ""
+                color: "@capsuleInk@"
+                font.family: "Orbitron"
+                font.pixelSize: 12
+                font.weight: cell.modelData.focused ? Font.Bold : Font.DemiBold
+                x: (cell.cw - width) / 2
+                y: 21
+            }
+        }
+    }
+
+    // Dividers are siblings of the cells, not children: a cell clips its
+    // own content, which would cut a divider straddling the boundary down
+    // to half its width.
+    //
+    // One at each end too, not just between cells. The plate runs out
+    // into a lip past the first and last cell, and without a divider that
+    // white is read as part of those cells - which makes them look around
+    // twice the width of their neighbours.
+    Repeater {
+        model: root.cells.length > 0 ? root.cells.length + 1 : 0
+
+        Rectangle {
+            required property int index
+
+            readonly property real inset:
+                (index === 0 || index === root.cells.length)
+                    ? root.endDividerInset : root.dividerInset
+
+            x: shell.bodyX + root.cellOffset(index) - root.dividerWidth / 2
+            y: shell.bodyY + inset
+            width: root.dividerWidth
+            height: root.cellHeight - 2 * inset
+            radius: width / 2
+            // A divider whose cell has shrunk to nothing would otherwise
+            // sit on top of its neighbour's edge. The end ones are always
+            // present.
+            opacity: (index === 0 || index === root.cells.length) ? 1
+                   : Math.min(1, root.widthAt(index) / root.cellWidthPlain)
+            color: "@capsuleInk@"
         }
     }
 }

@@ -175,11 +175,6 @@ Scope {
             // Where the two beams collide: the battery percentage.
             readonly property real batteryMeetX: root.batteryFraction * width
 
-            // -1 unless the collision falls inside this module's own box.
-            function seamFor(item) {
-                const local = batteryMeetX - item.x;
-                return (local >= 0 && local <= item.width) ? local : -1;
-            }
 
             // Current travel distance of each beam from its screen edge,
             // shared by the beams, the collision meeting point, and every
@@ -238,40 +233,16 @@ Scope {
                 coverLeft: panel.leftExtent
                 coverRight: panel.rightExtent
                 active: root.active
+                leftRail: "@greenColor@"
+                rightRail: "@redColor@"
+                ink: "@capsuleInk@"
+                meetX: panel.batteryMeetX
 
-                WorkspaceModule {
-                    slotSide: "left"
-                    // Lightened, not the rail colour itself: a filament the same colour
-                    // as the band disappears where the shoulder crosses the beam, and
-                    // the dark border reads as two parallel lines with a gap.
-                    wireColor: Qt.lighter(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 1.5)
-                    wireColorAfterSeam: Qt.lighter("@redColor@", 1.5)
-                    seamX: panel.seamFor(this)
-                    workspaces: root.workspaceList
-                    // The rail covering this module, so the focused cell
-                    // drifts green to red with the battery.
-                    accent: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
-                }
+                WorkspaceModule { workspaces: root.workspaceList }
 
-                ClockModule {
-                    slotSide: "centre"
-                    // Lightened, not the rail colour itself: a filament the same colour
-                    // as the band disappears where the shoulder crosses the beam, and
-                    // the dark border reads as two parallel lines with a gap.
-                    wireColor: Qt.lighter(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 1.5)
-                    wireColorAfterSeam: Qt.lighter("@redColor@", 1.5)
-                    seamX: panel.seamFor(this)
-                }
+                ClockModule {}
 
                 WifiModule {
-                    id: wifi
-                    slotSide: "right"
-                    // Lightened, not the rail colour itself: a filament the same colour
-                    // as the band disappears where the shoulder crosses the beam, and
-                    // the dark border reads as two parallel lines with a gap.
-                    wireColor: Qt.lighter(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 1.5)
-                    wireColorAfterSeam: Qt.lighter("@redColor@", 1.5)
-                    seamX: panel.seamFor(this)
                     ssid: root.wifiState.ssid
                     strength: root.wifiState.strength
                     connected: root.wifiState.connected
