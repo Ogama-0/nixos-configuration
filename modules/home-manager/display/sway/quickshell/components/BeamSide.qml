@@ -26,82 +26,6 @@ Item {
     property var pinchSpans: []
     readonly property real pinchPad: 20
 
-    // The coloured band is not a rectangle. It runs at full height in the
-    // open beam and eases down to the throat at a module's edge, so the beam
-    // funnels into the capsule instead of being chopped off by it. Inside a
-    // module's span the height collapses to zero - the capsule covers that
-    // stretch anyway, and collapsing keeps the whole band one polygon rather
-    // than one per gap.
-    readonly property real bandHeight: 44
-    property real throatHeight: 12
-    property real funnelLead: 30
-
-    function bandHalfAt(px) {
-        let d = Infinity;
-        for (let i = 0; i < pinchSpans.length; i++) {
-            const a = pinchSpans[i][0];
-            const b = pinchSpans[i][1];
-            if (px >= a && px <= b) return 0;
-            d = Math.min(d, px < a ? a - px : px - b);
-        }
-        if (!(d < funnelLead)) return bandHeight / 2;
-        const t = d / funnelLead;
-        // Smoothstep: flat in the open beam, steepest mid-funnel, flat again
-        // into the throat. A straight taper reads as an angular wedge.
-        const k = t * t * (3 - 2 * t);
-        return (throatHeight + (bandHeight - throatHeight) * k) / 2;
-    }
-
-    property var bandPoints: []
-
-    // Sampled where the silhouette actually curves, not uniformly. The open
-    // beam is a straight line that needs two points; only the funnels either
-    // side of a module need a fine step. Uniform sampling here produced a
-    // ~900-point polygon and nearly doubled the bar's cost on its own.
-    function bandBoundaries() {
-        const xs = [0, extent];
-        for (let i = 0; i < pinchSpans.length; i++) {
-            const a = pinchSpans[i][0];
-            const b = pinchSpans[i][1];
-            const edges = isLeft
-                ? [a - funnelLead, a, b, b + funnelLead]
-                : [panelWidth - (b + funnelLead), panelWidth - b,
-                   panelWidth - a, panelWidth - (a - funnelLead)];
-            for (let j = 0; j < edges.length; j++) {
-                const t = edges[j];
-                if (t > 0 && t < extent) xs.push(t);
-            }
-        }
-        xs.sort((p, q) => p - q);
-        return xs;
-    }
-
-    function rebuildBand() {
-        if (extent <= 0) { bandPoints = []; return; }
-        const xs = bandBoundaries();
-        const top = [];
-        const bottom = [];
-        const push = t => {
-            const px = isLeft ? t : panelWidth - t;
-            const half = bandHalfAt(px);
-            top.push(Qt.point(px, beamY - half));
-            bottom.unshift(Qt.point(px, beamY + half));
-        };
-        for (let i = 0; i < xs.length - 1; i++) {
-            const from = xs[i];
-            const to = xs[i + 1];
-            const midPx = isLeft ? (from + to) / 2 : panelWidth - (from + to) / 2;
-            const flat = Math.abs(bandHalfAt(midPx) - bandHalfAt(isLeft ? from : panelWidth - from)) < 0.01;
-            if (flat) {
-                push(from);
-            } else {
-                for (let t = from; t < to; t += 2) push(t);
-            }
-        }
-        push(xs[xs.length - 1]);
-        bandPoints = top.concat(bottom);
-    }
-
     function pinchScale(px) {
         if (!pinchSpans || pinchSpans.length === 0) return 1
         let scale = 1
@@ -174,14 +98,9 @@ Item {
     }
 
     onWavePhaseChanged: rebuildStrands()
-    // The band's silhouette depends on where the beam has reached and where
-    // the modules are - not on the wave phase. Rebuilding it on every phase
-    // tick re-triangulated a ~900-point polygon 30 times a second and cost
-    // more than everything else in the bar put together.
-    onExtentChanged: { rebuildStrands(); rebuildBand(); }
-    onPinchSpansChanged: { rebuildStrands(); rebuildBand(); }
-    onPanelWidthChanged: rebuildBand()
-    Component.onCompleted: { rebuildStrands(); rebuildBand(); }
+    onExtentChanged: rebuildStrands()
+    onPinchSpansChanged: rebuildStrands()
+    Component.onCompleted: rebuildStrands()
 
     function corePoints(midY) {
         if (root.extent <= 0) return []
@@ -236,36 +155,44 @@ Item {
         layer.effect: MultiEffect { blurEnabled: true; blur: 1.0; blurMax: 34 }
     }
 
-    // Travelling tip highlight, shaped by the funnel profile above: accent at
-    // the screen edge running to white at the tip. The old version was a
-    // plain rectangle with a second rectangle of black gradient laid over it
-    // for vertical falloff; the silhouette does that job now, and the band
-    // and the capsule outline finally share one shape.
-    Shape {
-        id: bandShape
-        anchors.fill: parent
-        antialiasing: true
-        // GeometryRenderer, not CurveRenderer: this is a large filled polygon
-        // of straight segments, so there are no curves for CurveRenderer to
-        // antialias - it just rasterises the whole area per-pixel and costs
-        // dearly for it.
-        preferredRendererType: Shape.GeometryRenderer
-
-        ShapePath {
-            strokeColor: "transparent"
-            strokeWidth: 0
-            fillGradient: LinearGradient {
-                x1: root.isLeft ? 0 : root.panelWidth
-                y1: 0
-                x2: root.isLeft ? root.extent : root.panelWidth - root.extent
-                y2: 0
-                GradientStop { position: 0.0; color: root.accentColor }
-                GradientStop { position: 0.93; color: root.accentColor }
-                GradientStop { position: 1.0; color: "#FFFFFF" }
-            }
-            PathPolyline { path: root.bandPoints }
+    // Traveling tip highlight: accent-to-white gradient, resizes with
+    // `root.extent` every animation frame.
+    Rectangle {
+        id: tipHighlight
+        anchors.left: root.isLeft ? parent.left : undefined
+        anchors.right: root.isLeft ? undefined : parent.right
+        y: root.beamY - height / 2
+        height: 44
+        width: root.extent
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: root.isLeft ? 0.0 : 1.0; color: root.accentColor }
+            GradientStop { position: root.isLeft ? 0.95 : 0.05; color: root.accentColor }
+            GradientStop { position: root.isLeft ? 1.0 : 0.0; color: "#FFFFFF" }
         }
         opacity: root.hum
+    }
+
+    // Vertical falloff for the highlight above: a plain black gradient
+    // overlaid on top of it, opaque right at the top/bottom edges (hiding
+    // the highlight completely there) and fading to fully transparent by
+    // 5% height, continuing to fully clear by center - mirrored on the
+    // bottom half. Pure alpha compositing, no layer/effect/texture-capture
+    // involved, so there's nothing in this approach that can silently fail
+    // the way MultiEffect.maskSource just did (twice).
+    Rectangle {
+        anchors.left: tipHighlight.left
+        anchors.right: tipHighlight.right
+        y: tipHighlight.y
+        height: tipHighlight.height
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop { position: 0.0; color: "#E6000000" }
+            GradientStop { position: 0.05; color: "#19000000" }
+            GradientStop { position: 0.5; color: "#00000000" }
+            GradientStop { position: 0.95; color: "#19000000" }
+            GradientStop { position: 1.0; color: "#E6000000" }
+        }
     }
 
     // Beam core: GPU-rendered wave strands. This used to be a Canvas, which
