@@ -20,7 +20,8 @@ Components.RevealMask {
     // Item-local x of the beams' meeting point when it lands inside this
     // module, or -1. See BarShell.
     property real seamX: -1
-    property color strokeColorAfterSeam: "@capsuleInk@"
+    property color wireColor: "@capsuleInk@"
+    property color wireColorAfterSeam: "@capsuleInk@"
 
     // Read by BarSlots, which does the placing. See BarSlots.qml.
     property string slotSide: "centre"
@@ -43,7 +44,8 @@ Components.RevealMask {
         bodyHeight: 38
         strokeColor: root.strokeColor
         seamX: root.seamX
-        strokeColorAfterSeam: root.strokeColorAfterSeam
+        wireColor: root.wireColor
+        wireColorAfterSeam: root.wireColorAfterSeam
 
         Text {
             id: clockText

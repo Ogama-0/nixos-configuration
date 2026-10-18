@@ -27,17 +27,19 @@ Item {
     required property real bodyWidth
     required property real bodyHeight
     property real radius: 9
-    property real flare: 21
+    // Long and shallow: the taper reads as the beam narrowing into the module
+    // rather than a bracket stuck on its end.
+    property real flare: 32
     property real outline: 4.6
     property color fillColor: "@capsuleFill@"
-    // The outline is a wire in the rail's own colour, laid over a darker
-    // copy of itself for depth. When the beams' meeting point falls inside
-    // this module, the wire changes colour at that point - that IS the
+    // A dark border with a thin filament of the rail's colour running down
+    // the middle of it. When the beams' meeting point falls inside this
+    // module the filament changes colour at that point - that IS the
     // collision indicator, so nothing is drawn across the capsule.
     property color strokeColor: "@capsuleInk@"
-    property real wireWidth: 2.6
-    readonly property color wireShadow: Qt.darker(strokeColor, 3.4)
-    readonly property color wireShadowAfterSeam: Qt.darker(strokeColorAfterSeam, 3.4)
+    property color wireColor: "@capsuleInk@"
+    property color wireColorAfterSeam: "@capsuleInk@"
+    property real wireWidth: 1.5
 
     // Where the two beams collide, if that happens to fall inside this
     // module. Item-local x, or -1 for not here. The capsule then carries the
@@ -45,7 +47,6 @@ Item {
     // and the collision burning white at the exact x - otherwise the payoff
     // would simply be hidden behind the capsule at some battery levels.
     property real seamX: -1
-    property color strokeColorAfterSeam: "@capsuleInk@"
     readonly property bool seamed: seamX >= 0 && seamX <= width
 
     // The flare ends at the beam's own thickness, not at a point, and that
@@ -156,7 +157,8 @@ Item {
         }
     }
 
-    // Outline, as two open edges so nothing is drawn across a throat.
+    // Outline, as two open edges so nothing is drawn across a throat: the
+    // dark border first, then the filament down the middle of it.
     Shape {
         x: root.inset
         y: root.inset
@@ -167,7 +169,7 @@ Item {
 
         ShapePath {
             fillColor: "transparent"
-            strokeColor: root.wireShadow
+            strokeColor: root.strokeColor
             strokeWidth: root.outline
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap
@@ -175,7 +177,7 @@ Item {
         }
         ShapePath {
             fillColor: "transparent"
-            strokeColor: root.wireShadow
+            strokeColor: root.strokeColor
             strokeWidth: root.outline
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap
@@ -183,7 +185,7 @@ Item {
         }
         ShapePath {
             fillColor: "transparent"
-            strokeColor: root.strokeColor
+            strokeColor: root.wireColor
             strokeWidth: root.wireWidth
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap
@@ -191,7 +193,7 @@ Item {
         }
         ShapePath {
             fillColor: "transparent"
-            strokeColor: root.strokeColor
+            strokeColor: root.wireColor
             strokeWidth: root.wireWidth
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap
@@ -199,9 +201,8 @@ Item {
         }
     }
 
-    // Everything past the meeting point, in the other rail's colour: the same
-    // outline drawn again and clipped. Qt Quick Shapes cannot gradient a
-    // stroke, so one path in two colours is not available.
+    // Past the meeting point the filament takes the other rail's colour.
+    // Only the filament is redrawn - the dark border is the same either side.
     Item {
         visible: root.seamed
         x: root.seamX
@@ -219,23 +220,7 @@ Item {
 
             ShapePath {
                 fillColor: "transparent"
-                strokeColor: root.wireShadowAfterSeam
-                strokeWidth: root.outline
-                joinStyle: ShapePath.RoundJoin
-                capStyle: ShapePath.RoundCap
-                PathSvg { path: root.topEdge }
-            }
-            ShapePath {
-                fillColor: "transparent"
-                strokeColor: root.wireShadowAfterSeam
-                strokeWidth: root.outline
-                joinStyle: ShapePath.RoundJoin
-                capStyle: ShapePath.RoundCap
-                PathSvg { path: root.bottomEdge }
-            }
-            ShapePath {
-                fillColor: "transparent"
-                strokeColor: root.strokeColorAfterSeam
+                strokeColor: root.wireColorAfterSeam
                 strokeWidth: root.wireWidth
                 joinStyle: ShapePath.RoundJoin
                 capStyle: ShapePath.RoundCap
@@ -243,7 +228,7 @@ Item {
             }
             ShapePath {
                 fillColor: "transparent"
-                strokeColor: root.strokeColorAfterSeam
+                strokeColor: root.wireColorAfterSeam
                 strokeWidth: root.wireWidth
                 joinStyle: ShapePath.RoundJoin
                 capStyle: ShapePath.RoundCap

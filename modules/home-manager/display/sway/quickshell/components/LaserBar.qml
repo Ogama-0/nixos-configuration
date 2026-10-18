@@ -220,8 +220,8 @@ Scope {
 
                 WorkspaceModule {
                     slotSide: "left"
-                    strokeColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
-                    strokeColorAfterSeam: "@redColor@"
+                    wireColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
+                    wireColorAfterSeam: "@redColor@"
                     seamX: panel.seamFor(this)
                     workspaces: root.workspaceList
                     // The rail covering this module, so the focused cell
@@ -231,16 +231,16 @@ Scope {
 
                 ClockModule {
                     slotSide: "centre"
-                    strokeColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
-                    strokeColorAfterSeam: "@redColor@"
+                    wireColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
+                    wireColorAfterSeam: "@redColor@"
                     seamX: panel.seamFor(this)
                 }
 
                 WifiModule {
                     id: wifi
                     slotSide: "right"
-                    strokeColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
-                    strokeColorAfterSeam: "@redColor@"
+                    wireColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
+                    wireColorAfterSeam: "@redColor@"
                     seamX: panel.seamFor(this)
                     ssid: root.wifiState.ssid
                     strength: root.wifiState.strength

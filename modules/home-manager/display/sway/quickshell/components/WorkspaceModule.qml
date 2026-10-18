@@ -35,7 +35,8 @@ Components.RevealMask {
     // Item-local x of the beams' meeting point when it lands inside this
     // module, or -1. See BarShell.
     property real seamX: -1
-    property color strokeColorAfterSeam: "@capsuleInk@"
+    property color wireColor: "@capsuleInk@"
+    property color wireColorAfterSeam: "@capsuleInk@"
 
     readonly property real cellHeight: 38
     readonly property real cellWidthPlain: 27
