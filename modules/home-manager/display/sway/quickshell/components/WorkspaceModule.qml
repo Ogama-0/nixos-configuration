@@ -81,7 +81,10 @@ Components.RevealMask {
     }
 
     readonly property real bodyW: cellOffset(cells.length)
-    readonly property real dividerWidth: shell.outline * 0.78
+    readonly property real dividerWidth: shell.outline * 0.5
+    // Dividers stop short of the outer wire rather than running into it: a
+    // separator that touches the border reads as part of the frame.
+    readonly property real dividerInset: 5
 
     width: maxBodyWidth + 2 * shell.flare + shell.outline
     height: shell.height
@@ -288,9 +291,10 @@ Components.RevealMask {
                 required property int index
 
                 x: shell.bodyX + root.cellOffset(index) - root.dividerWidth / 2
-                y: shell.bodyY
+                y: shell.bodyY + root.dividerInset
                 width: root.dividerWidth
-                height: root.cellHeight
+                height: root.cellHeight - 2 * root.dividerInset
+                radius: width / 2
                 // A divider whose cell has shrunk to nothing would otherwise
                 // sit on top of its neighbour's edge. The end ones are always
                 // present.
