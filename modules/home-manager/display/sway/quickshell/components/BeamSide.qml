@@ -199,6 +199,25 @@ Item {
         }
     }
 
+    // Thin dark lip along the band's top and bottom, so the beam reads as a
+    // channel the modules are set into rather than a flat wash of colour.
+    Rectangle {
+        anchors.left: tipHighlight.left
+        anchors.right: tipHighlight.right
+        y: root.beamY - 22
+        height: 1.6
+        color: "#CC000000"
+        opacity: root.hum
+    }
+    Rectangle {
+        anchors.left: tipHighlight.left
+        anchors.right: tipHighlight.right
+        y: root.beamY + 22 - 1.6
+        height: 1.6
+        color: "#CC000000"
+        opacity: root.hum
+    }
+
     // Beam core: GPU-rendered wave strands. This used to be a Canvas, which
     // Qt Quick always rasterizes on the CPU into a framebuffer and then
     // uploads as a texture every single repaint, regardless of how little

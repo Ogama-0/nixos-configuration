@@ -220,8 +220,8 @@ Scope {
 
                 WorkspaceModule {
                     slotSide: "left"
-                    strokeColor: Qt.darker(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 7)
-                    strokeColorAfterSeam: Qt.darker("@redColor@", 7)
+                    strokeColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
+                    strokeColorAfterSeam: "@redColor@"
                     seamX: panel.seamFor(this)
                     workspaces: root.workspaceList
                     // The rail covering this module, so the focused cell
@@ -231,16 +231,16 @@ Scope {
 
                 ClockModule {
                     slotSide: "centre"
-                    strokeColor: Qt.darker(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 7)
-                    strokeColorAfterSeam: Qt.darker("@redColor@", 7)
+                    strokeColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
+                    strokeColorAfterSeam: "@redColor@"
                     seamX: panel.seamFor(this)
                 }
 
                 WifiModule {
                     id: wifi
                     slotSide: "right"
-                    strokeColor: Qt.darker(x < panel.batteryMeetX ? "@greenColor@" : "@redColor@", 7)
-                    strokeColorAfterSeam: Qt.darker("@redColor@", 7)
+                    strokeColor: x < panel.batteryMeetX ? "@greenColor@" : "@redColor@"
+                    strokeColorAfterSeam: "@redColor@"
                     seamX: panel.seamFor(this)
                     ssid: root.wifiState.ssid
                     strength: root.wifiState.strength

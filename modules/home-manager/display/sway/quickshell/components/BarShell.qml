@@ -30,7 +30,14 @@ Item {
     property real flare: 21
     property real outline: 4.6
     property color fillColor: "@capsuleFill@"
+    // The outline is a wire in the rail's own colour, laid over a darker
+    // copy of itself for depth. When the beams' meeting point falls inside
+    // this module, the wire changes colour at that point - that IS the
+    // collision indicator, so nothing is drawn across the capsule.
     property color strokeColor: "@capsuleInk@"
+    property real wireWidth: 2.6
+    readonly property color wireShadow: Qt.darker(strokeColor, 3.4)
+    readonly property color wireShadowAfterSeam: Qt.darker(strokeColorAfterSeam, 3.4)
 
     // Where the two beams collide, if that happens to fall inside this
     // module. Item-local x, or -1 for not here. The capsule then carries the
@@ -45,7 +52,7 @@ Item {
     // end is left unstroked. A flare closing to a point puts two strokes on
     // top of each other and the beam dead-ends into the resulting blob; an
     // open throat reads as two rails guiding the beam into the capsule.
-    property real throat: 12
+    property real throat: 0
 
     // An accent wash over part of the capsule - the focused workspace cell.
     // Clipped to an x range but drawn from the same path, so a cell at either
@@ -160,7 +167,7 @@ Item {
 
         ShapePath {
             fillColor: "transparent"
-            strokeColor: root.strokeColor
+            strokeColor: root.wireShadow
             strokeWidth: root.outline
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap
@@ -168,17 +175,33 @@ Item {
         }
         ShapePath {
             fillColor: "transparent"
-            strokeColor: root.strokeColor
+            strokeColor: root.wireShadow
             strokeWidth: root.outline
+            joinStyle: ShapePath.RoundJoin
+            capStyle: ShapePath.RoundCap
+            PathSvg { path: root.bottomEdge }
+        }
+        ShapePath {
+            fillColor: "transparent"
+            strokeColor: root.strokeColor
+            strokeWidth: root.wireWidth
+            joinStyle: ShapePath.RoundJoin
+            capStyle: ShapePath.RoundCap
+            PathSvg { path: root.topEdge }
+        }
+        ShapePath {
+            fillColor: "transparent"
+            strokeColor: root.strokeColor
+            strokeWidth: root.wireWidth
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap
             PathSvg { path: root.bottomEdge }
         }
     }
 
-    // Everything past the seam, in the other rail's colour: the same outline
-    // drawn again and clipped. Qt Quick Shapes cannot gradient a stroke, so
-    // one path with two colours is not available.
+    // Everything past the meeting point, in the other rail's colour: the same
+    // outline drawn again and clipped. Qt Quick Shapes cannot gradient a
+    // stroke, so one path in two colours is not available.
     Item {
         visible: root.seamed
         x: root.seamX
@@ -196,7 +219,7 @@ Item {
 
             ShapePath {
                 fillColor: "transparent"
-                strokeColor: root.strokeColorAfterSeam
+                strokeColor: root.wireShadowAfterSeam
                 strokeWidth: root.outline
                 joinStyle: ShapePath.RoundJoin
                 capStyle: ShapePath.RoundCap
@@ -204,42 +227,29 @@ Item {
             }
             ShapePath {
                 fillColor: "transparent"
-                strokeColor: root.strokeColorAfterSeam
+                strokeColor: root.wireShadowAfterSeam
                 strokeWidth: root.outline
                 joinStyle: ShapePath.RoundJoin
                 capStyle: ShapePath.RoundCap
                 PathSvg { path: root.bottomEdge }
             }
+            ShapePath {
+                fillColor: "transparent"
+                strokeColor: root.strokeColorAfterSeam
+                strokeWidth: root.wireWidth
+                joinStyle: ShapePath.RoundJoin
+                capStyle: ShapePath.RoundCap
+                PathSvg { path: root.topEdge }
+            }
+            ShapePath {
+                fillColor: "transparent"
+                strokeColor: root.strokeColorAfterSeam
+                strokeWidth: root.wireWidth
+                joinStyle: ShapePath.RoundJoin
+                capStyle: ShapePath.RoundCap
+                PathSvg { path: root.bottomEdge }
+            }
         }
-    }
-
-    // The collision itself, burning through the capsule. Flanked in the
-    // outline's own ink: a white line on an off-white plate is almost
-    // invisible, and this is meant to be the payoff.
-    Rectangle {
-        visible: root.seamed
-        x: root.seamX - width / 2
-        y: root.inset
-        width: 13
-        height: root.bodyHeight
-        color: "#FFFFFF"
-        opacity: 0.18
-    }
-    Rectangle {
-        visible: root.seamed
-        x: root.seamX - width / 2
-        y: root.inset
-        width: 6.5
-        height: root.bodyHeight
-        color: root.strokeColor
-    }
-    Rectangle {
-        visible: root.seamed
-        x: root.seamX - width / 2
-        y: root.inset
-        width: 2.6
-        height: root.bodyHeight
-        color: "#FFFFFF"
     }
 
     Item {
