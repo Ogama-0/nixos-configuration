@@ -179,6 +179,11 @@ Scope {
         active: root.isOpen
     }
 
+    DiskModel {
+        id: diskModel
+        active: root.isOpen
+    }
+
     // The panel's own clock. One tick a second, and only while it is open -
     // the bar's clock learned this the expensive way.
     property var now: new Date()
@@ -410,7 +415,18 @@ Scope {
                         }
                         Item { id: diskZone
                             x: 571 * zones.s; y: 169 * zones.s
-                            width: 106 * zones.s; height: (700 - 169) * zones.s }
+                            width: 106 * zones.s; height: (700 - 169) * zones.s
+
+                            DiskPane {
+                                x: 16 * zones.s
+                                y: 18 * zones.s
+                                width: parent.width - 32 * zones.s
+                                height: parent.height - 36 * zones.s
+                                uiScale: panel.uiScale
+                                disks: diskModel.disks
+                                freeTotal: diskModel.freeTotal
+                            }
+                        }
                         Item { id: notifyZone
                             x: 678 * zones.s; y: 169 * zones.s
                             width: 262 * zones.s; height: (700 - 169) * zones.s }
