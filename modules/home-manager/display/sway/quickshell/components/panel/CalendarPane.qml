@@ -27,8 +27,18 @@ Item {
     signal daySelected(var date)
 
     readonly property real cellW: width / 7
-    readonly property real cellH: 28 * uiScale
     readonly property int shownEvents: 3
+    readonly property int rows: Math.max(1, Math.ceil(cells.length / 7))
+
+    // The grid takes the space rather than leaving a gap above the events.
+    // A fixed row height left a band of dead glass between the last week and
+    // the divider that got bigger in five-row months; filling it means the
+    // calendar is the thing the zone is mostly made of, which is what it is
+    // for. Floor keeps a six-row month from squeezing the numbers.
+    readonly property real gridTop: dow.y + 19 * uiScale
+    readonly property real gridBottom: eventsCol.y - 22 * uiScale
+    readonly property real cellH:
+        Math.max(26 * uiScale, (gridBottom - gridTop) / rows)
 
     // ---- month bar ----
 
@@ -127,7 +137,21 @@ Item {
         id: grid
         y: dow.y + 19 * root.uiScale
         width: parent.width
-        height: Math.ceil(root.cells.length / 7) * root.cellH
+        height: root.rows * root.cellH
+
+        // A discreet grid: one hairline under each week except the last, at
+        // an alpha where you read it as structure rather than as lines.
+        Repeater {
+            model: root.rows - 1
+            Rectangle {
+                required property int index
+                y: (index + 1) * root.cellH
+                width: grid.width
+                height: 1
+                color: "@glassBorder@"
+                opacity: 0.35
+            }
+        }
 
         Repeater {
             model: root.cells
@@ -143,9 +167,13 @@ Item {
 
                 Rectangle {
                     anchors.centerIn: parent
-                    width: parent.height - 2 * root.uiScale
+                    // Capped, not tied to the row height: the rows grow to
+                    // fill the zone and a pill that grew with them would be
+                    // a 76px slab around a 13px number.
+                    width: Math.min(parent.height - 2 * root.uiScale,
+                                    34 * root.uiScale)
                     height: width
-                    radius: 7 * root.uiScale
+                    radius: 9 * root.uiScale
                     color: modelData.isSelected ? "@greenColor@"
                          : dayArea.containsMouse ? "@plateBg@" : "transparent"
                 }
@@ -173,7 +201,10 @@ Item {
                     height: width
                     radius: width / 2
                     x: (parent.width - width) / 2
-                    y: parent.height - 4 * root.uiScale
+                    // Hung off the number, not the bottom of the cell -
+                    // taller rows would otherwise strand it halfway to the
+                    // row below.
+                    y: parent.height / 2 + 11 * root.uiScale
                     color: modelData.isSelected ? "@onAccentInk@" : "@clockColor@"
                 }
 

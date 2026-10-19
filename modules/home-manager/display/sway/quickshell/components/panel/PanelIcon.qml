@@ -10,10 +10,15 @@ import QtQuick.Shapes
 // - a ShapePath cannot be a Repeater delegate, it fails silently and draws
 // nothing (BeamSide.qml and WorkspaceIcon.qml document the same trap).
 //
-// `name` is read once when the icon is built. A tile whose icon CHANGES -
-// the power profile cycling, do-not-disturb flipping - instantiates one
-// PanelIcon per variant and toggles visibility, rather than reassigning
-// `name` on a live one.
+// `name` CAN change at runtime - do-not-disturb flips its bell, the power
+// profile cycles through three - and that is exactly the case rule 4 breaks:
+// a ShapePath whose data changes after load draws wrongly or not at all. The
+// first version reassigned `name` on a live Shape and the icon visibly
+// smeared when you pressed the tile.
+//
+// So the Shape is built by a Loader that is torn down and rebuilt whenever
+// the name changes. Every Shape therefore has constant path data for its
+// whole life, which is the only arrangement that works.
 Item {
     id: root
 
@@ -82,43 +87,64 @@ Item {
         return { s: ["", "", ""], f: "" };
     }
 
-    Shape {
+    Loader {
+        id: builder
         anchors.fill: parent
-        transform: [
-            Scale { xScale: root.uiScale; yScale: root.uiScale },
-            Translate { x: root.width / 2; y: root.height / 2 }
-        ]
-        preferredRendererType: Shape.CurveRenderer
+        sourceComponent: glyph
 
-        ShapePath {
-            strokeColor: root.color
-            strokeWidth: root.thickness
-            fillColor: "transparent"
-            capStyle: ShapePath.RoundCap
-            joinStyle: ShapePath.RoundJoin
-            PathSvg { path: root.art.s[0] }
+        Connections {
+            target: root
+            function onNameChanged() {
+                // Tear down and rebuild: a reload is the point, not a cost.
+                // These are eleven short paths, rebuilt only when a toggle
+                // is actually pressed.
+                builder.active = false;
+                builder.active = true;
+            }
         }
-        ShapePath {
-            strokeColor: root.color
-            strokeWidth: root.thickness
-            fillColor: "transparent"
-            capStyle: ShapePath.RoundCap
-            joinStyle: ShapePath.RoundJoin
-            PathSvg { path: root.art.s[1] }
-        }
-        ShapePath {
-            strokeColor: root.color
-            strokeWidth: root.thickness
-            fillColor: "transparent"
-            capStyle: ShapePath.RoundCap
-            joinStyle: ShapePath.RoundJoin
-            PathSvg { path: root.art.s[2] }
-        }
-        ShapePath {
-            strokeColor: "transparent"
-            strokeWidth: 0
-            fillColor: root.color
-            PathSvg { path: root.art.f }
+    }
+
+    Component {
+        id: glyph
+
+        Shape {
+            anchors.fill: parent
+            transform: [
+                Scale { xScale: root.uiScale; yScale: root.uiScale },
+                Translate { x: root.width / 2; y: root.height / 2 }
+            ]
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeColor: root.color
+                strokeWidth: root.thickness
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                joinStyle: ShapePath.RoundJoin
+                PathSvg { path: root.art.s[0] }
+            }
+            ShapePath {
+                strokeColor: root.color
+                strokeWidth: root.thickness
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                joinStyle: ShapePath.RoundJoin
+                PathSvg { path: root.art.s[1] }
+            }
+            ShapePath {
+                strokeColor: root.color
+                strokeWidth: root.thickness
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                joinStyle: ShapePath.RoundJoin
+                PathSvg { path: root.art.s[2] }
+            }
+            ShapePath {
+                strokeColor: "transparent"
+                strokeWidth: 0
+                fillColor: root.color
+                PathSvg { path: root.art.f }
+            }
         }
     }
 }

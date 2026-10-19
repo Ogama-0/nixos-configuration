@@ -51,6 +51,16 @@ Scope {
     }
 
 
+    // Set by shell.qml from the bar. Releasing mod hides the bar and the
+    // panel undocks; holding it again re-docks. Without this the detach and
+    // re-attach animations exist and nothing ever plays them - they were
+    // dead code for the whole first pass.
+    property bool barVisible: false
+    onBarVisibleChanged: {
+        if (!isOpen) return;
+        if (barVisible) reattach(); else detach();
+    }
+
     // Set by shell.qml from the lock surface. An open panel drawn over a
     // locked screen would leak the calendar and the notification list past
     // the lock, so it goes.
@@ -95,12 +105,21 @@ Scope {
     // appearing fully formed inside a box that is still opening.
     property real contentReveal: isOpen ? 1 : 0
 
+    // Short on purpose. This opens dozens of times an hour and the only
+    // thing that matters is that it feels instant; 280ms measured fine and
+    // read as sluggish, which is the only verdict that counts.
+    //
+    // Nothing waits for anything else: these are Behaviors, so a summon
+    // during a dismiss retargets from wherever the clip currently is rather
+    // than queueing behind it.
     readonly property int clipMs: {
-        if (panelState === "gone") return dismissMode === "free" ? 190 : 220;
-        if (panelState === "attached") return 280;
-        return 300;
+        if (panelState === "gone") return dismissMode === "free" ? 140 : 150;
+        if (panelState === "attached") return 180;
+        return 200;
     }
-    readonly property int clipEase: panelState === "gone" ? Easing.InQuart : Easing.OutQuart
+    // OutQuint opens: almost all the distance is covered in the first third,
+    // so it reads as arriving rather than travelling.
+    readonly property int clipEase: panelState === "gone" ? Easing.InQuad : Easing.OutQuint
 
     // Which output it is on. Empty means "the first one", which is what a
     // single-screen session and every render fixture get.
@@ -108,13 +127,18 @@ Scope {
 
     function summon(): void {
         if (panelState !== "gone") return;
-        // Re-arm the collapsed geometry without animating it: after a free
-        // dismiss the clip is sitting at full width, and opening from there
-        // would unfold from nowhere instead of out of the clock.
-        snapping = true;
-        dismissMode = "docked";
+        // Only re-arm after a FREE dismiss, where the clip is parked at full
+        // width and opening from there would unfold from nowhere. After a
+        // docked dismiss the clip is already collapsed at the clock, and
+        // snapping would throw away a half-finished close that the Behavior
+        // can simply reverse - which is what makes a fast mod+n,Escape,mod+n
+        // feel continuous instead of stuttering.
+        if (dismissMode === "free") {
+            snapping = true;
+            dismissMode = "docked";
+            snapping = false;
+        }
         animatingOut = false;
-        snapping = false;
         summonedOn = focusedWorkspace;
         panelState = "attached";
         wipe.restart();
@@ -145,7 +169,7 @@ Scope {
     Behavior on sheetScale { enabled: !root.snapping; NumberAnimation { duration: root.clipMs; easing.type: root.clipEase } }
     Behavior on contentReveal {
         enabled: !root.snapping
-        NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
     }
 
     // The laser wipe: one accent line crossing the sheet as it opens, the
@@ -157,15 +181,17 @@ Scope {
         property real alpha: 0
         function restart(): void { wipeAnim.restart() }
     }
+    // Crosses WITH the panel opening, not after it. Trailing behind the
+    // reveal is what made the whole thing read as two separate events.
     SequentialAnimation {
         id: wipeAnim
-        PauseAnimation { duration: 100 }
+        PauseAnimation { duration: 20 }
         ParallelAnimation {
-            NumberAnimation { target: wipe; property: "x"; from: 0; to: 940; duration: 340 }
+            NumberAnimation { target: wipe; property: "x"; from: 0; to: 940; duration: 200 }
             SequentialAnimation {
-                NumberAnimation { target: wipe; property: "alpha"; from: 0; to: 0.55; duration: 60 }
-                PauseAnimation { duration: 220 }
-                NumberAnimation { target: wipe; property: "alpha"; to: 0; duration: 60 }
+                NumberAnimation { target: wipe; property: "alpha"; from: 0; to: 0.5; duration: 40 }
+                PauseAnimation { duration: 110 }
+                NumberAnimation { target: wipe; property: "alpha"; to: 0; duration: 50 }
             }
         }
     }
