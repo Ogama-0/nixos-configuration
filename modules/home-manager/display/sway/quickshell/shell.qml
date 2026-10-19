@@ -7,8 +7,8 @@ Scope {
     Music {}
     Calendar {}
     Lock { id: lock }
-    LaserBar {}
+    LaserBar { onPanelRequested: controlPanel.summon() }
     StatusPanel {}
     // An open panel must not survive into the lock screen.
-    ControlPanel { lockActive: lock.locked }
+    ControlPanel { id: controlPanel; lockActive: lock.locked }
 }

@@ -101,6 +101,10 @@ in
         "${modifier}+Shift+a" = "exec pavucontrol";
         "${modifier}+p" = "exec wl-color-picker";
         "${modifier}+w" = "exec quickshell ipc -c widgets call wallpaper togglePicker";
+        # Hold mod (which raises the bar), then n. A normal binding works
+        # here where a bare-modifier one would not: sway only stops firing
+        # the --release of the modifier ITSELF once it has been used as one.
+        "${modifier}+n" = "exec quickshell ipc -c widgets call panel toggle";
 
         # Workspace related keys
         "${modifier}+grave" = "workspace 10";
