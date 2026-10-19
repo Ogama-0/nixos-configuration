@@ -26,8 +26,12 @@ PanelWindow {
     // out on the spot destroys its delegate mid-frame and there is nothing
     // left to animate - toasts would simply blink out of existence.
     readonly property int exitMs: 200
+    // How many a packed toast remembers. Past this the count still rises;
+    // what you lose is being able to open them here rather than in the
+    // centre, which is where a backlog belongs anyway.
+    readonly property int maxInToast: 5
 
-    // [{ item, born, leaving, count, app }]
+    // [{ items, born, leaving, app, open }] - newest item first
     property var live: []
 
     // A second notification from an app that already has a toast up packs
@@ -43,26 +47,39 @@ PanelWindow {
         for (let i = 0; i < live.length; i++) {
             if (live[i].leaving || live[i].app !== app) continue;
             const next = live.slice();
-            next[i] = { item: record, born: now, leaving: false,
-                        count: live[i].count + 1, app: app };
+            next[i] = { items: [record].concat(live[i].items).slice(0, maxInToast),
+                        born: now, leaving: false, app: app,
+                        open: live[i].open };
             live = next;
             return;
         }
 
         const next = live.filter(t => !t.leaving).slice(0, maxShown - 1);
-        next.unshift({ item: record, born: now, leaving: false,
-                       count: 1, app: app });
+        next.unshift({ items: [record], born: now, leaving: false,
+                       app: app, open: false });
         live = next;
     }
 
     function retire(born) {
         const next = live.map(t =>
             t.born === born
-                ? { item: t.item, born: t.born, leaving: true,
-                    count: t.count, app: t.app }
+                ? { items: t.items, born: t.born, leaving: true,
+                    app: t.app, open: t.open }
                 : t);
         live = next;
         reaper.restart();
+    }
+
+    // Clicking a packed toast opens it where it stands, rather than making
+    // you go to the centre to find out what the count was hiding. Opening
+    // also stops the clock: you are reading it.
+    function toggle(born) {
+        const next = live.map(t =>
+            t.born === born
+                ? { items: t.items, born: t.open ? t.born : Date.now(),
+                    leaving: false, app: t.app, open: !t.open }
+                : t);
+        live = next;
     }
 
     visible: live.length > 0
@@ -137,21 +154,37 @@ PanelWindow {
                         scale: 1
                     }
 
-                    NotificationRow {
+                    Column {
                         id: row
                         x: 13 * root.uiScale
                         y: 9 * root.uiScale
                         width: parent.width - 26 * root.uiScale
                                - (badge.visible ? badge.width + 8 * root.uiScale : 0)
-                        uiScale: root.uiScale
-                        item: toast.modelData.item
+                        spacing: 7 * root.uiScale
+
+                        Repeater {
+                            model: toast.modelData.open
+                                ? toast.modelData.items
+                                : toast.modelData.items.slice(0, 1)
+
+                            NotificationRow {
+                                required property var modelData
+                                required property int index
+                                width: row.width
+                                uiScale: root.uiScale
+                                item: modelData
+                                // Named once. They are all from the same
+                                // app - that is what packing means.
+                                showApp: index === 0
+                            }
+                        }
                     }
 
                     // Same badge as the centre, for the same reason: only
                     // when there is more than one.
                     Rectangle {
                         id: badge
-                        visible: toast.modelData.count > 1
+                        visible: toast.modelData.items.length > 1
                         x: parent.width - width - 13 * root.uiScale
                         y: 9 * root.uiScale
                         width: badgeText.implicitWidth + 11 * root.uiScale
@@ -162,16 +195,22 @@ PanelWindow {
                         Text {
                             id: badgeText
                             anchors.centerIn: parent
-                            text: toast.modelData.count
+                            text: toast.modelData.items.length
                             color: "@onAccentInk@"
                             font.pixelSize: Math.round(10 * root.uiScale)
                             font.weight: Font.DemiBold
                         }
                     }
 
+                    // Packed: click opens it. Single: click puts it away.
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: root.retire(toast.modelData.born)
+                        onClicked: {
+                            if (toast.modelData.items.length > 1)
+                                root.toggle(toast.modelData.born);
+                            else
+                                root.retire(toast.modelData.born);
+                        }
                     }
                 }
 
@@ -227,7 +266,8 @@ PanelWindow {
         onTriggered: {
             const now = Date.now();
             for (const t of root.live)
-                if (!t.leaving && now - t.born >= root.lifeMs) root.retire(t.born);
+                if (!t.leaving && !t.open && now - t.born >= root.lifeMs)
+                    root.retire(t.born);
         }
     }
 

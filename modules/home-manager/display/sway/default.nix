@@ -113,6 +113,11 @@ in
       # click outside or a workspace change leaves the mode too.
       modes.panel = config.wayland.windowManager.sway.config.keybindings // {
         "Escape" = "mode default; exec quickshell ipc -c widgets call panel dismiss";
+        # Deleting the selected notification, by the same route and for the
+        # same reason: the panel never holds keyboard focus, so sway has to
+        # intercept the key. Unlike Escape this one does NOT leave the mode
+        # - you are usually deleting several.
+        "Delete" = "exec quickshell ipc -c widgets call panel deleteSelected";
       };
 
       keybindings = lib.mkOptionDefault {

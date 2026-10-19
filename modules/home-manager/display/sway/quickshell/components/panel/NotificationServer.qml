@@ -44,13 +44,25 @@ Item {
 
     function recordFor(n) {
         return {
+            // `key` is the TEXT, used to fold a restored twin into its live
+            // original. `uid` is this notification and no other - two
+            // messages with identical text are still two messages, and
+            // selecting or deleting one must not touch the other.
             key: (n.appName || "") + "|" + (n.summary || "") + "|" + (n.body || ""),
+            uid: "l" + n.id,
             appName: n.appName || "",
             summary: n.summary || "",
             body: n.body || "",
+            appIcon: n.appIcon || "",
+            image: n.image || "",
             live: true,
             ref: n
         };
+    }
+
+    function byUid(uid) {
+        for (const r of notifications) if (r.uid === uid) return r;
+        return null;
     }
 
     // Live first, newest first, then whatever was on disk.
@@ -120,29 +132,48 @@ Item {
         return list.slice(0, excess);
     }
 
+    function dismissUid(uid) { dismiss(byUid(uid)) }
+
     function dismiss(record) {
         if (!record) return;
         if (record.live && record.ref) {
             record.ref.dismiss();
         } else {
-            restored = restored.filter(r => r.key !== record.key);
+            restored = restored.filter(r => r.uid !== record.uid);
         }
         save();
     }
 
     function clearAll() {
-        // Copied first: dismissing mutates the model being walked.
-        const live = notifications.filter(r => r.live && r.ref).map(r => r.ref);
-        for (const n of live) n.dismiss();
+        // Walks the RAW tracked list, not the rendered one. The rendered
+        // list is sliced to maxRetained and used to be deduplicated, so
+        // anything it was not showing survived a "clear all" and then
+        // reappeared the moment its twin was gone. Copied first, because
+        // dismissing mutates the model being walked.
+        const model = server.trackedNotifications;
+        const all = (model ? model.values : []).slice();
+        for (const n of all) if (n) n.dismiss();
         restored = [];
         save();
     }
 
-    function save() {
-        const flat = notifications.map(r => ({
-            appName: r.appName, summary: r.summary, body: r.body
-        }));
-        store.setText(JSON.stringify(flat));
+    // Deferred by a turn. Called straight from onNotification it ran before
+    // the new notification was in trackedNotifications, so the file was
+    // always one behind the screen - and the newest notification, the one
+    // you most want back, was the one a restart lost.
+    function save() { saveSoon.restart() }
+
+    Timer {
+        id: saveSoon
+        interval: 0
+        repeat: false
+        onTriggered: {
+            const flat = root.notifications.map(r => ({
+                appName: r.appName, summary: r.summary, body: r.body,
+                appIcon: r.appIcon, image: r.image
+            }));
+            store.setText(JSON.stringify(flat));
+        }
     }
 
     NotificationServer {
@@ -191,13 +222,17 @@ Item {
             try {
                 const saved = JSON.parse(text());
                 const out = [];
+                let i = 0;
                 for (const e of saved) {
                     out.push({
                         key: (e.appName || "") + "|" + (e.summary || "")
                              + "|" + (e.body || ""),
+                        uid: "r" + (i++),
                         appName: e.appName || "",
                         summary: e.summary || "",
                         body: e.body || "",
+                        appIcon: e.appIcon || "",
+                        image: e.image || "",
                         live: false,
                         ref: null
                     });

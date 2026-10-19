@@ -23,6 +23,12 @@ Scope {
                           body: "On est en bas" });
             toasts.show({ appName: "Signal", summary: "Groupe projet",
                           body: "Reunion decalee" });
+            // Opened in place: a packed toast shows what its count hides
+            // without sending you to the centre. Found by app rather than
+            // by index - packing reorders nothing, so the Signal toast is
+            // not the first one.
+            for (const t of toasts.live)
+                if (t.app === "Signal") toasts.toggle(t.born);
         }
     }
 }

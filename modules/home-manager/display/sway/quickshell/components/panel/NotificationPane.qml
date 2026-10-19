@@ -28,9 +28,19 @@ Item {
     // survives the list reshuffling underneath it - an index would not.
     property var expanded: ({})
 
+    // The selected notification, by uid. Clicking one selects it and prints
+    // the whole thing; Delete removes it. Selection rather than
+    // click-to-dismiss because reading a long notification used to require
+    // destroying it.
+    property string selectedUid: ""
+
     signal clearAllAsked
     signal groupCleared(string app)
     signal dismissed(var item)
+
+    function select(uid) {
+        selectedUid = selectedUid === uid ? "" : uid;
+    }
 
     default property alias footer: footerSlot.data
 
@@ -123,6 +133,15 @@ Item {
                 color: "@plateBg@"
                 clip: true
 
+                readonly property bool holdsSelection: {
+                    for (const it of modelData.items)
+                        if (it.uid === root.selectedUid) return true;
+                    return false;
+                }
+
+                border.width: holdsSelection ? 1 : 0
+                border.color: "@greenColor@"
+
                 // Opening a group grows the plate rather than snapping it.
                 // The delegate survives the toggle - `expanded` is keyed on
                 // the app name and does not rebuild `groups` - so a plain
@@ -199,6 +218,8 @@ Item {
                         uiScale: root.uiScale
                         showApp: false
                         item: group.modelData.items[0]
+                        expanded: !group.stacked
+                            && root.selectedUid === group.modelData.items[0].uid
                     }
 
                     // ---- expanded: all of them ----
@@ -227,6 +248,7 @@ Item {
                                 uiScale: root.uiScale
                                 showApp: false
                                 item: modelData
+                                expanded: root.selectedUid === modelData.uid
 
                                 // Each one a beat behind the last, so an
                                 // opening group reads as unfolding rather
@@ -243,11 +265,10 @@ Item {
                                 }
                             }
 
-                            // In an open group each entry is its own target,
-                            // so you can clear the one you have read.
+                            // In an open group each entry is its own target.
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: root.dismissed(modelData)
+                                onClicked: root.select(modelData.uid)
                             }
                         }
                     }
@@ -270,7 +291,7 @@ Item {
                         ? parent.height - 26 * root.uiScale : 0
                     onClicked: {
                         if (group.stacked) root.toggle(group.modelData.app);
-                        else root.dismissed(group.modelData.items[0]);
+                        else root.select(group.modelData.items[0].uid);
                     }
                 }
             }

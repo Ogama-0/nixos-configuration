@@ -320,6 +320,12 @@ Scope {
         }
         // Bound to mod+shift+z, which used to be makoctl dismiss.
         function clearNotifications(): void { notifications.clearAll() }
+        // Delete, while the panel is up. Does nothing with no selection.
+        function deleteSelected(): void {
+            if (notifyPane.selectedUid === "") return;
+            notifications.dismissUid(notifyPane.selectedUid);
+            notifyPane.selectedUid = "";
+        }
     }
 
     Variants {
@@ -621,6 +627,7 @@ Scope {
                             width: 262 * zones.s; height: (700 - 169) * zones.s
 
                             NotificationPane {
+                                id: notifyPane
                                 x: 22 * zones.s
                                 y: 18 * zones.s
                                 width: parent.width - 44 * zones.s
