@@ -195,7 +195,8 @@ in
           "${d}/components/panel/NotificationPane.qml" = themedQmlFile variant ./components/panel/NotificationPane.qml;
           "${d}/components/panel/AudioModel.qml" = themedQmlFile variant ./components/panel/AudioModel.qml;
           "${d}/components/panel/AudioPane.qml" = themedQmlFile variant ./components/panel/AudioPane.qml;
-          "${d}/components/panel/MobileStub.qml" = themedQmlFile variant ./components/panel/MobileStub.qml;
+          "${d}/components/panel/MobileModel.qml" = themedQmlFile variant ./components/panel/MobileModel.qml;
+          "${d}/components/panel/MobilePane.qml" = themedQmlFile variant ./components/panel/MobilePane.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };

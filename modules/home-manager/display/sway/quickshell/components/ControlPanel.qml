@@ -281,6 +281,11 @@ Scope {
         active: root.readersActive
     }
 
+    MobileModel {
+        id: mobile
+        active: root.readersActive
+    }
+
     // The panel's own clock. One tick a second, and only while it is open -
     // the bar's clock learned this the expensive way.
     property var now: new Date()
@@ -524,12 +529,15 @@ Scope {
                             x: 678 * zones.s; y: 0
                             width: 262 * zones.s; height: zones.rowSplit * zones.s
 
-                            MobileStub {
+                            MobilePane {
                                 x: 22 * zones.s
-                                y: 40 * zones.s
+                                y: 26 * zones.s
                                 width: parent.width - 44 * zones.s
-                                height: parent.height - 80 * zones.s
+                                height: parent.height - 52 * zones.s
                                 uiScale: panel.uiScale
+                                device: mobile.device
+                                connected: mobile.connected
+                                onActivated: mobile.openGui()
                             }
                         }
 
