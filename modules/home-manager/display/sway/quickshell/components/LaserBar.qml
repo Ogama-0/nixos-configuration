@@ -175,7 +175,25 @@ Scope {
             color: "transparent"
             focusable: false
             exclusionMode: ExclusionMode.Ignore
-            mask: Region {}
+
+            // The bar takes the pointer while it is revealed, and nothing
+            // at all while it is not - that is what makes a widget's
+            // BarButton clickable (see BarButton.qml).
+            //
+            // Deliberately the whole panel rather than a rect per button:
+            // the regions would have to be mapped into panel coordinates
+            // and kept in step with capsules that move as widgets resize,
+            // for an input surface that is only alive while a key is held.
+            // What it costs is that mod+click along the bottom 70px does
+            // not drag a window while the bar is up, which is the same
+            // trade any clickable bar makes.
+            //
+            // Keyboard focus is never taken (`focusable: false`), so the
+            // held modifier keeps doing its job underneath.
+            mask: Region {
+                width: root.active ? panel.width : 0
+                height: root.active ? panel.implicitHeight : 0
+            }
 
             // Vertical centre of the whole bar. The beam band is 44px tall
             // (BeamSide draws it symmetrically about this line) and the
@@ -297,8 +315,10 @@ Scope {
                 BarGroup {
                     slotSide: "right"
 
+                    MusicWidget { pos: 1 }
+
                     WifiWidget {
-                        pos: 1
+                        pos: 2
                         ssid: root.wifiState.ssid
                         strength: root.wifiState.strength
                         connected: root.wifiState.connected

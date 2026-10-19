@@ -146,6 +146,8 @@ in
           "${d}/components/WorkspaceIcon.qml" = themedQmlFile variant ./components/WorkspaceIcon.qml;
           "${d}/components/WorkspaceWidget.qml" = themedQmlFile variant ./components/WorkspaceWidget.qml;
           "${d}/components/WifiWidget.qml" = themedQmlFile variant ./components/WifiWidget.qml;
+          "${d}/components/BarButton.qml" = themedQmlFile variant ./components/BarButton.qml;
+          "${d}/components/MusicWidget.qml" = themedQmlFile variant ./components/MusicWidget.qml;
           "${d}/components/BeamSide.qml" = themedQmlFile variant ./components/BeamSide.qml;
           "${d}/components/CollisionEffects.qml" = themedQmlFile variant ./components/CollisionEffects.qml;
           "${d}/components/ClockWidget.qml" = themedQmlFile variant ./components/ClockWidget.qml;

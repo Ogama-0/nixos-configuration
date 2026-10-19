@@ -93,7 +93,11 @@ Components.RevealMask {
     // Lay the widgets out left to right and record the boundaries between
     // them, which is also where the separators go.
     function layoutWidgets() {
-        const ws = widgets();
+        // A widget with no width is not in the capsule at all - the music
+        // widget collapses to nothing with no player. Laying it out anyway
+        // would leave a separator at its zero-width boundary, which reads
+        // as a stray bar against the capsule's lip.
+        const ws = widgets().filter(w => w.width > 0);
         const offsets = [0];
         let x = 0;
         for (const w of ws) {
@@ -131,7 +135,7 @@ Components.RevealMask {
     // own edge, and that widget is at the capsule's edge, runs on into the
     // lip rather than stopping at the body.
     function accentSpan() {
-        const ws = widgets();
+        const ws = widgets().filter(w => w.width > 0);
         for (let i = 0; i < ws.length; i++) {
             const w = ws[i];
             if (w.accentFromX === undefined || w.accentToX === undefined) continue;

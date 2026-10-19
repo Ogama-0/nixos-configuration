@@ -26,7 +26,11 @@ LaserBar.qml                  the panel, one per screen, plus the data sources
 
 A **group** is a capsule. A **widget** is a thing inside one. There are three
 groups — left, centre, right — and widgets within a group are ordered by `pos`.
-Today: `left: 1 workspaces`, `centre: 1 clock`, `right: 1 wifi`.
+Today: `left: 1 workspaces`, `centre: 1 clock`, `right: 1 music, 2 wifi`.
+
+A widget may take no width at all - the music widget collapses to zero with
+no player - and the group leaves it out of the layout entirely rather than
+drawing a separator at its zero-width boundary.
 
 ## Adding a widget: three steps
 
@@ -57,8 +61,17 @@ Item {
 ```
 
 `ClockWidget.qml` is the smallest real example; `WifiWidget.qml` shows a widget
-with inputs; `WorkspaceWidget.qml` is the complicated one (a model, an
-animation and its own internal dividers) and is not where to start.
+with inputs; `MusicWidget.qml` shows one that feeds itself from a service and
+a subprocess, and collapses to nothing when there is nothing to show;
+`WorkspaceWidget.qml` is the complicated one (a model, an animation and its
+own internal dividers) and is not where to start.
+
+A widget that takes its data from a service should still expose it as plain
+properties with the service as the default — `MusicWidget`'s `title`,
+`playing`, `levels` and friends — so a fixture can assign them and render
+the widget with nothing on the bus. `cavaFeed: false` in the music fixtures
+exists for exactly that: without it the live analyser overwrites the pinned
+bands.
 
 ### 2. Declare it in `LaserBar.qml`
 
@@ -88,6 +101,49 @@ In `modules/home-manager/display/sway/quickshell/default.nix`:
 component that is not listed simply does not exist at runtime, and the error
 you get is `DndWidget is not a type` with no hint that the file is sitting
 right there on disk.
+
+## Making a widget clickable
+
+Wrap whatever should react in a `BarButton`:
+
+```qml
+BarButton {
+    width: 28 * root.uiScale
+    height: root.bodyHeight
+    tint: root.railColor
+    enabled: Dnd.available
+    onClicked: Dnd.toggle()
+
+    Text { anchors.centerIn: parent; text: "DND" }
+}
+```
+
+That is the whole contract - hover and press feedback, the pointer cursor
+and the click all come with it. `enabled` is Item's own property: set it
+false for an action that is not available and the feedback goes with it.
+`MusicWidget.qml`'s disc is the worked example.
+
+Two things are worth knowing about how the pointer gets there at all:
+
+- **The bar takes the pointer only while it is revealed.** `LaserBar.qml`
+  gives the panel an input region the size of the panel while `active`, and
+  a zero-sized one otherwise. The cost is that mod+click along the bottom
+  70px does not drag a window while the bar is up.
+- **The click arrives while the modifier is still held**, because that is
+  the only time the bar is on screen. sway forwards a button press over a
+  layer surface to the client rather than treating it as a
+  `floating_modifier` drag, which is what makes this work at all. Keyboard
+  focus is never taken (`focusable: false`), so the held modifier keeps
+  doing its job underneath.
+
+A mask is a texture rendered at its item's own size, so a circular mask on
+a 30px item comes out as a visible octagon — `MusicWidget`'s cover sets
+`layer.textureSize` to 4x to get a round edge. `antialiasing` and
+`layer.samples` do not help.
+
+A button whose feedback plate sits under opaque content will never be seen
+- make the button a few pixels larger than the content, the way the music
+disc does, so the highlight shows as a ring around it.
 
 ## The widget contract
 
@@ -134,17 +190,30 @@ These are scars. Each one cost a debugging session.
    repaint — measured at 110% CPU here against 7% idle. Use `Shape` +
    `ShapePath` with `preferredRendererType: Shape.CurveRenderer`.
 
-4. **No positioners (`Row`, `RowLayout`) for anything that animates.** Use
+4. **A `Shape` inside a widget only draws data it had at load.** A
+   `ShapePath` whose `PathSvg`/`PathPolyline` data comes from anything that
+   changes — a property written from JS, a function the binding calls, a
+   point list — draws *nothing at all*, silently, while the identical path
+   written as a QML literal draws fine. It was checked from both ends: the
+   generated path string, logged every frame, was valid, and pasting one of
+   those logged strings back as a literal rendered it. `BeamSide` escapes
+   this because it builds its strands in a `Repeater` that pushes each
+   `ShapePath` into the `Shape` by hand *after* the data exists — copy that
+   pattern, or draw with `Rectangle`s, which is what `MusicWidget`'s wave
+   does. Budget a whole session if you ignore this one: there is no warning
+   to grep for.
+
+5. **No positioners (`Row`, `RowLayout`) for anything that animates.** Use
    explicit `x` arithmetic. `StatusPanel.qml` documents a case where a
    positioner silently stopped laying out and stacked every child at `y: 0`.
 
-5. **Do not make `BeamSide` rebuild its strands more often than its own tick.**
+6. **Do not make `BeamSide` rebuild its strands more often than its own tick.**
    A module animating its width changes its pinch span every frame; rebuilding
    five full-screen strand polylines at display rate on top of the wave's own
    30fps saturates the loop and the wave visibly stalls. `pinchSpans` changes
    are deliberately picked up on the next tick instead.
 
-6. **One `BeamSide` per side.** Two leave a visible seam where they meet and
+7. **One `BeamSide` per side.** Two leave a visible seam where they meet and
    duplicate the blurred glow layer.
 
 ## Sizes and screens
