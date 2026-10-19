@@ -72,8 +72,11 @@ Scope {
             anchors.bottom: true
             margins.bottom: barHeight * uiScale
 
-            implicitWidth: 940 * uiScale
-            implicitHeight: 700 * uiScale
+            implicitWidth: sheet.implicitWidth
+            // Taller than the glass by the funnel's drop: a layer-shell
+            // surface clips to itself, so the tail has to be inside this
+            // window or it is simply not drawn.
+            implicitHeight: sheet.implicitHeight
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "laser-bar-panel"
@@ -84,9 +87,12 @@ Scope {
             // whatever you are actually typing into underneath it.
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
-            // The bar is 70 1080p-pixels tall (LaserBar.qml). The panel
-            // clears it so the tail has somewhere to run.
-            readonly property real barHeight: 54
+            // The clock capsule is 38 tall centred on beamY, which puts its
+            // top 44 1080p-pixels above the screen bottom (LaserBar.qml:
+            // 70 tall, beamY = 45 from its top). The funnel's neck ends at
+            // 38, so it runs 6px behind the capsule - which is what hides
+            // the two flank strokes where they terminate.
+            readonly property real barHeight: 38
 
             // Same derivation as LaserBar's, deliberately repeated rather
             // than shared: a singleton for four lines would cost a file, a
@@ -105,13 +111,9 @@ Scope {
                 height: panel.visible ? panel.height : 0
             }
 
-            Rectangle {
-                id: glass
-                anchors.fill: parent
-                radius: 26 * panel.uiScale
-                color: "@glassBg@"
-                border.color: "@glassBorder@"
-                border.width: 1
+            PanelSheet {
+                id: sheet
+                uiScale: panel.uiScale
             }
         }
     }
