@@ -155,6 +155,7 @@ in
           "${d}/components/StatusModel.qml" = themedQmlFile variant ./components/StatusModel.qml;
           "${d}/components/Sparkline.qml" = themedQmlFile variant ./components/Sparkline.qml;
           "${d}/components/StatusPanel.qml" = themedQmlFile variant ./components/StatusPanel.qml;
+          "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
     in
     treeFor "dark" // treeFor "light";

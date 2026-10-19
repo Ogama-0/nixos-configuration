@@ -9,4 +9,5 @@ Scope {
     Lock {}
     LaserBar {}
     StatusPanel {}
+    ControlPanel {}
 }
