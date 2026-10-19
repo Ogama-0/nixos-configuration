@@ -36,6 +36,19 @@ Item {
 
     function dismiss(n) { if (n) n.dismiss() }
 
+    // Which entries to retire when the ceiling is passed, oldest first.
+    //
+    // Returned as a copy rather than dismissed in place: `list` is the live
+    // model, dismissing REMOVES an entry from it, and walking it by index
+    // while it shrinks under you skips every other one. Under a flood -
+    // which is the only time this runs - that leaves the list permanently
+    // over the ceiling.
+    function overflow(list, max) {
+        const excess = list.length - max;
+        if (excess <= 0) return [];
+        return list.slice(0, excess);
+    }
+
     function clearAll() {
         // Copied first: dismissing mutates the model being walked.
         const all = notifications.slice();
@@ -60,8 +73,8 @@ Item {
             // the newest: the new one is the one you care about.
             const model = server.trackedNotifications;
             const all = model ? model.values : [];
-            for (let i = 0; i < all.length - root.maxRetained; i++)
-                if (all[i]) all[i].dismiss();
+            for (const old of root.overflow(all, root.maxRetained))
+                if (old) old.dismiss();
         }
     }
 }

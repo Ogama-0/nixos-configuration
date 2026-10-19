@@ -27,6 +27,17 @@ Item {
 
     property real latitude: NaN
     property real longitude: NaN
+    property real fixedAt: 0
+
+    // How long a fix is trusted. The whole point of asking geoclue rather
+    // than hardcoding coordinates is that the machine moves; a fix taken
+    // once per session is a hardcoded city with extra steps.
+    readonly property int fixTtlMs: 3600000
+
+    function needsFix(lat, fixAt, ttl) {
+        if (isNaN(lat)) return true;
+        return Date.now() - fixAt >= ttl;
+    }
 
     // WMO weather codes, grouped the way a person reads a sky rather than
     // the way the standard enumerates it.
@@ -62,6 +73,7 @@ Item {
                 }
                 root.latitude = parseFloat(lat[1]);
                 root.longitude = parseFloat(lon[1]);
+                root.fixedAt = Date.now();
                 root.fetchWeather();
             }
         }
@@ -119,8 +131,10 @@ Item {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (isNaN(root.latitude)) locate.running = true;
-            else root.fetchWeather();
+            if (root.needsFix(root.latitude, root.fixedAt, root.fixTtlMs))
+                locate.running = true;
+            else
+                root.fetchWeather();
         }
     }
 }

@@ -364,8 +364,11 @@ timer escaped.
   times an hour.
 - **Resting state must stand down while a transition runs.** Re-attach was
   broken by `.detached` pinning the bar invisible while the rails animated back
-  in behind it. `tests/laserbar/panel-roundtrip.qml` is the regression test —
-  summon, detach, re-attach must be pixel-identical to a plain summon.
+  in behind it. `tests/laserbar/panel-roundtrip.qml` is the regression test:
+  summon, detach, re-attach must come back pixel-identical to a plain summon.
+  Diff the **tail region only** — the panel carries a ticking clock and live
+  CPU and RAM, so a whole-frame comparison can never be stable. The fixture's
+  own comment has the exact crop.
 - **A `Process` whose binary does not exist never emits `onExited`** — it fails
   to *start*. Give-up logic hung off exit never runs. `MetricsModel` forked a
   doomed `nvidia-smi` eight times in two seconds before this was understood;
