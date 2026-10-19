@@ -8,7 +8,7 @@
 # last home-manager switch produced, so probing it would verify stale code.
 #
 # The bar is momentary - it only draws while revealed - so this reveals it
-# over the same `laserbar` IPC the Insert binding uses, then grims the output.
+# over the same `laserbar` IPC the bar itself uses, then grims the output.
 set -euo pipefail
 
 ENTRY="${1:?usage: laserbar-preview.sh <entry.qml> <out.png> [battery-fraction] [WxH]}"

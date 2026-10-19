@@ -17,7 +17,11 @@ becomes its border. It replaces the sheared parallelogram of the present
 
 ### Why now
 
-The bar is held-open on a key (`Insert`, see `modules/home-manager/display/sway/default.nix:146`).
+The bar is held-open on a key (`Insert` at the time of writing; **superseded
+2026-10-19** — it is the modifier now, tracked by sway itself through a
+`bar { mode hide; modifier }` block and its `bar_state_update` event, because
+sway stops firing a modifier's `--release` binding once it has been used as a
+modifier).
 Today it costs a keypress and shows the time, which is not worth the keypress.
 Workspace state and Wi-Fi are the two things worth the gesture.
 
@@ -26,8 +30,9 @@ Workspace state and Wi-Fi are the two things worth the gesture.
 This is the hard constraint on the whole design. The bar's existing behaviour is
 the product, not scaffolding around it:
 
-- **Momentary reveal.** `Insert` held calls `laserbar reveal` over IPC, release
-  calls `laserbar hide`. The bar is not persistent and must not become
+- **Momentary reveal.** The key held reveals the bar and releasing it hides
+  the bar. (`Insert` when this was written; the modifier since 2026-10-19 —
+  see *Why now*.) The bar is not persistent and must not become
   persistent. `exclusionMode: ExclusionMode.Ignore` and `mask: Region {}` stay:
   the bar never reserves space and never takes the pointer.
 - **Two beams, meeting on the battery.** The left beam travels
