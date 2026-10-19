@@ -47,6 +47,26 @@ Item {
 
     readonly property var eventsForSelected: eventsByDate[key(selected)] || []
 
+    // On TODAY, what is left of it. A list whose first two entries are
+    // lectures you already sat through is a worse answer to "what is coming"
+    // than no list at all. Any other day shows the whole day, because there
+    // is no "now" in it to be past.
+    //
+    // All-day entries stay: they are still true at any hour.
+    readonly property var upcomingToday: {
+        const now = new Date();
+        return (eventsByDate[key(now)] || []).filter(e =>
+            e["all-day"] === "True" || eventDateTime(e) >= now);
+    }
+
+    readonly property var visibleEvents:
+        sameDay(selected, today) ? upcomingToday : eventsForSelected
+
+    // Whether today had anything at all, which is what separates "nothing
+    // was ever on" from "it has all happened".
+    readonly property bool todayHadEvents:
+        (eventsByDate[key(today)] || []).length > 0
+
     // The grid: six weeks from the Monday on or before the 1st, each cell
     // carrying everything the renderer needs so neither renderer repeats
     // this arithmetic.

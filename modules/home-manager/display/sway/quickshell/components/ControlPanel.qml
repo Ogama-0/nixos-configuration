@@ -400,6 +400,13 @@ Scope {
                 PanelSheet {
                     id: sheet
                     uiScale: panel.uiScale
+                    // Closes as the funnel goes, so the outline is complete
+                    // the whole time rather than briefly open at the mouth.
+                    mouthClosed: root.panelState === "detached" ? 1 : 0
+                    Behavior on mouthClosed {
+                        NumberAnimation { duration: root.clipMs
+                                          easing.type: root.clipEase }
+                    }
                     x: -clipper.x
                     y: -clipper.y
 
@@ -520,7 +527,11 @@ Scope {
 
                                 monthLabel: cal.monthLabel
                                 cells: cal.monthCells
-                                events: cal.eventsForSelected
+                                events: cal.visibleEvents
+                                emptyText: !cal.onToday ? "Nothing on."
+                                    : cal.todayHadEvents
+                                        ? "No more events today."
+                                        : "Nothing on today."
                                 onToday: cal.onToday
                                 selectedLabel: cal.onToday
                                     ? "Today"

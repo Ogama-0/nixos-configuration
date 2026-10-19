@@ -20,6 +20,9 @@ Item {
     property var events: []
     property bool onToday: false
     property string selectedLabel: ""
+    // What an empty list says. "Nothing on" and "no more today" are
+    // different facts and the difference is the whole point of the filter.
+    property string emptyText: "Nothing on."
 
     signal prevMonth
     signal nextMonth
@@ -42,8 +45,16 @@ Item {
     // the divider that got bigger in five-row months; filling it means the
     // calendar is the thing the zone is mostly made of, which is what it is
     // for. Floor keeps a six-row month from squeezing the numbers.
+    // The events block is a FIXED reservation, not a block that grows with
+    // the day you picked. Sizing it to its content moved the divider, which
+    // moved the grid's bottom, which changed the row height - so clicking
+    // from a busy day to a quiet one resized the whole calendar under the
+    // cursor. Three rows plus the header plus the "and N more" line is the
+    // worst case, so that is what is always reserved.
+    readonly property real eventsHeight: 112 * uiScale
+
     readonly property real gridTop: dow.y + 19 * uiScale
-    readonly property real gridBottom: eventsCol.y - 22 * uiScale
+    readonly property real gridBottom: root.height - eventsHeight - 22 * uiScale
     readonly property real cellH:
         Math.max(26 * uiScale, (gridBottom - gridTop) / layoutRows)
 
@@ -237,7 +248,8 @@ Item {
 
     Column {
         id: eventsCol
-        y: root.height - height
+        y: root.height - root.eventsHeight
+        height: root.eventsHeight
         width: root.width
         spacing: 6 * root.uiScale
 
@@ -250,7 +262,7 @@ Item {
 
         Text {
             visible: root.events.length === 0
-            text: "Nothing on."
+            text: root.emptyText
             color: "@mutedColor@"
             font.pixelSize: Math.round(12.5 * root.uiScale)
         }

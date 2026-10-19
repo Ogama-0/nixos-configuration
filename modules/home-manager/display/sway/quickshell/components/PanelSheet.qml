@@ -28,6 +28,15 @@ Item {
     // ControlPanel.qml drive this; it is a clip, never a redrawn path.
     property real openFraction: 1
 
+    // How much of the straight bottom edge to draw across the funnel's
+    // mouth. 0 while docked - the outline detours down the flanks there, and
+    // a line across the mouth is exactly what made the tail look like a
+    // shape hung off a closed box. 1 once undocked, because then the funnel
+    // is gone and without it the sheet has a 300px hole in its border.
+    property real mouthClosed: 0
+
+    readonly property color edgeColor: "@glassBorder@"
+
     readonly property real sheetWidth: 940
     readonly property real sheetHeight: 700
     readonly property real tailDrop: 34
@@ -59,6 +68,19 @@ H620 C584 700 560 712 546 726 C542 730 540 734 534 734 \
 H406 C400 734 398 730 394 726 C380 712 356 700 320 700 \
 H26 A26 26 0 0 1 0 674 V26 A26 26 0 0 1 26 0 Z"
             }
+        }
+
+        // The mouth's own lid, faded in as the funnel retracts. A separate
+        // ShapePath with its own literal, not a change to the one above:
+        // path data that changes draws nothing at all (rule 4). Only the
+        // stroke's alpha moves, which is a colour, not geometry.
+        ShapePath {
+            fillColor: "transparent"
+            strokeWidth: 1
+            strokeColor: Qt.rgba(root.edgeColor.r, root.edgeColor.g,
+                                 root.edgeColor.b,
+                                 root.edgeColor.a * root.mouthClosed)
+            PathSvg { path: "M320 700 H620" }
         }
     }
 }
