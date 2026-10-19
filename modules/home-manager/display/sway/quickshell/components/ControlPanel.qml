@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
+import Quickshell.I3
 // The zones live one directory down; QML needs that said explicitly.
 import "panel"
 
@@ -28,6 +29,27 @@ Scope {
     property string panelState: "gone"
 
     readonly property bool isOpen: panelState !== "gone"
+
+    // Changing workspace dismisses the panel. Which workspace you were on
+    // when it opened has to be remembered: the id changes once on open too,
+    // and dismissing on that would close the panel the instant it appeared.
+    readonly property int focusedWorkspace: {
+        const all = I3.workspaces ? I3.workspaces.values : [];
+        for (const w of all) if (w.active) return w.id;
+        return -1;
+    }
+    property int summonedOn: -1
+
+    onFocusedWorkspaceChanged: {
+        if (!isOpen) return;
+        // The I3 socket connects asynchronously, so a panel summoned early
+        // in the session records -1 and would then never dismiss on a
+        // workspace change at all. Adopt the first id we actually learn
+        // instead of treating "not known yet" as "never leave".
+        if (summonedOn === -1) { summonedOn = focusedWorkspace; return; }
+        if (focusedWorkspace !== summonedOn) dismiss();
+    }
+
 
     // Set by shell.qml from the lock surface. An open panel drawn over a
     // locked screen would leak the calendar and the notification list past
@@ -93,6 +115,7 @@ Scope {
         dismissMode = "docked";
         animatingOut = false;
         snapping = false;
+        summonedOn = focusedWorkspace;
         panelState = "attached";
         wipe.restart();
     }
@@ -242,25 +265,24 @@ Scope {
 
             visible: (root.isOpen || root.animatingOut) && onTarget
 
-            // Bottom-anchored only, so layer-shell centres it horizontally
-            // over the clock it grows out of.
-            anchors.bottom: true
-            margins.bottom: barHeight * uiScale
-
-            implicitWidth: sheet.implicitWidth
-            // Taller than the glass by the funnel's drop: a layer-shell
-            // surface clips to itself, so the tail has to be inside this
-            // window or it is simply not drawn.
-            implicitHeight: sheet.implicitHeight
+            // Full-screen, not sheet-sized. Three of the four ways out need
+            // it: a click lands outside the sheet, Escape needs keyboard
+            // focus, and neither reaches a surface that only covers the
+            // sheet. The wallpaper picker is the same shape for the same
+            // reason. The sheet is positioned inside it by `stage` below.
+            anchors { top: true; bottom: true; left: true; right: true }
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "laser-bar-panel"
             WlrLayershell.layer: WlrLayer.Overlay
 
-            // OnDemand, not Exclusive: Escape has to reach the panel, but a
-            // panel left sitting there detached must not swallow keys from
-            // whatever you are actually typing into underneath it.
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            // Exclusive, and this is a real trade. OnDemand only hands over
+            // the keyboard when the surface is CLICKED, so Escape would not
+            // work on a panel summoned with mod+n - which is the normal way
+            // to open it. The cost is that typing goes to the panel while it
+            // is up, including while it sits detached.
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            focusable: true
 
             // The clock capsule is 38 tall centred on beamY, which puts its
             // top 44 1080p-pixels above the screen bottom (LaserBar.qml:
@@ -280,11 +302,44 @@ Scope {
                 return Math.max(1, Math.min(3, h / 1080));
             }
 
-            // Takes the pointer only while it is up, like the bar does.
-            mask: Region {
-                width: panel.visible ? panel.width : 0
-                height: panel.visible ? panel.height : 0
+            // No input mask at all, deliberately. The whole surface takes
+            // the pointer while it is up, which is what lets the backdrop
+            // below catch a click anywhere outside the sheet; the surface
+            // does not exist at all when the panel is shut, so there is
+            // nothing to mask off. A Region sized to the window LOOKS
+            // equivalent and is not - it cost an afternoon.
+
+            // Click anywhere that is not the sheet.
+            MouseArea {
+                // Sized from the WINDOW, not `anchors.fill: parent`. This
+                // window's content item stays 0x0, so anything anchored to
+                // it is 0x0 too and silently receives no pointer events at
+                // all - the panel drew perfectly while being completely
+                // unclickable. `stage` below only escaped it by doing its
+                // own arithmetic against panel.width/height.
+                width: panel.width
+                height: panel.height
+                onClicked: root.dismiss()
             }
+
+            Item {
+                // Same reason as the backdrop above.
+                width: panel.width
+                height: panel.height
+                focus: true
+                Keys.onEscapePressed: root.dismiss()
+            }
+
+            // Where the sheet actually sits now that the window is the whole
+            // output: horizontally centred, its bottom edge clearing the bar
+            // so the funnel has somewhere to run.
+            Item {
+                id: stage
+                width: sheet.implicitWidth
+                height: sheet.implicitHeight
+                x: Math.round((panel.width - width) / 2)
+                y: Math.round(panel.height - height
+                              - panel.barHeight * panel.uiScale)
 
             // The clipper is what moves; the sheet inside it is pinned by an
             // equal and opposite offset so the glass never shifts on screen.
@@ -501,6 +556,7 @@ Scope {
                             height: (700 - 190 - 24) * zones.s }
                     }
                 }
+            }
             }
         }
     }

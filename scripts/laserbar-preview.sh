@@ -22,6 +22,17 @@ RESOLUTION="${4:-1920x1080}"
 # them - and the light one has its own legibility problems (base0B is pale on
 # cream) that a dark render cannot show.
 VARIANT="${LASERBAR_VARIANT:-dark}"
+# A command run inside the nested session after the bar is revealed and the
+# fixture has settled, before the screenshot. This is how dismissal is tested
+# at all: Escape, a click and a workspace switch cannot be asserted from a
+# static render, and all three are things a user does TO the shell.
+#
+#   LASERBAR_EXEC='swaymsg workspace 2'
+#   LASERBAR_EXEC='wtype -k Escape'
+#   LASERBAR_EXEC='swaymsg seat - cursor set 100 100; swaymsg seat - cursor press button1'
+#
+# SWAYSOCK and WAYLAND_DISPLAY are already exported when it runs.
+EXEC_AFTER="${LASERBAR_EXEC:-}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 [ -f "$ENTRY" ] || { echo "no such fixture: $ENTRY" >&2; exit 2; }
@@ -110,6 +121,12 @@ sleep 1
 # to nothing, with no module left painted.
 if [ "${LASERBAR_RETRACT:-}" = "1" ]; then
     quickshell -p "$TREE/shell.qml" ipc call laserbar hide >>"$RT/qs.log" 2>&1 || true
+    sleep 1
+fi
+
+if [ -n "$EXEC_AFTER" ]; then
+    sh -c "$EXEC_AFTER" >>"$RT/qs.log" 2>&1 || echo "LASERBAR_EXEC failed" >>"$RT/qs.log"
+    # Dismissal animations are ~200-300ms; give them room to finish.
     sleep 1
 fi
 
