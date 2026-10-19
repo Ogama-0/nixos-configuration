@@ -174,6 +174,11 @@ Scope {
         active: root.isOpen
     }
 
+    MetricsModel {
+        id: metrics
+        active: root.isOpen
+    }
+
     // The panel's own clock. One tick a second, and only while it is open -
     // the bar's clock learned this the expensive way.
     property var now: new Date()
@@ -345,7 +350,19 @@ Scope {
                         }
                         Item { id: metricZone
                             x: 323 * zones.s; y: 0
-                            width: 354 * zones.s; height: zones.rowSplit * zones.s }
+                            width: 354 * zones.s; height: zones.rowSplit * zones.s
+
+                            MetricsPane {
+                                x: 20 * zones.s
+                                y: 34 * zones.s
+                                width: parent.width - 40 * zones.s
+                                height: 90 * zones.s
+                                uiScale: panel.uiScale
+                                cpuPct: metrics.cpuPct
+                                gpuPct: metrics.gpuPct
+                                ramPct: metrics.ramPct
+                            }
+                        }
                         Item { id: mobileZone
                             x: 678 * zones.s; y: 0
                             width: 262 * zones.s; height: zones.rowSplit * zones.s }

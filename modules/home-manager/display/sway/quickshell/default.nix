@@ -174,6 +174,8 @@ in
           "${d}/components/panel/WeatherModel.qml" = themedQmlFile variant ./components/panel/WeatherModel.qml;
           "${d}/components/panel/PanelNavButton.qml" = themedQmlFile variant ./components/panel/PanelNavButton.qml;
           "${d}/components/panel/CalendarPane.qml" = themedQmlFile variant ./components/panel/CalendarPane.qml;
+          "${d}/components/panel/MetricsPane.qml" = themedQmlFile variant ./components/panel/MetricsPane.qml;
+          "${d}/components/panel/MetricsModel.qml" = themedQmlFile variant ./components/panel/MetricsModel.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
