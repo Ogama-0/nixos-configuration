@@ -95,6 +95,16 @@ export LASERBAR_FAKE_BATTERY
 cat > "$RT/sway.conf" <<CONF
 output HEADLESS-1 resolution $RESOLUTION
 exec sleep infinity
+
+# Mirrors modes.panel from the real sway config. The panel holds no
+# keyboard focus, so Escape can only reach it by sway intercepting that one
+# key in a mode - without this block the dismissal test fails for a reason
+# that has nothing to do with the panel.
+mode "panel" {
+    # -p, not -c widgets: the nested shell is launched by path and has no
+    # instance name, so the real config's IPC target finds nothing here.
+    bindsym Escape mode default; exec quickshell -p $TREE/shell.qml ipc call panel dismiss
+}
 CONF
 
 sway -c "$RT/sway.conf" >"$RT/sway.log" 2>&1 &

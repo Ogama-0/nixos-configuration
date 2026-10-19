@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -74,6 +75,22 @@ in
         titlebar = false;
         border = 0;
 
+      };
+
+      # A sway mode that exists for exactly one key.
+      #
+      # The panel must not hold keyboard focus - you are meant to carry on
+      # typing into whatever is underneath it - but Escape still has to
+      # dismiss it, and a layer surface cannot receive a key it does not
+      # have focus for. A mode is the only mechanism in sway that intercepts
+      # ONE key and lets every other one through to the focused window.
+      #
+      # Every normal binding is copied in, so nothing stops working while
+      # the panel is up. ControlPanel.qml enters this mode when the panel
+      # opens and returns to default when it closes, by any route - so a
+      # click outside or a workspace change leaves the mode too.
+      modes.panel = config.wayland.windowManager.sway.config.keybindings // {
+        "Escape" = "mode default; exec quickshell ipc -c widgets call panel dismiss";
       };
 
       keybindings = lib.mkOptionDefault {

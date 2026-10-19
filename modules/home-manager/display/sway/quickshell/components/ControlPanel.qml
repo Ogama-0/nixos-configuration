@@ -152,6 +152,18 @@ Scope {
         outTimer.restart();
     }
 
+    // sway only intercepts Escape while this mode is active, so the mode's
+    // lifetime is the panel's. Leaving it on every close - however the
+    // close happened - is what keeps a crashed or killed shell from
+    // stranding the session in a mode nobody asked for.
+    onIsOpenChanged: {
+        swayMode.command = ["@swaymsgBin@", "mode",
+                            root.isOpen ? "panel" : "default"];
+        swayMode.running = true;
+    }
+
+    Process { id: swayMode }
+
     // Keeps the window up until the closing animation has finished; without
     // it the surface vanishes on the first frame and there is no animation
     // to see at all.
@@ -302,17 +314,16 @@ Scope {
             WlrLayershell.namespace: "laser-bar-panel"
             WlrLayershell.layer: WlrLayer.Overlay
 
-            // OnDemand, chosen deliberately over Exclusive. Exclusive makes
-            // Escape work the instant the panel opens, but it also takes the
-            // keyboard for as long as the panel is up - and this panel is
-            // meant to sit there detached while you carry on working, so
-            // swallowing every keystroke is the worse half of the trade.
+            // The panel never takes the keyboard. You are meant to keep
+            // typing into whatever is underneath it.
             //
-            // The cost: Escape only reaches the panel once it has been
-            // clicked, because that is when the compositor hands focus over.
-            // Clicking outside and changing workspace are unaffected.
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
-            focusable: true
+            // Escape still dismisses, but it cannot arrive here - a layer
+            // surface receives no keys without focus. sway intercepts that
+            // one key in a mode instead (see modes.panel in the sway config)
+            // and passes every other key through to the focused window,
+            // which is the only arrangement that gives both halves.
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            focusable: false
 
             // The clock capsule is 38 tall centred on beamY, which puts its
             // top 44 1080p-pixels above the screen bottom (LaserBar.qml:
