@@ -26,13 +26,13 @@ Scope {
             height: 400
             uiScale: 1
             groups: [
-                { app: "Signal", count: 3, items: [
+                { key: "Signal", app: "Signal", count: 3, items: [
                     { appName: "Signal", summary: "Marie", body: "On arrive dans 10 minutes" },
                     { appName: "Signal", summary: "Marie", body: "On est en bas" },
                     { appName: "Signal", summary: "Groupe projet", body: "Reunion decalee" } ] },
-                { app: "Syncthing", count: 1, items: [
+                { key: "Syncthing", app: "Syncthing", count: 1, items: [
                     { appName: "Syncthing", summary: "Folder up to date", body: "notes - 42 files" } ] },
-                { app: "System", count: 1, items: [
+                { key: "System", app: "System", count: 1, items: [
                     { appName: "System", summary: "Battery at 20%", body: "About 48 minutes left" } ] }
             ]
         }

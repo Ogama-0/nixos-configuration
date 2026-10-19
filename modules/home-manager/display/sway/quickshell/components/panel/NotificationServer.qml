@@ -95,28 +95,40 @@ Item {
 
     readonly property int count: notifications.length
 
+    // Apps whose notifications must never be packed together. KDE Connect
+    // is a RELAY: everything your phone shows arrives under its name, so
+    // packing by sender puts a message, a battery warning and a BeReal in
+    // one stack labelled "KDE Connect". They are not one thing that
+    // happened, they only share a courier.
+    property var ungroupedApps: ["KDE Connect"]
+
     // Grouped by the app that sent them, newest group first, and each
     // group's items newest first. Five notifications from one chat app is
     // one thing that happened, not five - and a flood from one sender
     // should not push everything else off the list.
     readonly property var groups: {
         const order = [];
-        const byApp = {};
+        const byKey = {};
         for (const n of notifications) {
             const app = n.appName || "Unknown app";
-            if (!byApp[app]) { byApp[app] = []; order.push(app); }
-            byApp[app].push(n);
+            // A relay gets one group per notification. The key is what
+            // packs; the app name is only what is printed.
+            const key = ungroupedApps.indexOf(app) >= 0
+                ? app + "\u0000" + n.uid : app;
+            if (!byKey[key]) { byKey[key] = { app: app, items: [] }; order.push(key); }
+            byKey[key].items.push(n);
         }
-        return order.map(app => ({
-            app: app,
-            items: byApp[app],
-            count: byApp[app].length
+        return order.map(key => ({
+            key: key,
+            app: byKey[key].app,
+            items: byKey[key].items,
+            count: byKey[key].items.length
         }));
     }
 
-    function dismissGroup(app) {
-        const doomed = notifications.filter(r => (r.appName || "Unknown app") === app);
-        for (const r of doomed) dismiss(r);
+    function dismissGroup(key) {
+        for (const g of groups)
+            if (g.key === key) { for (const r of g.items.slice()) dismiss(r); return; }
     }
 
     // Which entries to retire when the ceiling is passed, oldest first.

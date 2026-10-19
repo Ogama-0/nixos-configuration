@@ -124,7 +124,7 @@ Item {
                 required property var modelData
 
                 readonly property bool open:
-                    root.expanded[modelData.app] === true
+                    root.expanded[modelData.key] === true
                 readonly property bool stacked: modelData.count > 1
 
                 width: list.width
@@ -133,14 +133,6 @@ Item {
                 color: "@plateBg@"
                 clip: true
 
-                readonly property bool holdsSelection: {
-                    for (const it of modelData.items)
-                        if (it.uid === root.selectedUid) return true;
-                    return false;
-                }
-
-                border.width: holdsSelection ? 1 : 0
-                border.color: "@greenColor@"
 
                 // Opening a group grows the plate rather than snapping it.
                 // The delegate survives the toggle - `expanded` is keyed on
@@ -212,14 +204,31 @@ Item {
                     }
 
                     // ---- collapsed: the newest one only ----
-                    NotificationRow {
+                    Item {
                         visible: !group.open
                         width: parent.width
-                        uiScale: root.uiScale
-                        showApp: false
-                        item: group.modelData.items[0]
-                        expanded: !group.stacked
-                            && root.selectedUid === group.modelData.items[0].uid
+                        height: visible ? lone.implicitHeight : 0
+
+                        Rectangle {
+                            visible: !group.stacked
+                                && root.selectedUid === group.modelData.items[0].uid
+                            x: -7 * root.uiScale
+                            y: -3 * root.uiScale
+                            width: parent.width + 14 * root.uiScale
+                            height: lone.implicitHeight + 6 * root.uiScale
+                            radius: 7 * root.uiScale
+                            color: "@plateBg@"
+                        }
+
+                        NotificationRow {
+                            id: lone
+                            width: parent.width
+                            uiScale: root.uiScale
+                            showApp: false
+                            item: group.modelData.items[0]
+                            expanded: !group.stacked
+                                && root.selectedUid === group.modelData.items[0].uid
+                        }
                     }
 
                     // ---- expanded: all of them ----
@@ -239,6 +248,20 @@ Item {
                                 horizontal: true
                                 width: parent.width
                                 y: 0
+                            }
+
+                            // Selection marks the ROW, because that is what
+                            // is selected. Outlining the whole group put a
+                            // green rectangle around the green edge it
+                            // already had and read as a rendering fault.
+                            Rectangle {
+                                visible: root.selectedUid === modelData.uid
+                                x: -7 * root.uiScale
+                                y: row.y - 3 * root.uiScale
+                                width: parent.width + 14 * root.uiScale
+                                height: row.implicitHeight + 6 * root.uiScale
+                                radius: 7 * root.uiScale
+                                color: "@plateBg@"
                             }
 
                             NotificationRow {
@@ -290,7 +313,7 @@ Item {
                     anchors.bottomMargin: group.open
                         ? parent.height - 26 * root.uiScale : 0
                     onClicked: {
-                        if (group.stacked) root.toggle(group.modelData.app);
+                        if (group.stacked) root.toggle(group.modelData.key);
                         else root.select(group.modelData.items[0].uid);
                     }
                 }
