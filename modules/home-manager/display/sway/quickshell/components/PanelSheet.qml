@@ -45,7 +45,7 @@ Item {
         }
 
         ShapePath {
-            fillColor: "@panelBg@"
+            fillColor: "@sheetBg@"
             strokeColor: "@glassBorder@"
             strokeWidth: 1
 

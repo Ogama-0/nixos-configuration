@@ -30,6 +30,13 @@ Item {
     readonly property int shownEvents: 3
     readonly property int rows: Math.max(1, Math.ceil(cells.length / 7))
 
+    // Always lay out for six weeks, even in a month that only needs five.
+    // The row height is what the grid is measured in, so deriving it from
+    // THIS month's row count made the whole calendar change shape every time
+    // you paged - cells growing and shrinking under the cursor. Six is the
+    // worst case, so six is the layout.
+    readonly property int layoutRows: 6
+
     // The grid takes the space rather than leaving a gap above the events.
     // A fixed row height left a band of dead glass between the last week and
     // the divider that got bigger in five-row months; filling it means the
@@ -38,7 +45,7 @@ Item {
     readonly property real gridTop: dow.y + 19 * uiScale
     readonly property real gridBottom: eventsCol.y - 22 * uiScale
     readonly property real cellH:
-        Math.max(26 * uiScale, (gridBottom - gridTop) / rows)
+        Math.max(26 * uiScale, (gridBottom - gridTop) / layoutRows)
 
     // ---- month bar ----
 
@@ -137,12 +144,12 @@ Item {
         id: grid
         y: dow.y + 19 * root.uiScale
         width: parent.width
-        height: root.rows * root.cellH
+        height: root.layoutRows * root.cellH
 
         // A discreet grid: one hairline under each week except the last, at
         // an alpha where you read it as structure rather than as lines.
         Repeater {
-            model: root.rows - 1
+            model: root.rows - 1   // hairlines only under weeks that exist
             Rectangle {
                 required property int index
                 y: (index + 1) * root.cellH

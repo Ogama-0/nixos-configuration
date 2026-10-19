@@ -81,9 +81,14 @@ let
     # terminal, a white page - read straight through the panel and sat
     # behind the notification text. The beam showing through was never worth
     # that; what sells the glass is the border and the sheen, not the alpha.
-    panelBg = if variant == "light"
+    #
+    # base01, not base00, in dark. base00 IS black, and a 94%-black sheet on
+    # a black wallpaper has no edges - the panel vanished and left its own
+    # internal dividers floating in space. base01 is the next step up the
+    # ramp and reads as a surface on any ground.
+    sheetBg = if variant == "light"
               then "#F2${allColors.light.base00}"
-              else "#EF${allColors.dark.base00}";
+              else "#EF${allColors.dark.base01}";
   } // statusColorsFor variant // capsuleColorsFor variant);
 
   themedQmlFile = variant: path: {

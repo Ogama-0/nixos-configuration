@@ -49,12 +49,17 @@
   # geoclue's own CLI. PATH is not dependable inside the systemd user
   # service, which is why @systemctlBin@ exists too.
 , whereAmIBin ? "where-am-i"
-  # The control panel's own ground, and NOT @glassBg@ - that one is the bar's
+  # The control panel sheet's ground. Named @sheetBg@ and not @panelBg@
+  # because that token already exists for StatusPanel - replaceStrings takes
+  # the FIRST match, so a duplicate name is silently dead and the sheet
+  # inherits whatever the older token resolves to. It did, for one commit.
+  #
+  # Not @glassBg@ either - that one is the bar's
   # capsule material at 40%, which works in dark (darkening only helps
   # near-white text) and fails in light, where 40% cream over a saturated
   # wallpaper leaves base05 text floating on a mid-tone. Same lesson
   # @cardBg@'s consumers learned at 90%. Passed per variant.
-, panelBg ? "#CC${colors.base00}"
+, sheetBg ? "#CC${colors.base01}"
 }:
 builtins.replaceStrings
   [
@@ -94,7 +99,7 @@ builtins.replaceStrings
     "@onAccentInk@"
     "@plateBg@"
     "@whereAmIBin@"
-    "@panelBg@"
+    "@sheetBg@"
   ]
   [
     "#B3${colors.base00}"
@@ -136,5 +141,5 @@ builtins.replaceStrings
     onAccentInk
     "#12${colors.base05}"
     whereAmIBin
-    panelBg
+    sheetBg
   ]

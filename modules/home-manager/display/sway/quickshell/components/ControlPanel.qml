@@ -349,7 +349,18 @@ Scope {
                 // own arithmetic against panel.width/height.
                 width: panel.width
                 height: panel.height
-                onClicked: root.dismiss()
+                // Tested against the sheet's rectangle rather than trusting
+                // z-order and event propagation: the zones do not cover
+                // every pixel of the sheet - the gaps between tiles, the
+                // metrics column, the mobile stub have no MouseArea of
+                // their own - so a click on any of those fell through to
+                // here and shut the panel you were using.
+                onClicked: e => {
+                    if (e.x >= stage.x && e.x <= stage.x + stage.width
+                        && e.y >= stage.y && e.y <= stage.y + stage.height)
+                        return;
+                    root.dismiss();
+                }
             }
 
             Item {
