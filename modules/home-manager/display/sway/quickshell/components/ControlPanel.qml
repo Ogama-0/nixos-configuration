@@ -30,6 +30,30 @@ Scope {
 
     readonly property bool isOpen: panelState !== "gone"
 
+    // Opening the panel used to spawn ten subprocesses in the same turn as
+    // the reveal - khal, df, nmcli, bluetoothctl, powerprofilesctl, darkman,
+    // two /proc reads, nvidia-smi, curl - and khal alone takes half a second
+    // and then parses two hundred events back on the GUI thread. The open
+    // animation is 180ms. It was being held open by work nobody was waiting
+    // for yet, which is what made a press take about a second to land.
+    //
+    // So the panel paints first and the readers start just after. Nothing is
+    // less live for it: these are things that change on the scale of
+    // seconds, read for a surface you have been looking at for 150ms.
+    property bool warmedUp: false
+    Timer {
+        id: warmUp
+        interval: 150
+        repeat: false
+        onTriggered: root.warmedUp = true
+    }
+    onIsOpenChanged: {
+        if (isOpen) warmUp.restart();
+        else { warmUp.stop(); warmedUp = false; }
+    }
+
+    readonly property bool readersActive: isOpen && warmedUp
+
     // Changing workspace dismisses the panel. Which workspace you were on
     // when it opened has to be remembered: the id changes once on open too,
     // and dismissing on that would close the panel the instant it appeared.
@@ -218,7 +242,7 @@ Scope {
     // panel, not one per output.
     ToggleModel {
         id: toggles
-        active: root.isOpen
+        active: root.readersActive
         onLockRequested: root.lockRequested()
     }
 
@@ -227,22 +251,22 @@ Scope {
 
     WeatherModel {
         id: weather
-        active: root.isOpen
+        active: root.readersActive
     }
 
     CalendarModel {
         id: cal
-        active: root.isOpen
+        active: root.readersActive
     }
 
     MetricsModel {
         id: metrics
-        active: root.isOpen
+        active: root.readersActive
     }
 
     DiskModel {
         id: diskModel
-        active: root.isOpen
+        active: root.readersActive
     }
 
     // NOT gated on isOpen. A centre that only listened while you were
@@ -254,7 +278,7 @@ Scope {
 
     AudioModel {
         id: audio
-        active: root.isOpen
+        active: root.readersActive
     }
 
     // The panel's own clock. One tick a second, and only while it is open -

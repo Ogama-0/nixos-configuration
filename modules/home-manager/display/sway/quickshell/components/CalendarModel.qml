@@ -162,6 +162,28 @@ Item {
         return out;
     }
 
+    // The window we last fetched, and when. khal takes ~0.5s and then two
+    // hundred events are parsed here on the GUI thread, so paying that on
+    // every single open - for a diary that changes a few times a day - is
+    // the most expensive thing the panel does for the least reason.
+    property string fetchedWindow: ""
+    property real fetchedAt: 0
+    readonly property int freshMs: 120000
+
+    function refreshIfStale() {
+        const want = windowStart();
+        if (want === fetchedWindow && Date.now() - fetchedAt < freshMs) return;
+        refresh();
+    }
+
+    function windowStart() {
+        const first = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+        const lead = (first.getDay() + 6) % 7;
+        const start = new Date(first);
+        start.setDate(1 - lead);
+        return key(start);
+    }
+
     function refresh() {
         // From the Monday before the 1st, far enough to cover six weeks.
         const first = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
@@ -174,6 +196,8 @@ Item {
             "--json", "title", "--json", "location",
             key(start), "42d"
         ];
+        fetchedWindow = key(start);
+        fetchedAt = Date.now();
         khalProc.running = true;
     }
 
@@ -216,7 +240,7 @@ Item {
         triggeredOnStart: true
         onTriggered: {
             root.today = new Date();
-            root.refresh();
+            root.refreshIfStale();
         }
     }
 }
