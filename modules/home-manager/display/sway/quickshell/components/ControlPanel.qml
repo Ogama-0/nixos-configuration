@@ -84,9 +84,9 @@ Scope {
     // the sheet and the funnel are a single Shape (PanelSheet.qml) and a
     // clip is the only way to reveal part of one:
     //
-    //   attached   0..940 x 0..854   sheet and funnel
-    //   detached   0..940 x 0..820   the funnel clipped away, sheet untouched
-    //   gone       406..534 x 820..854   the neck stub, i.e. the clock
+    //   attached   0..940 x 0..734   sheet and funnel
+    //   detached   0..940 x 0..700   the funnel clipped away, sheet untouched
+    //   gone       406..534 x 700..734   the neck stub, i.e. the clock
     //
     // Collapsing to that last box IS the dock-dismiss: the panel folds back
     // into the clock it came out of.
@@ -95,8 +95,8 @@ Scope {
 
     property real clipL: collapsing ? 406 : 0
     property real clipR: collapsing ? 534 : 940
-    property real clipT: collapsing ? 820 : 0
-    property real clipB: (panelState === "attached" || collapsing) ? 854 : 820
+    property real clipT: collapsing ? 700 : 0
+    property real clipB: (panelState === "attached" || collapsing) ? 734 : 700
 
     property real sheetOpacity: sinking ? 0 : 1
     property real sheetScale: sinking ? 0.965 : 1
@@ -447,7 +447,7 @@ Scope {
                         id: zones
                         x: 0; y: 0
                         width: 940 * panel.uiScale
-                        height: 820 * panel.uiScale
+                        height: 700 * panel.uiScale
                         opacity: root.contentReveal
 
                         readonly property real s: panel.uiScale
@@ -511,7 +511,7 @@ Scope {
 
                         Item { id: calendarZone
                             x: 0; y: 169 * zones.s
-                            width: 570 * zones.s; height: (820 - 169) * zones.s
+                            width: 570 * zones.s; height: (700 - 169) * zones.s
 
                             ClockWeatherHead {
                                 x: 22 * zones.s
@@ -556,7 +556,7 @@ Scope {
                         }
                         Item { id: diskZone
                             x: 571 * zones.s; y: 169 * zones.s
-                            width: 106 * zones.s; height: (820 - 169) * zones.s
+                            width: 106 * zones.s; height: (700 - 169) * zones.s
 
                             DiskPane {
                                 x: 16 * zones.s
@@ -570,7 +570,7 @@ Scope {
                         }
                         Item { id: notifyZone
                             x: 678 * zones.s; y: 169 * zones.s
-                            width: 262 * zones.s; height: (820 - 169) * zones.s
+                            width: 262 * zones.s; height: (700 - 169) * zones.s
 
                             NotificationPane {
                                 x: 22 * zones.s
@@ -614,9 +614,9 @@ Scope {
                             x: 30 * zones.s; y: zones.rowSplit * zones.s
                             width: (940 - 60) * zones.s }
                         PanelBeam { x: 570 * zones.s; y: 190 * zones.s
-                            height: (820 - 190 - 24) * zones.s }
+                            height: (700 - 190 - 24) * zones.s }
                         PanelBeam { x: 677 * zones.s; y: 190 * zones.s
-                            height: (820 - 190 - 24) * zones.s }
+                            height: (700 - 190 - 24) * zones.s }
                     }
                 }
             }
