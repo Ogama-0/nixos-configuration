@@ -15,7 +15,6 @@ in
   imports = [
     # ./barbar.nix
     ./effects.nix
-    ./mako.nix
     ./quickshell
     ../../gammastep.nix
     ./idle.nix
@@ -94,7 +93,7 @@ in
         # second one is the likely reason sway stopped firing the --release
         # that collapses the bar. Restore it if you still want the swaybar
         # toggle and would rather move the laser bar to another key.
-        "${modifier}+Shift+z" = "exec makoctl dismiss";
+        "${modifier}+Shift+z" = "exec quickshell ipc -c widgets call panel clearNotifications";
         # "${modifier}+Shift+d" = "exec vesktop";
         "${modifier}+space" = "exec nautilus";
         "${modifier}+Shift+s" = "exec spotify";
@@ -141,17 +140,17 @@ in
         "XF86AudioPlay" = "exec playerctl play-pause";
 
         "XF86AudioRaiseVolume" =
-          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ && makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"'';
+          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+'';
 
         "XF86AudioLowerVolume" =
-          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- &&  makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"'';
+          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%-'';
         "XF86AudioMute" =
-          "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && makoctl dismiss -a && notify-desktop $(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'MUTED' && printf 'Sound OFF' || printf 'Sound ON')";
+          "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
 
         "XF86MonBrightnessUp" =
-          ''exec brightnessctl --exponent=2 s +10% && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf "Brightness: %.0f%%", ($1/max)*100;}')"'';
+          ''exec brightnessctl --exponent=2 s +10%'';
         "XF86MonBrightnessDown" =
-          ''exec brightnessctl --exponent=2 s 10%- && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf "Brightness: %.0f%%", ($1/max)*100;}')"'';
+          ''exec brightnessctl --exponent=2 s 10%-'';
 
         "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
       };

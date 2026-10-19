@@ -184,6 +184,13 @@ Scope {
         active: root.isOpen
     }
 
+    // NOT gated on isOpen. A centre that only listened while you were
+    // looking at it would be a list of things you had already seen.
+    NotificationServer {
+        id: notifications
+        dnd: toggles.dndOn
+    }
+
     // The panel's own clock. One tick a second, and only while it is open -
     // the bar's clock learned this the expensive way.
     property var now: new Date()
@@ -210,6 +217,8 @@ Scope {
         function toggle(): void {
             if (root.isOpen) root.dismiss(); else root.summon();
         }
+        // Bound to mod+shift+z, which used to be makoctl dismiss.
+        function clearNotifications(): void { notifications.clearAll() }
     }
 
     Variants {
@@ -429,7 +438,21 @@ Scope {
                         }
                         Item { id: notifyZone
                             x: 678 * zones.s; y: 169 * zones.s
-                            width: 262 * zones.s; height: (700 - 169) * zones.s }
+                            width: 262 * zones.s; height: (700 - 169) * zones.s
+
+                            NotificationPane {
+                                x: 22 * zones.s
+                                y: 18 * zones.s
+                                width: parent.width - 44 * zones.s
+                                height: parent.height - 36 * zones.s
+                                uiScale: panel.uiScale
+                                items: notifications.notifications
+
+                                onClearAllAsked: notifications.clearAll()
+                                onDismissed: i =>
+                                    notifications.dismiss(notifications.notifications[i])
+                            }
+                        }
 
                         PanelBeam { x: 322 * zones.s; y: 14 * zones.s
                             height: (zones.rowSplit - 28) * zones.s }

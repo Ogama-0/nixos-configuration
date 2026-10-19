@@ -178,6 +178,8 @@ in
           "${d}/components/panel/MetricsModel.qml" = themedQmlFile variant ./components/panel/MetricsModel.qml;
           "${d}/components/panel/DiskPane.qml" = themedQmlFile variant ./components/panel/DiskPane.qml;
           "${d}/components/panel/DiskModel.qml" = themedQmlFile variant ./components/panel/DiskModel.qml;
+          "${d}/components/panel/NotificationServer.qml" = themedQmlFile variant ./components/panel/NotificationServer.qml;
+          "${d}/components/panel/NotificationPane.qml" = themedQmlFile variant ./components/panel/NotificationPane.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
