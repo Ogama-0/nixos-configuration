@@ -27,18 +27,40 @@ PanelWindow {
     // left to animate - toasts would simply blink out of existence.
     readonly property int exitMs: 200
 
-    // [{ item, born, leaving }]
+    // [{ item, born, leaving, count, app }]
     property var live: []
 
+    // A second notification from an app that already has a toast up packs
+    // into it rather than opening another. Two toasts side by side saying
+    // "system" is the stack telling you about itself; one saying "system
+    // x2" is the stack telling you about the world. The timer restarts, so
+    // a conversation keeps one toast alive instead of marching a column
+    // down your screen.
     function show(record) {
+        const app = record.appName || "Unknown app";
+        const now = Date.now();
+
+        for (let i = 0; i < live.length; i++) {
+            if (live[i].leaving || live[i].app !== app) continue;
+            const next = live.slice();
+            next[i] = { item: record, born: now, leaving: false,
+                        count: live[i].count + 1, app: app };
+            live = next;
+            return;
+        }
+
         const next = live.filter(t => !t.leaving).slice(0, maxShown - 1);
-        next.unshift({ item: record, born: Date.now(), leaving: false });
+        next.unshift({ item: record, born: now, leaving: false,
+                       count: 1, app: app });
         live = next;
     }
 
     function retire(born) {
         const next = live.map(t =>
-            t.born === born ? { item: t.item, born: t.born, leaving: true } : t);
+            t.born === born
+                ? { item: t.item, born: t.born, leaving: true,
+                    count: t.count, app: t.app }
+                : t);
         live = next;
         reaper.restart();
     }
@@ -120,8 +142,31 @@ PanelWindow {
                         x: 13 * root.uiScale
                         y: 9 * root.uiScale
                         width: parent.width - 26 * root.uiScale
+                               - (badge.visible ? badge.width + 8 * root.uiScale : 0)
                         uiScale: root.uiScale
                         item: toast.modelData.item
+                    }
+
+                    // Same badge as the centre, for the same reason: only
+                    // when there is more than one.
+                    Rectangle {
+                        id: badge
+                        visible: toast.modelData.count > 1
+                        x: parent.width - width - 13 * root.uiScale
+                        y: 9 * root.uiScale
+                        width: badgeText.implicitWidth + 11 * root.uiScale
+                        height: badgeText.implicitHeight + 3 * root.uiScale
+                        radius: height / 2
+                        color: "@greenColor@"
+
+                        Text {
+                            id: badgeText
+                            anchors.centerIn: parent
+                            text: toast.modelData.count
+                            color: "@onAccentInk@"
+                            font.pixelSize: Math.round(10 * root.uiScale)
+                            font.weight: Font.DemiBold
+                        }
                     }
 
                     MouseArea {

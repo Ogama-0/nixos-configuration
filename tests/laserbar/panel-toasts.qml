@@ -2,7 +2,8 @@ import QtQuick
 import Quickshell
 import "components/panel"
 
-// Two toasts, top right, pushed in directly. Not driven through the
+// Four notifications from two apps, pushed in directly: they must become
+// TWO toasts, the Signal one carrying a count of 3. Not driven through the
 // notification server: that needs something to actually send one.
 //
 // They must use the same plate and the same row as the centre - a toast
@@ -16,6 +17,12 @@ Scope {
                           body: "On arrive dans 10 minutes" });
             toasts.show({ appName: "Syncthing", summary: "Folder up to date",
                           body: "notes - 42 files" });
+            // Same app twice more: these must PACK into the Signal toast
+            // with a count, not open two more toasts.
+            toasts.show({ appName: "Signal", summary: "Marie",
+                          body: "On est en bas" });
+            toasts.show({ appName: "Signal", summary: "Groupe projet",
+                          body: "Reunion decalee" });
         }
     }
 }

@@ -53,23 +53,29 @@ Item {
         };
     }
 
-    // Live first, then whatever was on disk, with twins collapsed - an app
-    // that re-sends the same thing after a restart should not appear twice.
+    // Live first, newest first, then whatever was on disk.
+    //
+    // Twins are collapsed only ACROSS that boundary - a restored entry that
+    // matches something live is the same notification seen twice, once from
+    // the bus and once from the file. Two live ones with identical text are
+    // two things that happened: "Wi-Fi on" twice is the radio going down and
+    // coming back, and folding them into one entry loses the second event
+    // and the count on its group.
     readonly property var notifications: {
         const model = server.trackedNotifications;
         const all = model ? model.values : [];
         const out = [];
-        const seen = {};
+        const liveText = {};
         for (let i = all.length - 1; i >= 0; i--) {
             if (!all[i]) continue;
             const r = recordFor(all[i]);
-            if (seen[r.key]) continue;
-            seen[r.key] = true;
+            liveText[r.key] = true;
             out.push(r);
         }
+        const seenRestored = {};
         for (const r of restored) {
-            if (seen[r.key]) continue;
-            seen[r.key] = true;
+            if (liveText[r.key] || seenRestored[r.key]) continue;
+            seenRestored[r.key] = true;
             out.push(r);
         }
         return out.slice(0, maxRetained);
