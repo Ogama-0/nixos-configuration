@@ -15,6 +15,20 @@ Item {
     readonly property int warnAt: 85
     readonly property real gap: 9
 
+    // A bar is a bar, not a slab. Dividing the column by the number of
+    // mounts means one mount gets the whole 106px width and reads as a
+    // filled panel rather than a meter, so the width is capped and the
+    // group centred in whatever is left.
+    readonly property real maxBarWidth: 26
+    readonly property real barWidth: Math.min(
+        maxBarWidth * uiScale,
+        disks.length > 0
+            ? (width - (disks.length - 1) * gap * uiScale) / disks.length
+            : width)
+    readonly property real groupWidth:
+        disks.length * barWidth + Math.max(0, disks.length - 1) * gap * uiScale
+    readonly property real groupX: (width - groupWidth) / 2
+
     Item {
         id: bars
         x: 0
@@ -29,12 +43,8 @@ Item {
                 required property var modelData
                 required property int index
 
-                readonly property real cell:
-                    (bars.width - (root.disks.length - 1) * root.gap * root.uiScale)
-                    / root.disks.length
-
-                x: index * (cell + root.gap * root.uiScale)
-                width: cell
+                x: root.groupX + index * (root.barWidth + root.gap * root.uiScale)
+                width: root.barWidth
                 height: bars.height
                 radius: 6 * root.uiScale
                 color: "@plateBg@"
@@ -54,16 +64,16 @@ Item {
 
     Row {
         id: labels
+        x: root.groupX
         y: bars.height + 7 * root.uiScale
-        width: parent.width
+        width: root.groupWidth
         spacing: root.gap * root.uiScale
 
         Repeater {
             model: root.disks
             Text {
                 required property var modelData
-                width: (labels.width - (root.disks.length - 1) * root.gap * root.uiScale)
-                       / root.disks.length
+                width: root.barWidth
                 text: modelData.label
                 color: "@mutedColor@"
                 font.pixelSize: Math.round(10 * root.uiScale)

@@ -294,7 +294,10 @@ session — the absolute number drifts with what else the machine is doing.
 ## Before you call it done
 
 ```sh
-git add -A            # nix ignores untracked files: an unadded .qml is invisible
+git add <the files you touched>   # nix ignores untracked files, so an
+                                 # unadded .qml is invisible to flake check.
+                                 # NOT -A: this tree usually holds unrelated
+                                 # work in progress.
 nix flake check
 ```
 
@@ -316,9 +319,83 @@ Then a real switch, which is the user's call to run:
 home-manager switch --flake .#personal && systemctl --user restart quickshell-widgets
 ```
 
+## Adding a panel zone
+
+The control panel (`components/ControlPanel.qml`) is the sheet summoned out of
+the clock. It is not a bar widget and the three steps above do not apply to it,
+but every rule in "Rules that are not negotiable" does, plus two of its own.
+
+**Split the zone in two.** Anything that reads the system is a non-visual
+`*Model.qml` plus a renderer that takes plain properties, the way
+`StatusModel.qml` backs `StatusPanel.qml`. That split is not tidiness: it is
+what makes the zone testable. The renderer can be driven from a literal in a
+fixture, so a render test asserts on values you chose instead of on what this
+machine's radios, diary or disks happen to be doing. Every zone fixture in
+`tests/laserbar/panel-*.qml` works this way.
+
+**Gate every repeating timer.** Bind `active` to the panel being open and hang
+the poller off it. The panel shells out to khal, df, curl, geoclue, nmcli,
+bluetoothctl and powerprofilesctl, and it is shut almost all of the time.
+This is checked, not remembered:
+
+```sh
+python3 scripts/laserbar-gating.py
+```
+
+It reads the generated tree, exempts one-shots (`repeat: false`) and exempts
+`NotificationServer` by name — a notification centre that only listened while
+you were looking at it would be a list of things you had already seen.
+
+Measured, panel open: `laserbar-cpu.sh tests/laserbar/panel-full.qml` is about
+a point above `current-bar.qml`. Shut, it is 0.0%. If either number moves, a
+timer escaped.
+
+### The things that cost a session
+
+- **The sheet and its tail are one `Shape`** (`PanelSheet.qml`). Two
+  translucent fills overlapping leave a visible seam, and a `Rectangle` cannot
+  omit its border along part of an edge — so a rectangular sheet always drew a
+  line across the funnel's mouth. The path is a literal in 1080p units with the
+  whole `Shape` scaled by `uiScale`, because a `ShapePath` whose data changes
+  draws nothing, silently (rule 4).
+- **One animated inset clip drives every docked transition**, and the clipper
+  moves while the sheet inside it is pinned by an equal and opposite offset.
+  The panel must not shift a pixel when it docks: mod is pressed dozens of
+  times an hour.
+- **Resting state must stand down while a transition runs.** Re-attach was
+  broken by `.detached` pinning the bar invisible while the rails animated back
+  in behind it. `tests/laserbar/panel-roundtrip.qml` is the regression test —
+  summon, detach, re-attach must be pixel-identical to a plain summon.
+- **A `Process` whose binary does not exist never emits `onExited`** — it fails
+  to *start*. Give-up logic hung off exit never runs. `MetricsModel` forked a
+  doomed `nvidia-smi` eight times in two seconds before this was understood;
+  it now counts attempts instead.
+- **Tooltips need their own `PopupWindow`.** The sheet clips its children to
+  its corners, so a tip drawn inside can never cross the top edge, which is
+  exactly where a top-row tile's tip goes.
+- **`@glassBg@` is the bar's capsule material, not the panel's ground.** At 40%
+  it works in dark and fails in light, where base05 ink ends up floating on
+  whatever the wallpaper is. The panel has `@panelBg@`, passed per variant.
+- **Nothing meaningful may be carried by `base0B` at small sizes.** Light's is
+  `#94E1B0`; a 3px dot or a 12px label in it is invisible on cream. Active
+  toggles take an accent *fill* with `@onAccentInk@` on top, and the calendar's
+  event dots are ink.
+
+Render the light variant too — it has failure modes dark cannot show:
+
+```sh
+LASERBAR_VARIANT=light scripts/laserbar-preview.sh tests/laserbar/panel-full.qml /tmp/light.png 0.62
+```
+
+`docs/previews/laser-bar-panel.html` is the approved design; open it beside a
+render. `docs/superpowers/specs/2026-10-19-laser-bar-panel-design.md` says why
+each part is the way it is.
+
 ## Related
 
 - `docs/superpowers/specs/2026-10-16-laser-bar-modules-design.md` — the design
   this was built from, including the behaviour that must not change.
+- `docs/superpowers/specs/2026-10-19-laser-bar-panel-design.md` — the control
+  panel's design, including the anti-goals it must not drift into.
 - `BeamSide.qml` — read its comments before touching the beam. They record two
   separate performance regressions and why the current shape is what it is.

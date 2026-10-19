@@ -17,6 +17,11 @@ BATTERY="${3:-0.5}"
 # Output size, so the bar can be checked at a resolution it would have to
 # scale itself up for.
 RESOLUTION="${4:-1920x1080}"
+# Which themed tree to render. Both variants are generated from the same QML
+# with different @token@ substitutions, so a render only ever exercises one of
+# them - and the light one has its own legibility problems (base0B is pale on
+# cream) that a dark render cannot show.
+VARIANT="${LASERBAR_VARIANT:-dark}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 [ -f "$ENTRY" ] || { echo "no such fixture: $ENTRY" >&2; exit 2; }
@@ -38,17 +43,17 @@ nix eval --json \
     "$REPO#homeConfigurations.personal.config.xdg.configFile" \
     --apply 'cf:
       let names = builtins.filter
-            (n: builtins.match "quickshell/widgets-dark/.*" n != null)
+            (n: builtins.match "quickshell/widgets-'"$VARIANT"'/.*" n != null)
             (builtins.attrNames cf);
       in builtins.listToAttrs
            (map (n: { name = n; value = cf.${n}.text; }) names)' \
     > "$RT/tree.json"
 
-python3 - "$RT/tree.json" "$TREE" <<'PY'
+python3 - "$RT/tree.json" "$TREE" "$VARIANT" <<'PY'
 import json, os, sys
 data = json.load(open(sys.argv[1]))
 root = sys.argv[2]
-prefix = "quickshell/widgets-dark/"
+prefix = "quickshell/widgets-%s/" % sys.argv[3]
 for name, text in data.items():
     rel = name[len(prefix):]
     path = os.path.join(root, rel)

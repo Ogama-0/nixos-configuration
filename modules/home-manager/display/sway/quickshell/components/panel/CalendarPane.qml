@@ -163,6 +163,10 @@ Item {
 
                 // A day carrying something gets a dot, so a busy week is
                 // visible without clicking through it.
+                //
+                // Ink, not the accent. base0B in light is #94E1B0 and a 3px
+                // dot of it on cream is invisible - the same rule that keeps
+                // the toggles from carrying state in icon colour alone.
                 Rectangle {
                     visible: modelData.hasEvents
                     width: 3 * root.uiScale
@@ -170,7 +174,7 @@ Item {
                     radius: width / 2
                     x: (parent.width - width) / 2
                     y: parent.height - 4 * root.uiScale
-                    color: modelData.isSelected ? "@onAccentInk@" : "@greenColor@"
+                    color: modelData.isSelected ? "@onAccentInk@" : "@clockColor@"
                 }
 
                 MouseArea {

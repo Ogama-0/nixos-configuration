@@ -76,6 +76,12 @@ let
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
     onAccentInk = onAccentInkFor variant;
     whereAmIBin = "${pkgs.geoclue2}/libexec/geoclue-2.0/demos/where-am-i";
+    # Light needs more opacity than dark: its ink is base05 on a pale ground,
+    # so anything bleeding through costs contrast directly. Dark can afford to
+    # let the beam show, which is half the point of the thing.
+    panelBg = if variant == "light"
+              then "#F2${allColors.light.base00}"
+              else "#CC${allColors.dark.base00}";
   } // statusColorsFor variant // capsuleColorsFor variant);
 
   themedQmlFile = variant: path: {
