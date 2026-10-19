@@ -191,6 +191,11 @@ Scope {
         dnd: toggles.dndOn
     }
 
+    AudioModel {
+        id: audio
+        active: root.isOpen
+    }
+
     // The panel's own clock. One tick a second, and only while it is open -
     // the bar's clock learned this the expensive way.
     property var now: new Date()
@@ -379,7 +384,16 @@ Scope {
                         }
                         Item { id: mobileZone
                             x: 678 * zones.s; y: 0
-                            width: 262 * zones.s; height: zones.rowSplit * zones.s }
+                            width: 262 * zones.s; height: zones.rowSplit * zones.s
+
+                            MobileStub {
+                                x: 22 * zones.s
+                                y: 40 * zones.s
+                                width: parent.width - 44 * zones.s
+                                height: parent.height - 80 * zones.s
+                                uiScale: panel.uiScale
+                            }
+                        }
 
                         Item { id: calendarZone
                             x: 0; y: 169 * zones.s
@@ -451,6 +465,26 @@ Scope {
                                 onClearAllAsked: notifications.clearAll()
                                 onDismissed: i =>
                                     notifications.dismiss(notifications.notifications[i])
+
+                                // Audio is the pane's footer slot, so the
+                                // beam between them belongs to the pane and
+                                // moves with the list.
+                                AudioPane {
+                                    width: parent.width
+                                    uiScale: panel.uiScale
+                                    sinks: audio.sinks
+                                    deviceName: audio.defaultName
+                                    volumePct: audio.volumePct
+                                    muted: audio.muted
+
+                                    onVolumeAsked: pct => audio.setVolume(pct)
+                                    onMuteAsked: audio.toggleMute()
+                                    onCycleAsked: {
+                                        const s = audio.sinks;
+                                        let i = s.findIndex(x => x.isDefault);
+                                        audio.setSink(s[(i + 1) % s.length].id);
+                                    }
+                                }
                             }
                         }
 
