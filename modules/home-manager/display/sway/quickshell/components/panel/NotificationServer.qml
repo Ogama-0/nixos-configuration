@@ -6,10 +6,10 @@ import Quickshell.Services.Notifications
 // Quickshell owns org.freedesktop.Notifications. mako is gone: two daemons
 // cannot share that bus name.
 //
-// This collects and NOTHING pops. Toasts are deliberately out of scope for
-// now, and the consequence is known and accepted - until they exist, a
-// notification is only visible by opening the panel. A half-built popup
-// surface would be worse than none.
+// It collects, and it raises `posted` for anything that has just arrived so
+// NotificationToasts can show it. Do-not-disturb stops the toast and not the
+// collecting: the point of suppressing a notification is that it does not
+// interrupt you, not that you never find out.
 //
 // The one thing in the panel that is NOT gated on being open: a notification
 // centre that only listened while you were looking at it would be a list of
@@ -27,6 +27,12 @@ Item {
     id: root
 
     property bool dnd: false
+
+    // Raised for a notification that has just arrived, so the toasts can
+    // show it. Deliberately not "the newest entry in the list changed":
+    // entries restored from disk at startup are new to the list and are
+    // not new to you.
+    signal posted(var record)
 
     readonly property int maxRetained: 50
 
@@ -70,6 +76,30 @@ Item {
     }
 
     readonly property int count: notifications.length
+
+    // Grouped by the app that sent them, newest group first, and each
+    // group's items newest first. Five notifications from one chat app is
+    // one thing that happened, not five - and a flood from one sender
+    // should not push everything else off the list.
+    readonly property var groups: {
+        const order = [];
+        const byApp = {};
+        for (const n of notifications) {
+            const app = n.appName || "Unknown app";
+            if (!byApp[app]) { byApp[app] = []; order.push(app); }
+            byApp[app].push(n);
+        }
+        return order.map(app => ({
+            app: app,
+            items: byApp[app],
+            count: byApp[app].length
+        }));
+    }
+
+    function dismissGroup(app) {
+        const doomed = notifications.filter(r => (r.appName || "Unknown app") === app);
+        for (const r of doomed) dismiss(r);
+    }
 
     // Which entries to retire when the ceiling is passed, oldest first.
     //
@@ -121,6 +151,8 @@ Item {
             // Without this the notification is closed the moment this
             // handler returns and the centre never sees it.
             notification.tracked = true;
+
+            if (!root.dnd) root.posted(root.recordFor(notification));
 
             // Enforce the ceiling by retiring the oldest, not by refusing
             // the newest: the new one is the one you care about.

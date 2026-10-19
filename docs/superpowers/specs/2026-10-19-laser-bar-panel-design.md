@@ -32,7 +32,13 @@ and grouping, and it means mako is removed.
 
 - The Mobile zone is a labelled placeholder this round. The KDE Connect module
   is later work and nothing in this design should assume it exists.
-- **Notification toasts are not in this round.** Quickshell owns the bus and
+- ~~**Notification toasts are not in this round.**~~ **Built after all**, once
+  the centre's row was a shared component: a toast is that row on its own
+  layer surface, top right, swept by one timer. Do-not-disturb suppresses the
+  toast and not the collecting, because the point of suppressing a
+  notification is that it does not interrupt you, not that you never find
+  out. Original reasoning below, kept because the decision to defer was
+  right at the time. Quickshell owns the bus and
   collects notifications into the center; it pops nothing. The user has taken
   this decision knowing the consequence: mako and Quickshell cannot both own
   `org.freedesktop.Notifications`, so from the switch until toasts are built

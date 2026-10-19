@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import "components/panel"
 
-// Three notifications across three apps, stubbed. Not driven through
+// Three apps, one of them with three notifications stacked, stubbed. Not driven through
 // NotificationServer: that one owns a bus, and a render fixture must not
 // depend on what this desktop happens to be shouting about.
 //
@@ -25,10 +25,15 @@ Scope {
             width: 262
             height: 400
             uiScale: 1
-            items: [
-                { appName: "Signal",    summary: "Marie",            body: "On arrive dans 10 minutes" },
-                { appName: "Syncthing", summary: "Folder up to date", body: "notes - 42 files" },
-                { appName: "System",    summary: "Battery at 20%",    body: "About 48 minutes left" }
+            groups: [
+                { app: "Signal", count: 3, items: [
+                    { appName: "Signal", summary: "Marie", body: "On arrive dans 10 minutes" },
+                    { appName: "Signal", summary: "Marie", body: "On est en bas" },
+                    { appName: "Signal", summary: "Groupe projet", body: "Reunion decalee" } ] },
+                { app: "Syncthing", count: 1, items: [
+                    { appName: "Syncthing", summary: "Folder up to date", body: "notes - 42 files" } ] },
+                { app: "System", count: 1, items: [
+                    { appName: "System", summary: "Battery at 20%", body: "About 48 minutes left" } ] }
             ]
         }
     }

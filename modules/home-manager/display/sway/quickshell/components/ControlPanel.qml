@@ -274,6 +274,12 @@ Scope {
     NotificationServer {
         id: notifications
         dnd: toggles.dndOn
+        onPosted: record => toasts.show(record)
+    }
+
+    NotificationToasts {
+        id: toasts
+        uiScale: 1
     }
 
     AudioModel {
@@ -620,11 +626,11 @@ Scope {
                                 width: parent.width - 44 * zones.s
                                 height: parent.height - 36 * zones.s
                                 uiScale: panel.uiScale
-                                items: notifications.notifications
+                                groups: notifications.groups
 
                                 onClearAllAsked: notifications.clearAll()
-                                onDismissed: i =>
-                                    notifications.dismiss(notifications.notifications[i])
+                                onGroupCleared: app => notifications.dismissGroup(app)
+                                onDismissed: item => notifications.dismiss(item)
 
                                 // Audio is the pane's footer slot, so the
                                 // beam between them belongs to the pane and

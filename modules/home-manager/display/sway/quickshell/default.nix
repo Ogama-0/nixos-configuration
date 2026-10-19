@@ -192,6 +192,8 @@ in
           "${d}/components/panel/DiskPane.qml" = themedQmlFile variant ./components/panel/DiskPane.qml;
           "${d}/components/panel/DiskModel.qml" = themedQmlFile variant ./components/panel/DiskModel.qml;
           "${d}/components/panel/NotificationServer.qml" = themedQmlFile variant ./components/panel/NotificationServer.qml;
+          "${d}/components/panel/NotificationRow.qml" = themedQmlFile variant ./components/panel/NotificationRow.qml;
+          "${d}/components/panel/NotificationToasts.qml" = themedQmlFile variant ./components/panel/NotificationToasts.qml;
           "${d}/components/panel/NotificationPane.qml" = themedQmlFile variant ./components/panel/NotificationPane.qml;
           "${d}/components/panel/AudioModel.qml" = themedQmlFile variant ./components/panel/AudioModel.qml;
           "${d}/components/panel/AudioPane.qml" = themedQmlFile variant ./components/panel/AudioPane.qml;

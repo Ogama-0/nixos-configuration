@@ -24,7 +24,14 @@ import re
 import subprocess
 import sys
 
-EXEMPT_FILES = {"NotificationServer.qml"}
+EXEMPT_FILES = {
+    # A notification centre that only listened while you were looking at it
+    # would be a list of things you had already seen.
+    "NotificationServer.qml",
+    # Toasts exist precisely to appear when the panel is shut. The sweep is
+    # gated on there being a toast up, which is the real bound.
+    "NotificationToasts.qml",
+}
 
 APPLY = (
     'cf: let ns = builtins.filter (n: builtins.match '
