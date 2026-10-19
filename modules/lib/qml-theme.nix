@@ -41,6 +41,11 @@
 , swaymsgBin ? "swaymsg"
 , capsuleFill ? "#F2${colors.base05}"
 , capsuleInk ? "#FF${colors.base00}"
+  # Ink on an accent fill. Not derivable from `colors` alone: it is base00 in
+  # dark but base07 in light, because light's base00 IS the cream ground and
+  # an icon painted in it would disappear into the fill. Same reason
+  # capsuleFill/capsuleInk are passed per variant rather than computed here.
+, onAccentInk ? "#FF${colors.base00}"
 }:
 builtins.replaceStrings
   [
@@ -73,6 +78,12 @@ builtins.replaceStrings
     "@swaymsgBin@"
     "@capsuleFill@"
     "@capsuleInk@"
+    # Panel tokens. @onAccentInk@ is the one derived value in the whole
+    # scheme: text and icons sitting ON an accent fill, which is base00 in
+    # dark but base07 in light - base00 there is the cream ground and would
+    # vanish. @plateBg@ is the faint resting plate a toggle tile sits on.
+    "@onAccentInk@"
+    "@plateBg@"
   ]
   [
     "#B3${colors.base00}"
@@ -111,4 +122,6 @@ builtins.replaceStrings
     swaymsgBin
     capsuleFill
     capsuleInk
+    onAccentInk
+    "#12${colors.base05}"
   ]

@@ -2,6 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
+// The zones live one directory down; QML needs that said explicitly.
+import "panel"
 
 // The panel summoned out of the laser bar's clock: one glass sheet carrying
 // the things that do not fit on a strip you can only read while a key is
@@ -151,6 +153,25 @@ Scope {
         if (panelState === "detached") panelState = "attached";
     }
 
+    // Non-visual, so it lives at the Scope: one set of backends for the
+    // panel, not one per output.
+    ToggleModel {
+        id: toggles
+        active: root.isOpen
+        onLockRequested: root.lockRequested()
+    }
+
+    // shell.qml owns the lock; the panel only asks.
+    signal lockRequested
+
+    // Hovering a tile names it. The tip is a separate layer surface, placed
+    // in screen coordinates, because the sheet clips its own children.
+    ToggleTip {
+        id: tip
+        label: ""
+        uiScale: 1
+    }
+
     IpcHandler {
         target: "panel"
         function open(): void { root.summon() }
@@ -275,7 +296,32 @@ Scope {
 
                         Item { id: toggleZone
                             x: 0; y: 0
-                            width: 322 * zones.s; height: zones.rowSplit * zones.s }
+                            width: 322 * zones.s; height: zones.rowSplit * zones.s
+
+                            ToggleGrid {
+                                x: 22 * zones.s
+                                y: 18 * zones.s
+                                width: parent.width - 44 * zones.s
+                                height: parent.height - 36 * zones.s
+                                uiScale: panel.uiScale
+                                items: toggles.items
+
+                                onActivated: key => toggles.act(key)
+                                // Tile coordinates are grid-local; the tip
+                                // needs them on the screen, so they are
+                                // walked out through the zone, the sheet and
+                                // the window's own margins.
+                                onTileHovered: (key, cx, ty, entered) => {
+                                    if (!entered) { tip.label = ""; return; }
+                                    const gx = panel.x + toggleZone.x + 22 * zones.s;
+                                    const gy = panel.y + toggleZone.y + 18 * zones.s;
+                                    tip.uiScale = panel.uiScale;
+                                    tip.anchorX = gx + cx;
+                                    tip.anchorY = gy + ty;
+                                    tip.label = toggles.items.find(i => i.key === key).name;
+                                }
+                            }
+                        }
                         Item { id: metricZone
                             x: 323 * zones.s; y: 0
                             width: 354 * zones.s; height: zones.rowSplit * zones.s }

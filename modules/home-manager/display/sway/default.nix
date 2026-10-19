@@ -17,6 +17,7 @@ in
     ./effects.nix
     ./mako.nix
     ./quickshell
+    ../../gammastep.nix
     ./idle.nix
     ../vicinae.nix
     ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix

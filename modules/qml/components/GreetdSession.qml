@@ -53,7 +53,7 @@ Item {
     function startSession() {
         if (session.starting) return
         session.starting = true
-        session.send({ type: "start_session", cmd: [ "@swayBin@" ] })
+        session.send({ type: "start_session", cmd: [ "@sessionBin@" ] })
     }
 
     Process {

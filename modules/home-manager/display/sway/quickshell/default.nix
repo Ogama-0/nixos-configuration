@@ -34,6 +34,12 @@ let
     then { capsuleFill = "#F2${c.base00}"; capsuleInk = "#FF${c.base05}"; }
     else { capsuleFill = "#F2${c.base05}"; capsuleInk = "#FF${c.base00}"; };
 
+  # Ink on an accent (base0B) fill: base00 in dark, base07 in light. Light's
+  # base00 is the cream ground, so an icon in it would vanish into the green.
+  onAccentInkFor = variant:
+    let c = allColors.${variant}; in
+    if variant == "light" then "#FF${c.base07}" else "#FF${c.base00}";
+
   # Built from the profile so the tailnet hostnames are never hardcoded in QML.
   #
   # The doubled `.server.server` is not a typo. host/profiles.nix builds every
@@ -68,6 +74,7 @@ let
     wallpaperDirs = "${variant} both";
     inherit systemctlBin swaymsgBin corptaFontPath statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
+    onAccentInk = onAccentInkFor variant;
   } // statusColorsFor variant // capsuleColorsFor variant);
 
   themedQmlFile = variant: path: {
@@ -156,6 +163,11 @@ in
           "${d}/components/Sparkline.qml" = themedQmlFile variant ./components/Sparkline.qml;
           "${d}/components/StatusPanel.qml" = themedQmlFile variant ./components/StatusPanel.qml;
           "${d}/components/PanelBeam.qml" = themedQmlFile variant ./components/PanelBeam.qml;
+          "${d}/components/panel/PanelIcon.qml" = themedQmlFile variant ./components/panel/PanelIcon.qml;
+          "${d}/components/panel/ToggleTile.qml" = themedQmlFile variant ./components/panel/ToggleTile.qml;
+          "${d}/components/panel/ToggleGrid.qml" = themedQmlFile variant ./components/panel/ToggleGrid.qml;
+          "${d}/components/panel/ToggleModel.qml" = themedQmlFile variant ./components/panel/ToggleModel.qml;
+          "${d}/components/panel/ToggleTip.qml" = themedQmlFile variant ./components/panel/ToggleTip.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };

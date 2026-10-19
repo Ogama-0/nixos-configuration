@@ -10,5 +10,9 @@ Scope {
     LaserBar { onPanelRequested: controlPanel.summon() }
     StatusPanel {}
     // An open panel must not survive into the lock screen.
-    ControlPanel { id: controlPanel; lockActive: lock.locked }
+    ControlPanel {
+        id: controlPanel
+        lockActive: lock.locked
+        onLockRequested: lock.lock()
+    }
 }
