@@ -83,11 +83,28 @@ Item {
         font.pixelSize: Math.round(12.5 * root.uiScale)
     }
 
-    Column {
-        id: list
+    // The list is BOUNDED and clipped. An expanded group of six on top of
+    // four other apps is taller than the zone, and without this it drew
+    // straight over the audio controls below and out of the sheet. The
+    // counts already say what is not shown; what must never happen is
+    // content landing somewhere it was not allocated.
+    Item {
+        id: listClip
         y: head.height + 10 * root.uiScale
         width: parent.width
+        height: Math.max(0, footerSlot.y - 14 * root.uiScale - y)
+        clip: true
+
+    Column {
+        id: list
+        width: parent.width
         spacing: 8 * root.uiScale
+
+        // Clearing one group slides the rest up into the gap.
+        move: Transition {
+            NumberAnimation { properties: "y"; duration: 180
+                              easing.type: Easing.OutCubic }
+        }
 
         Repeater {
             model: root.groups.slice(0, root.maxGroups)
@@ -105,6 +122,16 @@ Item {
                 radius: 12 * root.uiScale
                 color: "@plateBg@"
                 clip: true
+
+                // Opening a group grows the plate rather than snapping it.
+                // The delegate survives the toggle - `expanded` is keyed on
+                // the app name and does not rebuild `groups` - so a plain
+                // Behavior is enough, and clip:true above means the entries
+                // are revealed by the growing edge rather than spilling out
+                // of a box that has not caught up yet.
+                Behavior on height {
+                    NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                }
 
                 // So the accent edge follows the rounded corners instead of
                 // leaving a wedge of ground at each end of it.
@@ -200,6 +227,20 @@ Item {
                                 uiScale: root.uiScale
                                 showApp: false
                                 item: modelData
+
+                                // Each one a beat behind the last, so an
+                                // opening group reads as unfolding rather
+                                // than as a block arriving.
+                                opacity: 0
+                                Component.onCompleted: reveal.start()
+                                SequentialAnimation {
+                                    id: reveal
+                                    PauseAnimation { duration: 40 + index * 45 }
+                                    NumberAnimation {
+                                        target: row; property: "opacity"
+                                        to: 1; duration: 150
+                                    }
+                                }
                             }
 
                             // In an open group each entry is its own target,
@@ -241,6 +282,7 @@ Item {
             color: "@mutedColor@"
             font.pixelSize: Math.round(11.5 * root.uiScale)
         }
+    }
     }
 
     // Audio lives below a beam at the bottom of this column.
