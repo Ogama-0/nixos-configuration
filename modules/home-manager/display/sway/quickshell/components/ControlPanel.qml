@@ -248,6 +248,63 @@ Scope {
                         color: "@greenColor@"
                         opacity: wipe.alpha
                     }
+
+                    // ---- the layout ----
+                    //
+                    // Explicit arithmetic in 1080p units, not a RowLayout:
+                    // positioners are forbidden for anything that animates
+                    // (docs/adding-a-bar-widget.md rule 5), and the whole
+                    // sheet animates on every summon.
+                    //
+                    //   0        322   677      940
+                    //   +---------+-----+--------+   168   toggles | metrics | mobile
+                    //   +-----------+---+--------+         calendar | disks | notifications
+                    //   0          570 677      940
+                    //
+                    // The right column's two zones share an edge at 678 so
+                    // mobile sits exactly above notifications.
+                    Item {
+                        id: zones
+                        x: 0; y: 0
+                        width: 940 * panel.uiScale
+                        height: 700 * panel.uiScale
+                        opacity: root.contentReveal
+
+                        readonly property real s: panel.uiScale
+                        readonly property real rowSplit: 168
+
+                        Item { id: toggleZone
+                            x: 0; y: 0
+                            width: 322 * zones.s; height: zones.rowSplit * zones.s }
+                        Item { id: metricZone
+                            x: 323 * zones.s; y: 0
+                            width: 354 * zones.s; height: zones.rowSplit * zones.s }
+                        Item { id: mobileZone
+                            x: 678 * zones.s; y: 0
+                            width: 262 * zones.s; height: zones.rowSplit * zones.s }
+
+                        Item { id: calendarZone
+                            x: 0; y: 169 * zones.s
+                            width: 570 * zones.s; height: (700 - 169) * zones.s }
+                        Item { id: diskZone
+                            x: 571 * zones.s; y: 169 * zones.s
+                            width: 106 * zones.s; height: (700 - 169) * zones.s }
+                        Item { id: notifyZone
+                            x: 678 * zones.s; y: 169 * zones.s
+                            width: 262 * zones.s; height: (700 - 169) * zones.s }
+
+                        PanelBeam { x: 322 * zones.s; y: 14 * zones.s
+                            height: (zones.rowSplit - 28) * zones.s }
+                        PanelBeam { x: 677 * zones.s; y: 14 * zones.s
+                            height: (zones.rowSplit - 28) * zones.s }
+                        PanelBeam { horizontal: true
+                            x: 30 * zones.s; y: zones.rowSplit * zones.s
+                            width: (940 - 60) * zones.s }
+                        PanelBeam { x: 570 * zones.s; y: 190 * zones.s
+                            height: (700 - 190 - 24) * zones.s }
+                        PanelBeam { x: 677 * zones.s; y: 190 * zones.s
+                            height: (700 - 190 - 24) * zones.s }
+                    }
                 }
             }
         }

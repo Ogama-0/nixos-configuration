@@ -155,6 +155,7 @@ in
           "${d}/components/StatusModel.qml" = themedQmlFile variant ./components/StatusModel.qml;
           "${d}/components/Sparkline.qml" = themedQmlFile variant ./components/Sparkline.qml;
           "${d}/components/StatusPanel.qml" = themedQmlFile variant ./components/StatusPanel.qml;
+          "${d}/components/PanelBeam.qml" = themedQmlFile variant ./components/PanelBeam.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
