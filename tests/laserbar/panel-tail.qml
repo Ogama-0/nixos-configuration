@@ -5,9 +5,9 @@ import "components"
 
 // The panel with its tail fully extended.
 //
-// Probe geometry at uiScale 1 on 1920x1080. The sheet is 940 wide and the
-// window 734 tall, bottom margin 38, so the window spans x 490..1430 and
-// y 308..1042:
+// Probe geometry at uiScale 1 on 1920x1080. The sheet is 940x820 and the
+// funnel drops 34 below it, so the sheet bottom edge is at y 1008 whatever
+// the sheet height is - it grows upward from there:
 //
 //   neck interior   screen x 940..990,  y 1018..1030   must be glass
 //   across the mouth screen x 850..1070, y 1006..1009   must NOT carry a line

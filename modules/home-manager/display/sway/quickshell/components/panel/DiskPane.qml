@@ -32,9 +32,13 @@ Item {
     Item {
         id: bars
         x: 0
-        y: 0
+        // Capped and sat at the bottom of the column. The zone is over 600
+        // tall now and a bar that filled it would be a 450px slab reporting
+        // one number; past a point more pixels stop meaning more precision.
+        y: parent.height - 30 * root.uiScale - height
         width: parent.width
-        height: parent.height - 30 * root.uiScale
+        height: Math.min(340 * root.uiScale,
+                         parent.height - 30 * root.uiScale)
 
         Repeater {
             model: root.disks
@@ -65,7 +69,7 @@ Item {
     Row {
         id: labels
         x: root.groupX
-        y: bars.height + 7 * root.uiScale
+        y: bars.y + bars.height + 7 * root.uiScale
         width: root.groupWidth
         spacing: root.gap * root.uiScale
 

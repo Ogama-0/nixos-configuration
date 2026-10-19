@@ -38,7 +38,12 @@ Item {
     readonly property color edgeColor: "@glassBorder@"
 
     readonly property real sheetWidth: 940
-    readonly property real sheetHeight: 700
+    // 820, not 700. The calendar is the biggest thing on the sheet and at
+    // 700 its rows came out 28 1080p-pixels tall - a cramped band of digits
+    // with the dots almost touching the row below. Everything else on the
+    // sheet was already comfortable, so the height went to the zone that
+    // needed it rather than the other zones being squeezed further.
+    readonly property real sheetHeight: 820
     readonly property real tailDrop: 34
 
     implicitWidth: sheetWidth * uiScale
@@ -63,10 +68,10 @@ Item {
             // Mouth 320..620, neck 406..534 - the clock capsule is 128 wide
             // (ClockWidget implicitWidth), so the neck lands on it exactly.
             PathSvg {
-                path: "M26 0 H914 A26 26 0 0 1 940 26 V674 A26 26 0 0 1 914 700 \
-H620 C584 700 560 712 546 726 C542 730 540 734 534 734 \
-H406 C400 734 398 730 394 726 C380 712 356 700 320 700 \
-H26 A26 26 0 0 1 0 674 V26 A26 26 0 0 1 26 0 Z"
+                path: "M26 0 H914 A26 26 0 0 1 940 26 V794 A26 26 0 0 1 914 820 \
+H620 C584 820 560 832 546 846 C542 850 540 854 534 854 \
+H406 C400 854 398 850 394 846 C380 832 356 820 320 820 \
+H26 A26 26 0 0 1 0 794 V26 A26 26 0 0 1 26 0 Z"
             }
         }
 
@@ -80,7 +85,7 @@ H26 A26 26 0 0 1 0 674 V26 A26 26 0 0 1 26 0 Z"
             strokeColor: Qt.rgba(root.edgeColor.r, root.edgeColor.g,
                                  root.edgeColor.b,
                                  root.edgeColor.a * root.mouthClosed)
-            PathSvg { path: "M320 700 H620" }
+            PathSvg { path: "M320 820 H620" }
         }
     }
 }
