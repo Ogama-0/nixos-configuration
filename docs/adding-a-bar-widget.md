@@ -350,6 +350,24 @@ Measured, panel open: `laserbar-cpu.sh tests/laserbar/panel-full.qml` is about
 a point above `current-bar.qml`. Shut, it is 0.0%. If either number moves, a
 timer escaped.
 
+**Load the real shell before you call anything done:**
+
+```sh
+scripts/laserbar-preview.sh real /tmp/real.png 0.62
+```
+
+`real` keeps the GENERATED shell.qml instead of swapping a fixture in. Every
+fixture here instantiates one or two components; only the real shell
+instantiates all of them together, and a QML load error there is invisible to
+all of them. Two `onIsOpenChanged` handlers on one object is a load-time
+error, not a warning - it took the whole shell down and every fixture still
+rendered.
+
+And read the render output. `laserbar-probe.sh` hard-fails on a missing png
+but not on a stale one, so a render that failed while you were grepping its
+output for something else leaves the previous run's image sitting there,
+passing every probe you point at it.
+
 ### The things that cost a session
 
 - **The sheet and its tail are one `Shape`** (`PanelSheet.qml`). Two

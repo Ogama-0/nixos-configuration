@@ -35,7 +35,6 @@ VARIANT="${LASERBAR_VARIANT:-dark}"
 EXEC_AFTER="${LASERBAR_EXEC:-}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[ -f "$ENTRY" ] || { echo "no such fixture: $ENTRY" >&2; exit 2; }
 
 RT="$(mktemp -d)"
 TREE="$RT/tree"
@@ -75,7 +74,18 @@ print(f"{len(data)} files", file=sys.stderr)
 PY
 
 # The fixture replaces shell.qml; components/ comes from the evaluated tree.
-cp "$ENTRY" "$TREE/shell.qml"
+#
+# ENTRY=real keeps the GENERATED shell.qml instead, which is the only way to
+# find out whether the thing that actually runs loads. A fixture instantiates
+# one or two components; the real shell instantiates all of them together,
+# and a QML load error there - two handlers for one signal, say - is
+# invisible to every fixture in this directory.
+if [ "$ENTRY" = "real" ]; then
+    [ -f "$TREE/shell.qml" ] || { echo "no generated shell.qml in the tree" >&2; exit 2; }
+else
+    [ -f "$ENTRY" ] || { echo "no such fixture: $ENTRY" >&2; exit 2; }
+    cp "$ENTRY" "$TREE/shell.qml"
+fi
 
 # --- nested headless compositor ---------------------------------------------
 export XDG_RUNTIME_DIR="$RT"

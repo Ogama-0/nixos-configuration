@@ -47,9 +47,19 @@ Scope {
         repeat: false
         onTriggered: root.warmedUp = true
     }
+    // One handler, because QML allows exactly one per signal per object and
+    // a second is a load-time error, not a warning.
     onIsOpenChanged: {
         if (isOpen) warmUp.restart();
         else { warmUp.stop(); warmedUp = false; }
+
+        // sway only intercepts Escape while this mode is active, so the
+        // mode's lifetime is the panel's. Leaving it on every close -
+        // however the close happened - is what keeps a killed shell from
+        // stranding the session in a mode nobody asked for.
+        swayMode.command = ["@swaymsgBin@", "mode",
+                            isOpen ? "panel" : "default"];
+        swayMode.running = true;
     }
 
     readonly property bool readersActive: isOpen && warmedUp
@@ -174,16 +184,6 @@ Scope {
         panelState = "gone";
         outTimer.interval = clipMs;
         outTimer.restart();
-    }
-
-    // sway only intercepts Escape while this mode is active, so the mode's
-    // lifetime is the panel's. Leaving it on every close - however the
-    // close happened - is what keeps a crashed or killed shell from
-    // stranding the session in a mode nobody asked for.
-    onIsOpenChanged: {
-        swayMode.command = ["@swaymsgBin@", "mode",
-                            root.isOpen ? "panel" : "default"];
-        swayMode.running = true;
     }
 
     Process { id: swayMode }
