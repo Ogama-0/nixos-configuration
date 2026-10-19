@@ -35,10 +35,14 @@ Item {
         case "bell":
             return { s: ["M -6 -2 A 6 6 0 0 1 6 -2 L 6 2 L 8 5 L -8 5 L -6 2 Z",
                          "M -2 8 A 2 2 0 0 0 2 8", ""], f: "" };
+        // The SAME bell as above, with a line through it. The first
+        // version drew a fragment of an arc instead of the bell, so the
+        // active tile showed a squiggle and a slash rather than anything
+        // switched off. A negated icon has to be the icon first.
         case "bell-off":
-            return { s: ["M -6 -4 A 6 6 0 0 1 3.3 -9",
+            return { s: ["M -6 -2 A 6 6 0 0 1 6 -2 L 6 2 L 8 5 L -8 5 L -6 2 Z",
                          "M -2 8 A 2 2 0 0 0 2 8",
-                         "M -9 -9 L 9 9"], f: "" };
+                         "M -8.5 -8.5 L 8.5 8.5"], f: "" };
         // Power profiles. A leaf, a gauge, a bolt - three silhouettes that
         // cannot be mistaken for one another at 21px.
         case "leaf":

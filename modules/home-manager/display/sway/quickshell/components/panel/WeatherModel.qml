@@ -86,6 +86,12 @@ Item {
     }
 
     function fetchWeather() {
+        // Never restart one in flight. Opening the panel re-triggers the
+        // poll, and reassigning command on a running Process kills it -
+        // the aborted run reports a non-zero exit, which read as
+        // "Offline" even though nothing was wrong with the network. Two
+        // opens inside one round trip was all it took.
+        if (weather.running) return;
         weather.command = [
             "curl", "-s", "--max-time", "6",
             "https://api.open-meteo.com/v1/forecast"
@@ -110,13 +116,19 @@ Item {
                         : "";
                     root.ok = true;
                 } catch (e) {
-                    root.ok = false;
-                    root.failure = "No weather";
+                    if (!root.ok) {
+                        root.ok = false;
+                        root.failure = "No weather";
+                    }
                 }
             }
         }
         onExited: exitCode => {
-            if (exitCode !== 0) {
+            // A failed fetch does not erase a good reading. The sky has
+            // not changed because one request was cut short, and blanking
+            // 13 degrees to a dash is a worse answer than showing the
+            // temperature from four minutes ago.
+            if (exitCode !== 0 && !root.ok) {
                 root.ok = false;
                 root.failure = "Offline";
             }
@@ -131,10 +143,11 @@ Item {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (root.needsFix(root.latitude, root.fixedAt, root.fixTtlMs))
-                locate.running = true;
-            else
+            if (root.needsFix(root.latitude, root.fixedAt, root.fixTtlMs)) {
+                if (!locate.running) locate.running = true;
+            } else {
                 root.fetchWeather();
+            }
         }
     }
 }
