@@ -537,9 +537,17 @@ Scope {
                                 uiScale: panel.uiScale
                                 device: mobile.device
                                 connected: mobile.connected
-                                onGuiAsked: mobile.openGui()
+                                // Both of these put a window on screen, and
+                                // a layer-shell overlay is above every
+                                // normal window by protocol - the dialog
+                                // would open BEHIND the panel and be
+                                // unreachable. Standing down is the only
+                                // way it can be used, and the panel's job
+                                // is finished the moment you have asked.
+                                onGuiAsked: { mobile.openGui(); root.dismiss(); }
+                                onFileAsked: { mobile.sendFile(); root.dismiss(); }
+                                // Clipboard opens nothing, so the panel stays.
                                 onClipboardAsked: mobile.sendClipboard()
-                                onFileAsked: mobile.sendFile()
                             }
                         }
 

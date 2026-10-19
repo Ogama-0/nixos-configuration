@@ -75,6 +75,28 @@ in
         titlebar = false;
         border = 0;
 
+        commands = [
+          # The file picker the panel opens for "Send file". zenity hands
+          # the job to the XDG portal, so the window to catch is the
+          # portal's and not zenity's - matching app_id="zenity" catches
+          # nothing at all.
+          #
+          # Tiled it took the whole screen for a dialog whose job is to
+          # pick one path.
+          {
+            criteria.app_id = "xdg-desktop-portal-gtk";
+            command = "floating enable, resize set 760 480, move position center";
+          }
+
+          # Everything KDE Connect puts on screen: the app, the handler and
+          # the transfer window. The whole family, because which of them
+          # appears depends on what you asked for, and they all want the
+          # same treatment - small, out of the way, top left.
+          {
+            criteria.app_id = "^org\\.kde\\.kdeconnect";
+            command = "floating enable, resize set 480 320, move position 24 24";
+          }
+        ];
       };
 
       # A sway mode that exists for exactly one key.
