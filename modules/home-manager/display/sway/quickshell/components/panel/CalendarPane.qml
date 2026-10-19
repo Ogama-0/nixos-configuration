@@ -51,12 +51,18 @@ Item {
     // from a busy day to a quiet one resized the whole calendar under the
     // cursor. Three rows plus the header plus the "and N more" line is the
     // worst case, so that is what is always reserved.
-    readonly property real eventsHeight: 112 * uiScale
+    readonly property real eventsHeight: 124 * uiScale
 
-    readonly property real gridTop: dow.y + 19 * uiScale
-    readonly property real gridBottom: root.height - eventsHeight - 22 * uiScale
+    readonly property real gridTop: dow.y + 22 * uiScale
+
+    // The row HEIGHT is budgeted for six weeks and never changes, so cells
+    // never resize under the cursor. What varies is how many rows a month
+    // actually draws, and the divider sits directly under the last one -
+    // a five-week month should not leave a blank week hanging over it.
+    readonly property real gridBudget:
+        root.height - eventsHeight - 36 * uiScale - gridTop
     readonly property real cellH:
-        Math.max(26 * uiScale, (gridBottom - gridTop) / layoutRows)
+        Math.max(26 * uiScale, gridBudget / layoutRows)
 
     // ---- month bar ----
 
@@ -138,11 +144,11 @@ Item {
             Text {
                 required property var modelData
                 width: root.cellW
-                height: 19 * root.uiScale
+                height: 22 * root.uiScale
                 text: modelData
-                color: "@mutedColor@"
-                font.pixelSize: Math.round(10.5 * root.uiScale)
-                font.weight: Font.Medium
+                color: "@clockColor@"
+                font.pixelSize: Math.round(12.5 * root.uiScale)
+                font.weight: Font.Normal
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -153,9 +159,9 @@ Item {
 
     Item {
         id: grid
-        y: dow.y + 19 * root.uiScale
+        y: dow.y + 22 * root.uiScale
         width: parent.width
-        height: root.layoutRows * root.cellH
+        height: root.rows * root.cellH
 
         // A discreet grid: one hairline under each week except the last, at
         // an alpha where you read it as structure rather than as lines.
@@ -189,7 +195,7 @@ Item {
                     // fill the zone and a pill that grew with them would be
                     // a 76px slab around a 13px number.
                     width: Math.min(parent.height - 2 * root.uiScale,
-                                    34 * root.uiScale)
+                                    38 * root.uiScale)
                     height: width
                     radius: 9 * root.uiScale
                     color: modelData.isSelected ? "@greenColor@"
@@ -202,7 +208,7 @@ Item {
                     color: modelData.isSelected ? "@onAccentInk@"
                          : !modelData.inMonth ? "@mutedColor@"
                          : modelData.isToday ? "@greenColor@" : "@clockColor@"
-                    font.pixelSize: Math.round(12.5 * root.uiScale)
+                    font.pixelSize: Math.round(15.5 * root.uiScale)
                     font.weight: modelData.isToday || modelData.isSelected
                         ? Font.DemiBold : Font.Normal
                 }
@@ -222,7 +228,7 @@ Item {
                     // Hung off the number, not the bottom of the cell -
                     // taller rows would otherwise strand it halfway to the
                     // row below.
-                    y: parent.height / 2 + 11 * root.uiScale
+                    y: parent.height / 2 + 13 * root.uiScale
                     color: modelData.isSelected ? "@onAccentInk@" : "@clockColor@"
                 }
 
@@ -238,17 +244,22 @@ Item {
 
     // ---- the day's events, welded to the bottom ----
 
-    PanelBeam {
+    // Full width and solid, not a fading hairline. This one separates the
+    // month from the day rather than ruling one surface into zones, so it
+    // is a rule, not a beam.
+    Rectangle {
         id: evDivider
-        horizontal: true
         x: 0
-        y: eventsCol.y - 12 * root.uiScale
+        y: grid.y + grid.height + 16 * root.uiScale
         width: root.width
+        height: 1
+        color: "@greenColor@"
+        opacity: 0.45
     }
 
     Column {
         id: eventsCol
-        y: root.height - root.eventsHeight
+        y: evDivider.y + 14 * root.uiScale
         height: root.eventsHeight
         width: root.width
         spacing: 6 * root.uiScale
@@ -256,7 +267,7 @@ Item {
         Text {
             text: root.selectedLabel
             color: "@mutedColor@"
-            font.pixelSize: Math.round(12 * root.uiScale)
+            font.pixelSize: Math.round(13 * root.uiScale)
             font.weight: Font.DemiBold
         }
 
@@ -273,7 +284,7 @@ Item {
             Item {
                 required property var modelData
                 width: eventsCol.width
-                height: 18 * root.uiScale
+                height: 22 * root.uiScale
 
                 Rectangle {
                     width: 2 * root.uiScale
@@ -284,23 +295,25 @@ Item {
 
                 Text {
                     x: 10 * root.uiScale
-                    width: 46 * root.uiScale
+                    width: 52 * root.uiScale
                     height: parent.height
                     text: modelData["all-day"] === "True"
                         ? "all day" : modelData["start-time"]
                     color: "@mutedColor@"
-                    font.family: "Orbitron"
-                    font.pixelSize: Math.round(11 * root.uiScale)
+                    // Not Orbitron. It is the bar clock's voice and it earns
+                    // that on a 46px readout; at 13px in a list it is just
+                    // harder to read than the text beside it.
+                    font.pixelSize: Math.round(13 * root.uiScale)
                     verticalAlignment: Text.AlignVCenter
                 }
 
                 Text {
-                    x: 62 * root.uiScale
-                    width: parent.width - 62 * root.uiScale
+                    x: 78 * root.uiScale
+                    width: parent.width - 78 * root.uiScale
                     height: parent.height
                     text: modelData["title"]
                     color: "@clockColor@"
-                    font.pixelSize: Math.round(12.5 * root.uiScale)
+                    font.pixelSize: Math.round(14 * root.uiScale)
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                 }
