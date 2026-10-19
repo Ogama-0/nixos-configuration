@@ -26,6 +26,14 @@ Scope {
             ];
             const shape = server.groups.map(g => g.app + ":" + g.count).join(" ");
             console.log("GROUPS " + shape);
+
+            // The Delete key's path: dismissUid removes exactly the one
+            // selected and leaves its identical twin alone. "Ping!" from
+            // the phone appears twice here on purpose.
+            server.dismissUid("a");
+            console.log("AFTER_DELETE " + server.notifications.length
+                        + " remaining, uids "
+                        + server.notifications.map(r => r.uid).join(","));
         }
     }
 }

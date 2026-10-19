@@ -51,7 +51,7 @@ Scope {
     // a second is a load-time error, not a warning.
     onIsOpenChanged: {
         if (isOpen) warmUp.restart();
-        else { warmUp.stop(); warmedUp = false; }
+        else { warmUp.stop(); warmedUp = false; selectedNotification = ""; }
 
         // sway only intercepts Escape while this mode is active, so the
         // mode's lifetime is the panel's. Leaving it on every close -
@@ -271,6 +271,9 @@ Scope {
 
     // NOT gated on isOpen. A centre that only listened while you were
     // looking at it would be a list of things you had already seen.
+    // Lives here and not in the pane: see the note in NotificationPane.qml.
+    property string selectedNotification: ""
+
     NotificationServer {
         id: notifications
         dnd: toggles.dndOn
@@ -322,9 +325,9 @@ Scope {
         function clearNotifications(): void { notifications.clearAll() }
         // Delete, while the panel is up. Does nothing with no selection.
         function deleteSelected(): void {
-            if (notifyPane.selectedUid === "") return;
-            notifications.dismissUid(notifyPane.selectedUid);
-            notifyPane.selectedUid = "";
+            if (root.selectedNotification === "") return;
+            notifications.dismissUid(root.selectedNotification);
+            root.selectedNotification = "";
         }
     }
 
@@ -627,13 +630,16 @@ Scope {
                             width: 262 * zones.s; height: (700 - 169) * zones.s
 
                             NotificationPane {
-                                id: notifyPane
                                 x: 22 * zones.s
                                 y: 18 * zones.s
                                 width: parent.width - 44 * zones.s
                                 height: parent.height - 36 * zones.s
                                 uiScale: panel.uiScale
                                 groups: notifications.groups
+                                selectedUid: root.selectedNotification
+                                onSelectRequested: uid =>
+                                    root.selectedNotification =
+                                        root.selectedNotification === uid ? "" : uid
 
                                 onClearAllAsked: notifications.clearAll()
                                 onGroupCleared: app => notifications.dismissGroup(app)

@@ -32,15 +32,18 @@ Item {
     // the whole thing; Delete removes it. Selection rather than
     // click-to-dismiss because reading a long notification used to require
     // destroying it.
+    //
+    // OWNED BY THE PANEL, not by this pane. The pane lives inside a
+    // Variants delegate - one per screen - and ids in there are invisible
+    // to the IPC handler at the top of ControlPanel, so the Delete key
+    // reached a `notifyPane` that did not exist. Keeping the state outside
+    // also means two screens cannot disagree about what is selected.
     property string selectedUid: ""
 
     signal clearAllAsked
     signal groupCleared(string app)
     signal dismissed(var item)
-
-    function select(uid) {
-        selectedUid = selectedUid === uid ? "" : uid;
-    }
+    signal selectRequested(string uid)
 
     default property alias footer: footerSlot.data
 
@@ -291,7 +294,7 @@ Item {
                             // In an open group each entry is its own target.
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: root.select(modelData.uid)
+                                onClicked: root.selectRequested(modelData.uid)
                             }
                         }
                     }
@@ -314,7 +317,7 @@ Item {
                         ? parent.height - 26 * root.uiScale : 0
                     onClicked: {
                         if (group.stacked) root.toggle(group.modelData.key);
-                        else root.select(group.modelData.items[0].uid);
+                        else root.selectRequested(group.modelData.items[0].uid);
                     }
                 }
             }
