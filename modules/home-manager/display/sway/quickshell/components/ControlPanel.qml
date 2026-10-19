@@ -27,14 +27,123 @@ Scope {
 
     readonly property bool isOpen: panelState !== "gone"
 
+    // Set by shell.qml from the lock surface. An open panel drawn over a
+    // locked screen would leak the calendar and the notification list past
+    // the lock, so it goes.
+    property bool lockActive: false
+    onLockActiveChanged: if (lockActive) dismiss()
+
+    // How the last dismissal was asked for, which decides which of the two
+    // closing animations plays. Docked collapses back into the clock;
+    // detached cannot, because there is no clock on screen to collapse into
+    // - a retreat into nothing - so it sinks and fades instead.
+    property string dismissMode: "docked"
+    property bool animatingOut: false
+
+    // Suppresses the Behaviors for one assignment, so re-arming the closed
+    // geometry before an open does not animate a collapse nobody sees.
+    property bool snapping: false
+
+    // ---- the clip, in 1080p-equivalent units ----
+    //
+    // ONE animated inset rectangle drives every docked transition, because
+    // the sheet and the funnel are a single Shape (PanelSheet.qml) and a
+    // clip is the only way to reveal part of one:
+    //
+    //   attached   0..940 x 0..734   sheet and funnel
+    //   detached   0..940 x 0..700   the funnel clipped away, sheet untouched
+    //   gone       406..534 x 700..734   the neck stub, i.e. the clock
+    //
+    // Collapsing to that last box IS the dock-dismiss: the panel folds back
+    // into the clock it came out of.
+    readonly property bool collapsing: panelState === "gone" && dismissMode === "docked"
+    readonly property bool sinking: panelState === "gone" && dismissMode === "free"
+
+    property real clipL: collapsing ? 406 : 0
+    property real clipR: collapsing ? 534 : 940
+    property real clipT: collapsing ? 700 : 0
+    property real clipB: (panelState === "attached" || collapsing) ? 734 : 700
+
+    property real sheetOpacity: sinking ? 0 : 1
+    property real sheetScale: sinking ? 0.965 : 1
+
+    // Zones bind this so content fades up with the sheet rather than
+    // appearing fully formed inside a box that is still opening.
+    property real contentReveal: isOpen ? 1 : 0
+
+    readonly property int clipMs: {
+        if (panelState === "gone") return dismissMode === "free" ? 190 : 220;
+        if (panelState === "attached") return 280;
+        return 300;
+    }
+    readonly property int clipEase: panelState === "gone" ? Easing.InQuart : Easing.OutQuart
+
     // Which output it is on. Empty means "the first one", which is what a
     // single-screen session and every render fixture get.
     property string targetScreen: ""
 
     function summon(): void {
-        if (panelState === "gone") panelState = "attached";
+        if (panelState !== "gone") return;
+        // Re-arm the collapsed geometry without animating it: after a free
+        // dismiss the clip is sitting at full width, and opening from there
+        // would unfold from nowhere instead of out of the clock.
+        snapping = true;
+        dismissMode = "docked";
+        animatingOut = false;
+        snapping = false;
+        panelState = "attached";
+        wipe.restart();
     }
-    function dismiss(): void { panelState = "gone" }
+    function dismiss(): void {
+        if (panelState === "gone") return;
+        dismissMode = panelState === "detached" ? "free" : "docked";
+        animatingOut = true;
+        panelState = "gone";
+        outTimer.interval = clipMs;
+        outTimer.restart();
+    }
+
+    // Keeps the window up until the closing animation has finished; without
+    // it the surface vanishes on the first frame and there is no animation
+    // to see at all.
+    Timer {
+        id: outTimer
+        repeat: false
+        onTriggered: root.animatingOut = false
+    }
+
+    Behavior on clipL { enabled: !root.snapping; NumberAnimation { duration: root.clipMs; easing.type: root.clipEase } }
+    Behavior on clipR { enabled: !root.snapping; NumberAnimation { duration: root.clipMs; easing.type: root.clipEase } }
+    Behavior on clipT { enabled: !root.snapping; NumberAnimation { duration: root.clipMs; easing.type: root.clipEase } }
+    Behavior on clipB { enabled: !root.snapping; NumberAnimation { duration: root.clipMs; easing.type: root.clipEase } }
+    Behavior on sheetOpacity { enabled: !root.snapping; NumberAnimation { duration: root.clipMs; easing.type: root.clipEase } }
+    Behavior on sheetScale { enabled: !root.snapping; NumberAnimation { duration: root.clipMs; easing.type: root.clipEase } }
+    Behavior on contentReveal {
+        enabled: !root.snapping
+        NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+    }
+
+    // The laser wipe: one accent line crossing the sheet as it opens, the
+    // same gesture the bar's own reveal makes. Transient by nature - it is
+    // over long before the render harness screenshots, so no probe pins it.
+    QtObject {
+        id: wipe
+        property real x: 0
+        property real alpha: 0
+        function restart(): void { wipeAnim.restart() }
+    }
+    SequentialAnimation {
+        id: wipeAnim
+        PauseAnimation { duration: 100 }
+        ParallelAnimation {
+            NumberAnimation { target: wipe; property: "x"; from: 0; to: 940; duration: 340 }
+            SequentialAnimation {
+                NumberAnimation { target: wipe; property: "alpha"; from: 0; to: 0.55; duration: 60 }
+                PauseAnimation { duration: 220 }
+                NumberAnimation { target: wipe; property: "alpha"; to: 0; duration: 60 }
+            }
+        }
+    }
     function detach(): void {
         if (panelState === "attached") panelState = "detached";
     }
@@ -65,7 +174,7 @@ Scope {
                     ? modelData === Quickshell.screens[0]
                     : modelData.name === root.targetScreen
 
-            visible: root.isOpen && onTarget
+            visible: (root.isOpen || root.animatingOut) && onTarget
 
             // Bottom-anchored only, so layer-shell centres it horizontally
             // over the clock it grows out of.
@@ -111,9 +220,35 @@ Scope {
                 height: panel.visible ? panel.height : 0
             }
 
-            PanelSheet {
-                id: sheet
-                uiScale: panel.uiScale
+            // The clipper is what moves; the sheet inside it is pinned by an
+            // equal and opposite offset so the glass never shifts on screen.
+            // That is the hard rule: mod is pressed dozens of times an hour
+            // and a panel that jumps on every dock reads as a twitch.
+            Item {
+                id: clipper
+                clip: true
+                x: root.clipL * panel.uiScale
+                y: root.clipT * panel.uiScale
+                width: (root.clipR - root.clipL) * panel.uiScale
+                height: (root.clipB - root.clipT) * panel.uiScale
+                opacity: root.sheetOpacity
+                scale: root.sheetScale
+                transformOrigin: Item.Center
+
+                PanelSheet {
+                    id: sheet
+                    uiScale: panel.uiScale
+                    x: -clipper.x
+                    y: -clipper.y
+
+                    Rectangle {
+                        width: 3 * panel.uiScale
+                        height: parent.height
+                        x: wipe.x * panel.uiScale
+                        color: "@greenColor@"
+                        opacity: wipe.alpha
+                    }
+                }
             }
         }
     }

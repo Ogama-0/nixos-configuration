@@ -6,8 +6,9 @@ Scope {
     Clock {}
     Music {}
     Calendar {}
-    Lock {}
+    Lock { id: lock }
     LaserBar {}
     StatusPanel {}
-    ControlPanel {}
+    // An open panel must not survive into the lock screen.
+    ControlPanel { lockActive: lock.locked }
 }
