@@ -68,6 +68,7 @@
     # game
     modrinth-app
     steam
+    heroic
     prismlauncher
     steam-run
     sc-controller

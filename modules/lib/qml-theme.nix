@@ -46,6 +46,9 @@
   # an icon painted in it would disappear into the fill. Same reason
   # capsuleFill/capsuleInk are passed per variant rather than computed here.
 , onAccentInk ? "#FF${colors.base00}"
+  # geoclue's own CLI. PATH is not dependable inside the systemd user
+  # service, which is why @systemctlBin@ exists too.
+, whereAmIBin ? "where-am-i"
 }:
 builtins.replaceStrings
   [
@@ -84,6 +87,7 @@ builtins.replaceStrings
     # vanish. @plateBg@ is the faint resting plate a toggle tile sits on.
     "@onAccentInk@"
     "@plateBg@"
+    "@whereAmIBin@"
   ]
   [
     "#B3${colors.base00}"
@@ -124,4 +128,5 @@ builtins.replaceStrings
     capsuleInk
     onAccentInk
     "#12${colors.base05}"
+    whereAmIBin
   ]

@@ -164,6 +164,22 @@ Scope {
     // shell.qml owns the lock; the panel only asks.
     signal lockRequested
 
+    WeatherModel {
+        id: weather
+        active: root.isOpen
+    }
+
+    // The panel's own clock. One tick a second, and only while it is open -
+    // the bar's clock learned this the expensive way.
+    property var now: new Date()
+    Timer {
+        interval: 1000
+        running: root.isOpen
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: root.now = new Date()
+    }
+
     // Hovering a tile names it. The tip is a separate layer surface, placed
     // in screen coordinates, because the sheet clips its own children.
     ToggleTip {
@@ -331,7 +347,24 @@ Scope {
 
                         Item { id: calendarZone
                             x: 0; y: 169 * zones.s
-                            width: 570 * zones.s; height: (700 - 169) * zones.s }
+                            width: 570 * zones.s; height: (700 - 169) * zones.s
+
+                            ClockWeatherHead {
+                                x: 22 * zones.s
+                                y: 18 * zones.s
+                                width: parent.width - 44 * zones.s
+                                height: 100 * zones.s
+                                uiScale: panel.uiScale
+
+                                timeText: Qt.formatTime(root.now, "HH:mm")
+                                dateText: Qt.formatDate(root.now, "dddd d MMMM")
+                                tempC: weather.tempC
+                                condition: weather.condition
+                                place: weather.place
+                                ok: weather.ok
+                                failure: weather.failure
+                            }
+                        }
                         Item { id: diskZone
                             x: 571 * zones.s; y: 169 * zones.s
                             width: 106 * zones.s; height: (700 - 169) * zones.s }

@@ -12,6 +12,7 @@
     ../../modules/nixosconf/stream.nix
     ../../modules/nixosconf/utilities.nix
     ../../modules/nixosconf/nvidia.nix
+    ../../modules/nixosconf/geoclue.nix
     ../../modules/nixosconf/steam.nix
     ../../modules/nixosconf/printer.nix
     ../../modules/nixosconf/mounting.nix

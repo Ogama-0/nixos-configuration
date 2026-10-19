@@ -75,6 +75,7 @@ let
     inherit systemctlBin swaymsgBin corptaFontPath statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
     onAccentInk = onAccentInkFor variant;
+    whereAmIBin = "${pkgs.geoclue2}/libexec/geoclue-2.0/demos/where-am-i";
   } // statusColorsFor variant // capsuleColorsFor variant);
 
   themedQmlFile = variant: path: {
@@ -168,6 +169,8 @@ in
           "${d}/components/panel/ToggleGrid.qml" = themedQmlFile variant ./components/panel/ToggleGrid.qml;
           "${d}/components/panel/ToggleModel.qml" = themedQmlFile variant ./components/panel/ToggleModel.qml;
           "${d}/components/panel/ToggleTip.qml" = themedQmlFile variant ./components/panel/ToggleTip.qml;
+          "${d}/components/panel/ClockWeatherHead.qml" = themedQmlFile variant ./components/panel/ClockWeatherHead.qml;
+          "${d}/components/panel/WeatherModel.qml" = themedQmlFile variant ./components/panel/WeatherModel.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
