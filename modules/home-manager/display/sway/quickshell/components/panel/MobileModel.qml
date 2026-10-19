@@ -18,13 +18,39 @@ Item {
 
     property bool active: false
 
-    // { id, name, charge, charging }. One phone: the zone is a glance, not
-    // a device manager, and the second phone belongs in the GUI.
+    // { id, name, charge, charging, signal, network }. One phone: the zone
+    // is a glance, not a device manager, and the second phone belongs in
+    // the GUI.
     property var device: null
     readonly property bool connected: device !== null
 
-    // The GUI is the whole point of the zone being clickable.
     function openGui(): void { guiProc.running = true }
+
+    // Pushes THIS machine's clipboard to the phone. The daemon reads the
+    // clipboard itself, so there is no wl-paste in the way and nothing to
+    // get wrong about selection ownership.
+    function sendClipboard(): void {
+        if (!device) return;
+        clipProc.command = ["busctl", "--user", "call", "org.kde.kdeconnect",
+            "/modules/kdeconnect/devices/" + device.id + "/clipboard",
+            "org.kde.kdeconnect.device.clipboard", "sendClipboard"];
+        clipProc.running = true;
+    }
+
+    // Picker first, then send. One shell because the second half depends on
+    // the first and a cancelled picker must send nothing: zenity exits
+    // non-zero, && stops, no file goes anywhere.
+    function sendFile(): void {
+        if (!device) return;
+        fileProc.command = ["sh", "-c",
+            "f=$(zenity --file-selection --title='Send to " + device.name
+            + "') && exec kdeconnect-cli --device " + device.id
+            + " --share \"$f\""];
+        fileProc.running = true;
+    }
+
+    Process { id: clipProc }
+    Process { id: fileProc }
 
     Process {
         id: guiProc
@@ -50,32 +76,43 @@ Item {
                 // flashing a dash every poll while the battery query is in
                 // flight.
                 const keep = root.device && root.device.id === id
-                    ? root.device : { charge: -1, charging: false };
+                    ? root.device
+                    : { charge: -1, charging: false, signal: -1, network: "" };
                 root.device = { id: id, name: name,
-                                charge: keep.charge, charging: keep.charging };
-                root.readBattery(id);
+                                charge: keep.charge, charging: keep.charging,
+                                signal: keep.signal, network: keep.network };
+                root.readPlugins(id);
             }
         }
         onExited: exitCode => { if (exitCode !== 0) root.device = null }
     }
 
-    function readBattery(id) {
-        const path = "/modules/kdeconnect/devices/" + id;
-        chargeProc.command = ["busctl", "--user", "--json=short",
-            "get-property", "org.kde.kdeconnect", path,
-            "org.kde.kdeconnect.device.battery", "charge"];
-        chargeProc.running = true;
-        chargingProc.command = ["busctl", "--user", "--json=short",
-            "get-property", "org.kde.kdeconnect", path,
-            "org.kde.kdeconnect.device.battery", "isCharging"];
-        chargingProc.running = true;
+    // Each plugin is its own OBJECT under the device, not an interface on
+    // it. The first version asked the device path for the battery interface
+    // and silently got nothing, which looks identical to a phone with the
+    // plugin switched off.
+    function readPlugins(id) {
+        const dev = "/modules/kdeconnect/devices/" + id;
+        const get = (proc, obj, iface, prop) => {
+            proc.command = ["busctl", "--user", "--json=short",
+                "get-property", "org.kde.kdeconnect", dev + "/" + obj,
+                "org.kde.kdeconnect.device." + iface, prop];
+            proc.running = true;
+        };
+        get(chargeProc,   "battery", "battery", "charge");
+        get(chargingProc, "battery", "battery", "isCharging");
+        get(signalProc,   "connectivity_report", "connectivity_report",
+            "cellularNetworkStrength");
+        get(networkProc,  "connectivity_report", "connectivity_report",
+            "cellularNetworkType");
     }
 
     function patch(field, value) {
         if (!root.device) return;
         const d = {
             id: root.device.id, name: root.device.name,
-            charge: root.device.charge, charging: root.device.charging
+            charge: root.device.charge, charging: root.device.charging,
+            signal: root.device.signal, network: root.device.network
         };
         d[field] = value;
         root.device = d;
@@ -100,6 +137,30 @@ Item {
                 try {
                     const v = JSON.parse(this.text).data;
                     if (typeof v === "boolean") root.patch("charging", v);
+                } catch (e) { /* as above */ }
+            }
+        }
+    }
+
+    Process {
+        id: signalProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const v = JSON.parse(this.text).data;
+                    if (typeof v === "number") root.patch("signal", v);
+                } catch (e) { /* no connectivity plugin */ }
+            }
+        }
+    }
+
+    Process {
+        id: networkProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const v = JSON.parse(this.text).data;
+                    if (typeof v === "string") root.patch("network", v);
                 } catch (e) { /* as above */ }
             }
         }

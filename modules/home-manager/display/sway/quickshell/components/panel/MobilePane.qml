@@ -1,7 +1,7 @@
 import QtQuick
 
-// The phone, when there is one. Clicking anywhere in the zone opens the KDE
-// Connect GUI, which is where everything this zone does not show lives.
+// The phone, when there is one: what it is, how much of it is left, and the
+// two things worth doing from here without reaching for the GUI.
 //
 // When nothing is paired or reachable it says that plainly instead of
 // drawing an empty device - a greyed-out battery and a blank name read as
@@ -13,7 +13,9 @@ Item {
     property var device: null
     property bool connected: false
 
-    signal activated
+    signal guiAsked
+    signal clipboardAsked
+    signal fileAsked
 
     readonly property int lowAt: 20
 
@@ -49,15 +51,14 @@ Item {
         PanelIcon {
             id: phoneIcon
             name: "phone"
-            uiScale: root.uiScale
+            uiScale: root.uiScale * 0.85
             color: "@greenColor@"
             y: 0
         }
 
         Text {
-            id: phoneName
-            x: phoneIcon.width + 10 * root.uiScale
-            width: parent.width - x
+            x: phoneIcon.width + 8 * root.uiScale
+            width: parent.width - x - signalGroup.width - 8 * root.uiScale
             height: phoneIcon.height
             text: root.device ? root.device.name : ""
             color: "@clockColor@"
@@ -67,14 +68,49 @@ Item {
             verticalAlignment: Text.AlignVCenter
         }
 
-        // Battery, when the device reports one. A phone whose battery
-        // plugin is off is still a connected phone.
+        // Network type and bars, right-aligned on the name's line. Hidden
+        // whole rather than drawn empty when the phone has no connectivity
+        // plugin - four grey bars is a claim about signal, not an absence.
+        Row {
+            id: signalGroup
+            visible: root.device && root.device.signal >= 0
+            x: parent.width - width
+            height: phoneIcon.height
+            spacing: 5 * root.uiScale
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.device ? root.device.network : ""
+                color: "@mutedColor@"
+                font.pixelSize: Math.round(10.5 * root.uiScale)
+                font.weight: Font.Medium
+            }
+
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2 * root.uiScale
+                Repeater {
+                    model: 4
+                    Rectangle {
+                        required property int index
+                        width: 3 * root.uiScale
+                        height: (4 + index * 2.5) * root.uiScale
+                        y: parent.height - height
+                        radius: 1
+                        color: root.device && root.device.signal > index
+                            ? "@greenColor@" : "@plateBg@"
+                    }
+                }
+            }
+        }
+
+        // Battery. A phone whose battery plugin is off is still a phone.
         Item {
             id: battery
             visible: root.device && root.device.charge >= 0
-            y: phoneIcon.height + 12 * root.uiScale
+            y: phoneIcon.height + 9 * root.uiScale
             width: parent.width
-            height: 16 * root.uiScale
+            height: 26 * root.uiScale
 
             Text {
                 id: charge
@@ -83,11 +119,11 @@ Item {
                       + (root.device.charging ? " · charging" : "")
                     : ""
                 color: "@mutedColor@"
-                font.pixelSize: Math.round(12 * root.uiScale)
+                font.pixelSize: Math.round(11.5 * root.uiScale)
             }
 
             Rectangle {
-                y: charge.height + 6 * root.uiScale
+                y: charge.height + 5 * root.uiScale
                 width: parent.width
                 height: 5 * root.uiScale
                 radius: height / 2
@@ -106,19 +142,47 @@ Item {
             }
         }
 
+        // ---- the two actions ----
+
+        Row {
+            id: actions
+            y: battery.visible
+                ? battery.y + battery.height + 10 * root.uiScale
+                : phoneIcon.height + 12 * root.uiScale
+            width: parent.width
+            spacing: 7 * root.uiScale
+
+            MobileAction {
+                width: (actions.width - 7 * root.uiScale) / 2
+                uiScale: root.uiScale
+                icon: "clipboard"
+                label: "Clipboard"
+                onActivated: root.clipboardAsked()
+            }
+            MobileAction {
+                width: (actions.width - 7 * root.uiScale) / 2
+                uiScale: root.uiScale
+                icon: "upload"
+                label: "Send file"
+                onActivated: root.fileAsked()
+            }
+        }
+
         Text {
+            id: openLink
             y: parent.height - height
             text: "Open KDE Connect"
-            color: area.containsMouse ? "@clockColor@" : "@mutedColor@"
+            color: openArea.containsMouse ? "@clockColor@" : "@mutedColor@"
             font.pixelSize: Math.round(11.5 * root.uiScale)
-        }
-    }
 
-    MouseArea {
-        id: area
-        anchors.fill: parent
-        hoverEnabled: true
-        enabled: root.connected
-        onClicked: root.activated()
+            // Only this line opens the GUI. A zone-wide click target would
+            // sit under the two buttons and fire whenever one was missed.
+            MouseArea {
+                id: openArea
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: root.guiAsked()
+            }
+        }
     }
 }

@@ -537,7 +537,9 @@ Scope {
                                 uiScale: panel.uiScale
                                 device: mobile.device
                                 connected: mobile.connected
-                                onActivated: mobile.openGui()
+                                onGuiAsked: mobile.openGui()
+                                onClipboardAsked: mobile.sendClipboard()
+                                onFileAsked: mobile.sendFile()
                             }
                         }
 

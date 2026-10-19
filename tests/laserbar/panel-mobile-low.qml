@@ -23,10 +23,10 @@ Scope {
             x: 100
             y: 100
             width: 262
-            height: 120
+            height: 116
             uiScale: 1
             connected: true
-            device: { "id": "abc123", "name": "Pixel 8", "charge": 12, "charging": false }
+            device: { "id": "abc123", "name": "Pixel 8", "charge": 12, "charging": false, "signal": 1, "network": "3G" }
         }
     }
 }
