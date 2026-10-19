@@ -88,7 +88,7 @@ let
     # ramp and reads as a surface on any ground.
     sheetBg = if variant == "light"
               then "#F2${allColors.light.base00}"
-              else "#EF${allColors.dark.base01}";
+              else "#EF${allColors.dark.base00}";
   } // statusColorsFor variant // capsuleColorsFor variant);
 
   themedQmlFile = variant: path: {
