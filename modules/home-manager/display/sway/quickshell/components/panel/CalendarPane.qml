@@ -30,7 +30,9 @@ Item {
     signal daySelected(var date)
 
     readonly property real cellW: width / 7
-    readonly property int shownEvents: 3
+    // Two, not three. The list is a glance at what is next, and the
+    // reservation below is sized from this - raising it costs calendar.
+    readonly property int shownEvents: 2
     readonly property int rows: Math.max(1, Math.ceil(cells.length / 7))
 
     // Always lay out for six weeks, even in a month that only needs five.
@@ -49,9 +51,10 @@ Item {
     // the day you picked. Sizing it to its content moved the divider, which
     // moved the grid's bottom, which changed the row height - so clicking
     // from a busy day to a quiet one resized the whole calendar under the
-    // cursor. Three rows plus the header plus the "and N more" line is the
-    // worst case, so that is what is always reserved.
-    readonly property real eventsHeight: 124 * uiScale
+    // cursor. The worst case is shownEvents rows plus the header plus the
+    // "and N more" line, so that is what is always reserved - and dropping
+    // from three rows to two hands the difference back to the calendar.
+    readonly property real eventsHeight: 96 * uiScale
 
     readonly property real gridTop: dow.y + 22 * uiScale
 
