@@ -35,12 +35,17 @@ Item {
     readonly property int shownEvents: 2
     readonly property int rows: Math.max(1, Math.ceil(cells.length / 7))
 
-    // Always lay out for six weeks, even in a month that only needs five.
-    // The row height is what the grid is measured in, so deriving it from
-    // THIS month's row count made the whole calendar change shape every time
-    // you paged - cells growing and shrinking under the cursor. Six is the
-    // worst case, so six is the layout.
-    readonly property int layoutRows: 6
+    // The grid FILLS its budget: row height is the budget divided by the
+    // rows this month actually draws. Reserving six weeks and drawing five
+    // left the sixth row's worth of space stranded under the events block.
+    //
+    // This is not the resizing that was complained about. That was the
+    // events list changing height with the day you clicked, which moved
+    // everything above it - fixed, and it stays fixed: the block below is a
+    // constant reservation. What varies here is cell height between a
+    // five-week and a six-week month, and only when you page. Everything
+    // else - the divider, the events, the pane - stays exactly where it is,
+    // because rows * cellH is the same number either way.
 
     // The grid takes the space rather than leaving a gap above the events.
     // A fixed row height left a band of dead glass between the last week and
@@ -65,7 +70,7 @@ Item {
     readonly property real gridBudget:
         root.height - eventsHeight - 36 * uiScale - gridTop
     readonly property real cellH:
-        Math.max(26 * uiScale, gridBudget / layoutRows)
+        Math.max(26 * uiScale, gridBudget / rows)
 
     // ---- month bar ----
 
