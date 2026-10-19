@@ -163,6 +163,7 @@ in
           "${d}/components/StatusModel.qml" = themedQmlFile variant ./components/StatusModel.qml;
           "${d}/components/Sparkline.qml" = themedQmlFile variant ./components/Sparkline.qml;
           "${d}/components/StatusPanel.qml" = themedQmlFile variant ./components/StatusPanel.qml;
+          "${d}/components/CalendarModel.qml" = themedQmlFile variant ./components/CalendarModel.qml;
           "${d}/components/PanelBeam.qml" = themedQmlFile variant ./components/PanelBeam.qml;
           "${d}/components/panel/PanelIcon.qml" = themedQmlFile variant ./components/panel/PanelIcon.qml;
           "${d}/components/panel/ToggleTile.qml" = themedQmlFile variant ./components/panel/ToggleTile.qml;
@@ -171,6 +172,8 @@ in
           "${d}/components/panel/ToggleTip.qml" = themedQmlFile variant ./components/panel/ToggleTip.qml;
           "${d}/components/panel/ClockWeatherHead.qml" = themedQmlFile variant ./components/panel/ClockWeatherHead.qml;
           "${d}/components/panel/WeatherModel.qml" = themedQmlFile variant ./components/panel/WeatherModel.qml;
+          "${d}/components/panel/PanelNavButton.qml" = themedQmlFile variant ./components/panel/PanelNavButton.qml;
+          "${d}/components/panel/CalendarPane.qml" = themedQmlFile variant ./components/panel/CalendarPane.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };

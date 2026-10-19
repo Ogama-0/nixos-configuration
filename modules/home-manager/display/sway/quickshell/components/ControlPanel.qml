@@ -169,6 +169,11 @@ Scope {
         active: root.isOpen
     }
 
+    CalendarModel {
+        id: cal
+        active: root.isOpen
+    }
+
     // The panel's own clock. One tick a second, and only while it is open -
     // the bar's clock learned this the expensive way.
     property var now: new Date()
@@ -363,6 +368,27 @@ Scope {
                                 place: weather.place
                                 ok: weather.ok
                                 failure: weather.failure
+                            }
+
+                            CalendarPane {
+                                x: 22 * zones.s
+                                y: 128 * zones.s
+                                width: parent.width - 44 * zones.s
+                                height: parent.height - 146 * zones.s
+                                uiScale: panel.uiScale
+
+                                monthLabel: cal.monthLabel
+                                cells: cal.monthCells
+                                events: cal.eventsForSelected
+                                onToday: cal.onToday
+                                selectedLabel: cal.onToday
+                                    ? "Today"
+                                    : Qt.formatDate(cal.selected, "dddd d MMMM")
+
+                                onPrevMonth: cal.shiftMonth(-1)
+                                onNextMonth: cal.shiftMonth(1)
+                                onTodayAsked: cal.goToday()
+                                onDaySelected: d => cal.selectDay(d)
                             }
                         }
                         Item { id: diskZone
