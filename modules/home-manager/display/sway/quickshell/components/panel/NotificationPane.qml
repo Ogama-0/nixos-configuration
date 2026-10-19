@@ -71,23 +71,27 @@ Item {
                 required property int index
 
                 width: list.width
-                height: 50 * root.uiScale
-                radius: 11 * root.uiScale
+                height: 58 * root.uiScale
+                radius: 12 * root.uiScale
                 color: "@plateBg@"
+                // So the accent edge below follows the rounded corners
+                // instead of leaving a wedge of ground at each end of it.
+                clip: true
 
+                // Full height rather than inset: a stub floating beside the
+                // text reads as debris, a full edge reads as a margin.
                 Rectangle {
                     width: 2 * root.uiScale
-                    height: parent.height - 16 * root.uiScale
-                    y: 8 * root.uiScale
+                    height: parent.height
                     radius: width
                     color: "@greenColor@"
                 }
 
                 Column {
-                    x: 11 * root.uiScale
-                    y: 8 * root.uiScale
-                    width: parent.width - 22 * root.uiScale
-                    spacing: 1 * root.uiScale
+                    x: 13 * root.uiScale
+                    y: 9 * root.uiScale
+                    width: parent.width - 26 * root.uiScale
+                    spacing: 3 * root.uiScale
 
                     Text {
                         width: parent.width

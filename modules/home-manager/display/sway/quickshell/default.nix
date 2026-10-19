@@ -76,12 +76,14 @@ let
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
     onAccentInk = onAccentInkFor variant;
     whereAmIBin = "${pkgs.geoclue2}/libexec/geoclue-2.0/demos/where-am-i";
-    # Light needs more opacity than dark: its ink is base05 on a pale ground,
-    # so anything bleeding through costs contrast directly. Dark can afford to
-    # let the beam show, which is half the point of the thing.
+    # Both variants are nearly opaque, and dark learned this the same way
+    # @cardBg@'s consumers did. At 80% a bright window underneath - a
+    # terminal, a white page - read straight through the panel and sat
+    # behind the notification text. The beam showing through was never worth
+    # that; what sells the glass is the border and the sheen, not the alpha.
     panelBg = if variant == "light"
               then "#F2${allColors.light.base00}"
-              else "#CC${allColors.dark.base00}";
+              else "#EF${allColors.dark.base00}";
   } // statusColorsFor variant // capsuleColorsFor variant);
 
   themedQmlFile = variant: path: {

@@ -302,12 +302,16 @@ Scope {
             WlrLayershell.namespace: "laser-bar-panel"
             WlrLayershell.layer: WlrLayer.Overlay
 
-            // Exclusive, and this is a real trade. OnDemand only hands over
-            // the keyboard when the surface is CLICKED, so Escape would not
-            // work on a panel summoned with mod+n - which is the normal way
-            // to open it. The cost is that typing goes to the panel while it
-            // is up, including while it sits detached.
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            // OnDemand, chosen deliberately over Exclusive. Exclusive makes
+            // Escape work the instant the panel opens, but it also takes the
+            // keyboard for as long as the panel is up - and this panel is
+            // meant to sit there detached while you carry on working, so
+            // swallowing every keystroke is the worse half of the trade.
+            //
+            // The cost: Escape only reaches the panel once it has been
+            // clicked, because that is when the compositor hands focus over.
+            // Clicking outside and changing workspace are unaffected.
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
             focusable: true
 
             // The clock capsule is 38 tall centred on beamY, which puts its
