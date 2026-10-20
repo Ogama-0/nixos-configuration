@@ -18,17 +18,7 @@ let
   debugTrace = true;
 
   greetdProxy = "${lpkgs.greetd-proxy}/bin/greetd-proxy";
-  # The greeter itself runs plain sway: it shows one fullscreen Quickshell
-  # surface, so swayfx's effects would buy nothing on the one code path that
-  # must never fail to come up.
   swayBin = "${pkgs.sway}/bin/sway";
-
-  # The *session* is swayfx - ~/.config/sway/config carries swayfx-only
-  # directives (corner_radius, shadows, ...) that plain sway rejects with a
-  # red "there are errors in your config file" banner on every login.
-  # home-manager writes that config and puts swayfx on PATH, but nothing
-  # execs it: greetd starts the session by absolute store path, right here.
-  sessionBin = "${import ../lib/swayfx.nix pkgs}/bin/sway";
   swaymsgBin = "${pkgs.sway}/bin/swaymsg";
   systemctlBin = "${pkgs.systemd}/bin/systemctl";
 
@@ -38,8 +28,8 @@ let
 
   # Greeter-only tokens, on top of the shared palette substitution.
   withGreeterBins = builtins.replaceStrings
-    [ "@greetdProxyBin@" "@sessionBin@" ]
-    [ greetdProxy sessionBin ];
+    [ "@greetdProxyBin@" "@swayBin@" ]
+    [ greetdProxy swayBin ];
 
   themeGreeter = variant: image: path:
     withGreeterBins (qmlTheme {
