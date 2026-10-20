@@ -17,9 +17,24 @@ BATTERY="${3:-0.5}"
 # Output size, so the bar can be checked at a resolution it would have to
 # scale itself up for.
 RESOLUTION="${4:-1920x1080}"
+# Which themed tree to render. Both variants are generated from the same QML
+# with different @token@ substitutions, so a render only ever exercises one of
+# them - and the light one has its own legibility problems (base0B is pale on
+# cream) that a dark render cannot show.
+VARIANT="${LASERBAR_VARIANT:-dark}"
+# A command run inside the nested session after the bar is revealed and the
+# fixture has settled, before the screenshot. This is how dismissal is tested
+# at all: Escape, a click and a workspace switch cannot be asserted from a
+# static render, and all three are things a user does TO the shell.
+#
+#   LASERBAR_EXEC='swaymsg workspace 2'
+#   LASERBAR_EXEC='wtype -k Escape'
+#   LASERBAR_EXEC='swaymsg seat - cursor set 100 100; swaymsg seat - cursor press button1'
+#
+# SWAYSOCK and WAYLAND_DISPLAY are already exported when it runs.
+EXEC_AFTER="${LASERBAR_EXEC:-}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[ -f "$ENTRY" ] || { echo "no such fixture: $ENTRY" >&2; exit 2; }
 
 RT="$(mktemp -d)"
 TREE="$RT/tree"
@@ -38,17 +53,17 @@ nix eval --json \
     "$REPO#homeConfigurations.personal.config.xdg.configFile" \
     --apply 'cf:
       let names = builtins.filter
-            (n: builtins.match "quickshell/widgets-dark/.*" n != null)
+            (n: builtins.match "quickshell/widgets-'"$VARIANT"'/.*" n != null)
             (builtins.attrNames cf);
       in builtins.listToAttrs
            (map (n: { name = n; value = cf.${n}.text; }) names)' \
     > "$RT/tree.json"
 
-python3 - "$RT/tree.json" "$TREE" <<'PY'
+python3 - "$RT/tree.json" "$TREE" "$VARIANT" <<'PY'
 import json, os, sys
 data = json.load(open(sys.argv[1]))
 root = sys.argv[2]
-prefix = "quickshell/widgets-dark/"
+prefix = "quickshell/widgets-%s/" % sys.argv[3]
 for name, text in data.items():
     rel = name[len(prefix):]
     path = os.path.join(root, rel)
@@ -59,7 +74,18 @@ print(f"{len(data)} files", file=sys.stderr)
 PY
 
 # The fixture replaces shell.qml; components/ comes from the evaluated tree.
-cp "$ENTRY" "$TREE/shell.qml"
+#
+# ENTRY=real keeps the GENERATED shell.qml instead, which is the only way to
+# find out whether the thing that actually runs loads. A fixture instantiates
+# one or two components; the real shell instantiates all of them together,
+# and a QML load error there - two handlers for one signal, say - is
+# invisible to every fixture in this directory.
+if [ "$ENTRY" = "real" ]; then
+    [ -f "$TREE/shell.qml" ] || { echo "no generated shell.qml in the tree" >&2; exit 2; }
+else
+    [ -f "$ENTRY" ] || { echo "no such fixture: $ENTRY" >&2; exit 2; }
+    cp "$ENTRY" "$TREE/shell.qml"
+fi
 
 # --- nested headless compositor ---------------------------------------------
 export XDG_RUNTIME_DIR="$RT"
@@ -79,6 +105,16 @@ export LASERBAR_FAKE_BATTERY
 cat > "$RT/sway.conf" <<CONF
 output HEADLESS-1 resolution $RESOLUTION
 exec sleep infinity
+
+# Mirrors modes.panel from the real sway config. The panel holds no
+# keyboard focus, so Escape can only reach it by sway intercepting that one
+# key in a mode - without this block the dismissal test fails for a reason
+# that has nothing to do with the panel.
+mode "panel" {
+    # -p, not -c widgets: the nested shell is launched by path and has no
+    # instance name, so the real config's IPC target finds nothing here.
+    bindsym Escape mode default; exec quickshell -p $TREE/shell.qml ipc call panel dismiss
+}
 CONF
 
 sway -c "$RT/sway.conf" >"$RT/sway.log" 2>&1 &
@@ -105,6 +141,12 @@ sleep 1
 # to nothing, with no module left painted.
 if [ "${LASERBAR_RETRACT:-}" = "1" ]; then
     quickshell -p "$TREE/shell.qml" ipc call laserbar hide >>"$RT/qs.log" 2>&1 || true
+    sleep 1
+fi
+
+if [ -n "$EXEC_AFTER" ]; then
+    sh -c "$EXEC_AFTER" >>"$RT/qs.log" 2>&1 || echo "LASERBAR_EXEC failed" >>"$RT/qs.log"
+    # Dismissal animations are ~200-300ms; give them room to finish.
     sleep 1
 fi
 

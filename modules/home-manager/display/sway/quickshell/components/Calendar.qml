@@ -7,56 +7,27 @@ import QtQuick.Layouts
 PanelWindow {
     id: root
 
-    property string monthLabel: ""
-    property var monthCells: []
-    property int todayDayNum: 0
-    property var upcomingEvents: []
+    // The khal reading and the month arithmetic live in CalendarModel, which
+    // the panel's calendar pane renders too. One parser, two views.
+    CalendarModel {
+        id: cal
+        active: true
+        upcomingCount: 2
+    }
+
+    readonly property string monthLabel: cal.monthLabel
+    // This renderer wants a flat list of day numbers with 0 for a blank, so
+    // the shared cells are flattened here rather than changing the model for
+    // one of its two consumers.
+    readonly property var monthCells: cal.monthCells.map(c => c.inMonth ? c.day : 0)
+    readonly property int todayDayNum: cal.today.getDate()
+    readonly property var upcomingEvents: cal.upcomingEvents
+
+    function eventLabel(e) { return cal.eventLabel(e) }
 
     readonly property var weekdayLabels: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
     readonly property var monthNames: ["January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"]
-
-    function rebuildMonth() {
-        const now = new Date()
-        root.todayDayNum = now.getDate()
-        root.monthLabel = root.monthNames[now.getMonth()] + " " + now.getFullYear()
-
-        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-        const firstWeekday = (firstOfMonth.getDay() + 6) % 7
-
-        const cells = []
-        for (let i = 0; i < firstWeekday; i++) cells.push(0)
-        for (let d = 1; d <= daysInMonth; d++) cells.push(d)
-        while (cells.length % 7 !== 0) cells.push(0)
-        root.monthCells = cells
-    }
-
-    function eventDateTime(e) {
-        if (e["all-day"] === "True") return new Date(e["start-date"] + "T00:00")
-        return new Date(e["start-date"] + "T" + e["start-time"])
-    }
-
-    function eventLabel(e) {
-        if (e["all-day"] === "True") return e["title"]
-        return e["start-time"] + "  " + e["title"]
-    }
-
-    // Multiple synced calendars can carry the same invite (e.g. a shared
-    // event copied into two subscriptions) - collapse those "twins" down
-    // to a single entry, keyed on title + start, keeping the first seen.
-    function dedupeEvents(events) {
-        const seen = new Set()
-        const result = []
-        for (const e of events) {
-            const key = e["title"] + "|" + e["start-date"] + "|"
-                + (e["all-day"] === "True" ? "allday" : e["start-time"])
-            if (seen.has(key)) continue
-            seen.add(key)
-            result.push(e)
-        }
-        return result
-    }
 
     anchors {
         top: true
@@ -74,52 +45,11 @@ PanelWindow {
     WlrLayershell.namespace: "calendar-widget"
     WlrLayershell.layer: WlrLayer.Background
 
-    Timer {
-        interval: 60 * 60 * 1000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: root.rebuildMonth()
-    }
-
-    Process {
-        id: khalProc
-        running: false
-        command: [
-            "khal", "list",
-            "--json", "start-date", "--json", "start-time", "--json", "all-day",
-            "--json", "title", "--json", "location",
-            "today", "30d"
-        ]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const lines = this.text.split("\n").filter(l => l.trim().length > 0)
-                let events = []
-                for (const line of lines) {
-                    try {
-                        events = events.concat(JSON.parse(line))
-                    } catch (e) {}
-                }
-
-                events = root.dedupeEvents(events)
-
-                const now = new Date()
-                const today = now.toISOString().slice(0, 10)
-                events = events.filter(e => {
-                    if (e["all-day"] === "True") return e["start-date"] >= today
-                    return root.eventDateTime(e) >= now
-                })
-                events.sort((a, b) => root.eventDateTime(a) - root.eventDateTime(b))
-                root.upcomingEvents = events.slice(0, 2)
-            }
-        }
-    }
-
     Process {
         id: calendarSyncProc
         running: false
         command: ["vdirsyncer", "sync"]
-        onExited: khalProc.running = true
+        onExited: cal.refresh()
     }
 
     Timer {
@@ -135,7 +65,7 @@ PanelWindow {
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: khalProc.running = true
+        onTriggered: cal.refresh()
     }
 
     Rectangle {

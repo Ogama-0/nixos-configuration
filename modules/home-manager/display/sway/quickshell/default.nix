@@ -34,6 +34,12 @@ let
     then { capsuleFill = "#F2${c.base00}"; capsuleInk = "#FF${c.base05}"; }
     else { capsuleFill = "#F2${c.base05}"; capsuleInk = "#FF${c.base00}"; };
 
+  # Ink on an accent (base0B) fill: base00 in dark, base07 in light. Light's
+  # base00 is the cream ground, so an icon in it would vanish into the green.
+  onAccentInkFor = variant:
+    let c = allColors.${variant}; in
+    if variant == "light" then "#FF${c.base07}" else "#FF${c.base00}";
+
   # Built from the profile so the tailnet hostnames are never hardcoded in QML.
   #
   # The doubled `.server.server` is not a typo. host/profiles.nix builds every
@@ -68,6 +74,21 @@ let
     wallpaperDirs = "${variant} both";
     inherit systemctlBin swaymsgBin corptaFontPath statusApiUrl metricsApiUrl;
     lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
+    onAccentInk = onAccentInkFor variant;
+    whereAmIBin = "${pkgs.geoclue2}/libexec/geoclue-2.0/demos/where-am-i";
+    # Both variants are nearly opaque, and dark learned this the same way
+    # @cardBg@'s consumers did. At 80% a bright window underneath - a
+    # terminal, a white page - read straight through the panel and sat
+    # behind the notification text. The beam showing through was never worth
+    # that; what sells the glass is the border and the sheen, not the alpha.
+    #
+    # base01, not base00, in dark. base00 IS black, and a 94%-black sheet on
+    # a black wallpaper has no edges - the panel vanished and left its own
+    # internal dividers floating in space. base01 is the next step up the
+    # ramp and reads as a surface on any ground.
+    sheetBg = if variant == "light"
+              then "#F2${allColors.light.base00}"
+              else "#EF${allColors.dark.base00}";
   } // statusColorsFor variant // capsuleColorsFor variant);
 
   themedQmlFile = variant: path: {
@@ -155,6 +176,32 @@ in
           "${d}/components/StatusModel.qml" = themedQmlFile variant ./components/StatusModel.qml;
           "${d}/components/Sparkline.qml" = themedQmlFile variant ./components/Sparkline.qml;
           "${d}/components/StatusPanel.qml" = themedQmlFile variant ./components/StatusPanel.qml;
+          "${d}/components/CalendarModel.qml" = themedQmlFile variant ./components/CalendarModel.qml;
+          "${d}/components/PanelBeam.qml" = themedQmlFile variant ./components/PanelBeam.qml;
+          "${d}/components/panel/PanelIcon.qml" = themedQmlFile variant ./components/panel/PanelIcon.qml;
+          "${d}/components/panel/ToggleTile.qml" = themedQmlFile variant ./components/panel/ToggleTile.qml;
+          "${d}/components/panel/ToggleGrid.qml" = themedQmlFile variant ./components/panel/ToggleGrid.qml;
+          "${d}/components/panel/ToggleModel.qml" = themedQmlFile variant ./components/panel/ToggleModel.qml;
+          "${d}/components/panel/ToggleTip.qml" = themedQmlFile variant ./components/panel/ToggleTip.qml;
+          "${d}/components/panel/ClockWeatherHead.qml" = themedQmlFile variant ./components/panel/ClockWeatherHead.qml;
+          "${d}/components/panel/WeatherModel.qml" = themedQmlFile variant ./components/panel/WeatherModel.qml;
+          "${d}/components/panel/PanelNavButton.qml" = themedQmlFile variant ./components/panel/PanelNavButton.qml;
+          "${d}/components/panel/CalendarPane.qml" = themedQmlFile variant ./components/panel/CalendarPane.qml;
+          "${d}/components/panel/MetricsPane.qml" = themedQmlFile variant ./components/panel/MetricsPane.qml;
+          "${d}/components/panel/MetricsModel.qml" = themedQmlFile variant ./components/panel/MetricsModel.qml;
+          "${d}/components/panel/DiskPane.qml" = themedQmlFile variant ./components/panel/DiskPane.qml;
+          "${d}/components/panel/DiskModel.qml" = themedQmlFile variant ./components/panel/DiskModel.qml;
+          "${d}/components/panel/NotificationServer.qml" = themedQmlFile variant ./components/panel/NotificationServer.qml;
+          "${d}/components/panel/NotificationRow.qml" = themedQmlFile variant ./components/panel/NotificationRow.qml;
+          "${d}/components/panel/NotificationToasts.qml" = themedQmlFile variant ./components/panel/NotificationToasts.qml;
+          "${d}/components/panel/NotificationPane.qml" = themedQmlFile variant ./components/panel/NotificationPane.qml;
+          "${d}/components/panel/AudioModel.qml" = themedQmlFile variant ./components/panel/AudioModel.qml;
+          "${d}/components/panel/AudioPane.qml" = themedQmlFile variant ./components/panel/AudioPane.qml;
+          "${d}/components/panel/MobileModel.qml" = themedQmlFile variant ./components/panel/MobileModel.qml;
+          "${d}/components/panel/MobilePane.qml" = themedQmlFile variant ./components/panel/MobilePane.qml;
+          "${d}/components/panel/MobileAction.qml" = themedQmlFile variant ./components/panel/MobileAction.qml;
+          "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
+          "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
     in
     treeFor "dark" // treeFor "light";

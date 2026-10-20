@@ -41,6 +41,25 @@
 , swaymsgBin ? "swaymsg"
 , capsuleFill ? "#F2${colors.base05}"
 , capsuleInk ? "#FF${colors.base00}"
+  # Ink on an accent fill. Not derivable from `colors` alone: it is base00 in
+  # dark but base07 in light, because light's base00 IS the cream ground and
+  # an icon painted in it would disappear into the fill. Same reason
+  # capsuleFill/capsuleInk are passed per variant rather than computed here.
+, onAccentInk ? "#FF${colors.base00}"
+  # geoclue's own CLI. PATH is not dependable inside the systemd user
+  # service, which is why @systemctlBin@ exists too.
+, whereAmIBin ? "where-am-i"
+  # The control panel sheet's ground. Named @sheetBg@ and not @panelBg@
+  # because that token already exists for StatusPanel - replaceStrings takes
+  # the FIRST match, so a duplicate name is silently dead and the sheet
+  # inherits whatever the older token resolves to. It did, for one commit.
+  #
+  # Not @glassBg@ either - that one is the bar's
+  # capsule material at 40%, which works in dark (darkening only helps
+  # near-white text) and fails in light, where 40% cream over a saturated
+  # wallpaper leaves base05 text floating on a mid-tone. Same lesson
+  # @cardBg@'s consumers learned at 90%. Passed per variant.
+, sheetBg ? "#CC${colors.base01}"
 }:
 builtins.replaceStrings
   [
@@ -73,6 +92,14 @@ builtins.replaceStrings
     "@swaymsgBin@"
     "@capsuleFill@"
     "@capsuleInk@"
+    # Panel tokens. @onAccentInk@ is the one derived value in the whole
+    # scheme: text and icons sitting ON an accent fill, which is base00 in
+    # dark but base07 in light - base00 there is the cream ground and would
+    # vanish. @plateBg@ is the faint resting plate a toggle tile sits on.
+    "@onAccentInk@"
+    "@plateBg@"
+    "@whereAmIBin@"
+    "@sheetBg@"
   ]
   [
     "#B3${colors.base00}"
@@ -111,4 +138,8 @@ builtins.replaceStrings
     swaymsgBin
     capsuleFill
     capsuleInk
+    onAccentInk
+    "#12${colors.base05}"
+    whereAmIBin
+    sheetBg
   ]

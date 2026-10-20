@@ -122,9 +122,6 @@ in
         ${dconfExe} write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3-dark'"
         ${dconfExe} write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'"
       '';
-      mako = ''
-        ${pkgs.mako}/bin/makoctl mode -r light
-      '';
       quickshell-theme = ''
         ${treeLink} "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
         ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets.service || true
@@ -144,9 +141,6 @@ in
         ${dconfExe} write /org/gnome/desktop/interface/color-scheme "'prefer-light'"
         ${dconfExe} write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3'"
         ${dconfExe} write /org/gnome/desktop/interface/icon-theme "'Papirus-Light'"
-      '';
-      mako = ''
-        ${pkgs.mako}/bin/makoctl mode -a light
       '';
       quickshell-theme = ''
         ${treeLink} "${config.xdg.configHome}/quickshell/widgets-light" "${config.xdg.configHome}/quickshell/widgets"

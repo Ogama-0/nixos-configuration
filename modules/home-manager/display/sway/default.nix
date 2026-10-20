@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -15,8 +16,8 @@ in
   imports = [
     # ./barbar.nix
     ./effects.nix
-    ./mako.nix
     ./quickshell
+    ../../gammastep.nix
     ./idle.nix
     ../vicinae.nix
     ../swaylockTrollKristentenervepascestjustelideeesttropbien.nix
@@ -74,6 +75,49 @@ in
         titlebar = false;
         border = 0;
 
+        commands = [
+          # The file picker the panel opens for "Send file". zenity hands
+          # the job to the XDG portal, so the window to catch is the
+          # portal's and not zenity's - matching app_id="zenity" catches
+          # nothing at all.
+          #
+          # Tiled it took the whole screen for a dialog whose job is to
+          # pick one path.
+          {
+            criteria.app_id = "xdg-desktop-portal-gtk";
+            command = "floating enable, resize set 760 480, move position center";
+          }
+
+          # Everything KDE Connect puts on screen: the app, the handler and
+          # the transfer window. The whole family, because which of them
+          # appears depends on what you asked for, and they all want the
+          # same treatment - small, out of the way, top left.
+          {
+            criteria.app_id = "^org\\.kde\\.kdeconnect";
+            command = "floating enable, resize set 480 320, move position 24 24";
+          }
+        ];
+      };
+
+      # A sway mode that exists for exactly one key.
+      #
+      # The panel must not hold keyboard focus - you are meant to carry on
+      # typing into whatever is underneath it - but Escape still has to
+      # dismiss it, and a layer surface cannot receive a key it does not
+      # have focus for. A mode is the only mechanism in sway that intercepts
+      # ONE key and lets every other one through to the focused window.
+      #
+      # Every normal binding is copied in, so nothing stops working while
+      # the panel is up. ControlPanel.qml enters this mode when the panel
+      # opens and returns to default when it closes, by any route - so a
+      # click outside or a workspace change leaves the mode too.
+      modes.panel = config.wayland.windowManager.sway.config.keybindings // {
+        "Escape" = "mode default; exec quickshell ipc -c widgets call panel dismiss";
+        # Deleting the selected notification, by the same route and for the
+        # same reason: the panel never holds keyboard focus, so sway has to
+        # intercept the key. Unlike Escape this one does NOT leave the mode
+        # - you are usually deleting several.
+        "Delete" = "exec quickshell ipc -c widgets call panel deleteSelected";
       };
 
       keybindings = lib.mkOptionDefault {
@@ -93,7 +137,7 @@ in
         # second one is the likely reason sway stopped firing the --release
         # that collapses the bar. Restore it if you still want the swaybar
         # toggle and would rather move the laser bar to another key.
-        "${modifier}+Shift+z" = "exec makoctl dismiss";
+        "${modifier}+Shift+z" = "exec quickshell ipc -c widgets call panel clearNotifications";
         # "${modifier}+Shift+d" = "exec vesktop";
         "${modifier}+space" = "exec nautilus";
         "${modifier}+Shift+s" = "exec spotify";
@@ -101,6 +145,10 @@ in
         "${modifier}+Shift+a" = "exec pavucontrol";
         "${modifier}+p" = "exec wl-color-picker";
         "${modifier}+w" = "exec quickshell ipc -c widgets call wallpaper togglePicker";
+        # Hold mod (which raises the bar), then n. A normal binding works
+        # here where a bare-modifier one would not: sway only stops firing
+        # the --release of the modifier ITSELF once it has been used as one.
+        "${modifier}+n" = "exec quickshell ipc -c widgets call panel toggle";
 
         # Workspace related keys
         "${modifier}+grave" = "workspace 10";
@@ -136,17 +184,17 @@ in
         "XF86AudioPlay" = "exec playerctl play-pause";
 
         "XF86AudioRaiseVolume" =
-          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ && makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"'';
+          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+'';
 
         "XF86AudioLowerVolume" =
-          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- &&  makoctl dismiss -a && notify-desktop "Volume Level" "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"Volume: %.0f%%\", $2*100;}')"'';
+          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%-'';
         "XF86AudioMute" =
-          "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && makoctl dismiss -a && notify-desktop $(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'MUTED' && printf 'Sound OFF' || printf 'Sound ON')";
+          "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
 
         "XF86MonBrightnessUp" =
-          ''exec brightnessctl --exponent=2 s +10% && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf "Brightness: %.0f%%", ($1/max)*100;}')"'';
+          ''exec brightnessctl --exponent=2 s +10%'';
         "XF86MonBrightnessDown" =
-          ''exec brightnessctl --exponent=2 s 10%- && makoctl dismiss -a && notify-desktop "Brightness Level" "$(brightnessctl get | awk -v max=$(brightnessctl max) '{printf "Brightness: %.0f%%", ($1/max)*100;}')"'';
+          ''exec brightnessctl --exponent=2 s 10%-'';
 
         "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
       };

@@ -11,6 +11,11 @@ import QtQuick
 Item {
     id: root
 
+    // Clicking the clock summons the control panel. The widget does not know
+    // what a panel is: it says the clock was clicked and LaserBar passes that
+    // up to shell.qml, which owns both.
+    signal panelRequested
+
     // Read by BarGroup: where this sits inside its group.
     property int pos: 1
     property bool groupWired: false
@@ -50,6 +55,14 @@ Item {
             font.pixelSize: Math.round(19 * root.uiScale)
             font.bold: true
         }
+    }
+
+    // Covers the whole widget, under nothing: the capsule is the target, not
+    // the glyphs. The pointer only reaches the bar while it is revealed; see
+    // the input region in LaserBar.qml.
+    BarButton {
+        anchors.fill: parent
+        onClicked: root.panelRequested()
     }
 
     Timer {

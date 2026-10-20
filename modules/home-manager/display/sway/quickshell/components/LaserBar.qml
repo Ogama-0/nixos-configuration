@@ -18,6 +18,10 @@ Scope {
     property bool active: false
     property real batteryFraction: 0.5
 
+    // Raised when the clock capsule is clicked. shell.qml owns the panel;
+    // the bar only reports the click.
+    signal panelRequested
+
     // Sway speaks the i3 IPC, so this is socket-driven: no swaymsg subprocess
     // and no polling. Sway destroys a workspace as soon as its last window
     // closes, so "the workspaces it reports" is already "the workspaces with
@@ -309,7 +313,10 @@ Scope {
                 BarGroup {
                     slotSide: "centre"
 
-                    ClockWidget { pos: 1 }
+                    ClockWidget {
+                        pos: 1
+                        onPanelRequested: root.panelRequested()
+                    }
                 }
 
                 BarGroup {
