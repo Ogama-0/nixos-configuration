@@ -444,16 +444,25 @@ Scope {
             WlrLayershell.namespace: "laser-bar-panel"
             WlrLayershell.layer: WlrLayer.Overlay
 
-            // The panel never takes the keyboard. You are meant to keep
-            // typing into whatever is underneath it.
+            // OnDemand: the compositor hands the keyboard over when the
+            // surface is CLICKED, and not before.
             //
-            // Escape still dismisses, but it cannot arrive here - a layer
-            // surface receives no keys without focus. sway intercepts that
-            // one key in a mode instead (see modes.panel in the sway config)
-            // and passes every other key through to the focused window,
-            // which is the only arrangement that gives both halves.
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-            focusable: false
+            // This is the only setting that allows shift-click. Wayland
+            // delivers keyboard modifiers over wl_keyboard, which only the
+            // surface holding keyboard focus receives - with None the panel
+            // was told about every click and never about Shift, so a range
+            // selection could not be detected at all. Not a bug in the
+            // handler; the information was never sent.
+            //
+            // What it costs: once you have clicked the panel, keystrokes go
+            // to it until you dismiss it or click away. Summoning it and
+            // not touching it leaves your typing where it was.
+            //
+            // Escape and Delete do not depend on this either way - sway
+            // intercepts those two in modes.panel and passes everything
+            // else through to the focused window.
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            focusable: true
 
             // The clock capsule is 38 tall centred on beamY, which puts its
             // top 44 1080p-pixels above the screen bottom (LaserBar.qml:
