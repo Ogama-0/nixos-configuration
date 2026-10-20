@@ -51,7 +51,10 @@ Scope {
     // a second is a load-time error, not a warning.
     onIsOpenChanged: {
         if (isOpen) warmUp.restart();
-        else { warmUp.stop(); warmedUp = false; selectedNotification = ""; }
+        else {
+            warmUp.stop(); warmedUp = false;
+            selectedNotifications = []; selectionAnchor = "";
+        }
 
         // sway only intercepts Escape while this mode is active, so the
         // mode's lifetime is the panel's. Leaving it on every close -
@@ -271,8 +274,83 @@ Scope {
 
     // NOT gated on isOpen. A centre that only listened while you were
     // looking at it would be a list of things you had already seen.
-    // Lives here and not in the pane: see the note in NotificationPane.qml.
-    property string selectedNotification: ""
+    // Selection and expansion live HERE, not in the pane. The pane sits
+    // inside a Variants delegate - one per screen - and ids in there are
+    // invisible to the IPC handler, which is how the Delete key spent a
+    // release calling into a `notifyPane` that did not exist. Keeping the
+    // state outside also stops two screens disagreeing about it.
+    property var selectedNotifications: []
+    property string selectionAnchor: ""
+    property var expandedGroups: ({})
+
+    // The notifications as they are actually laid out: groups in order,
+    // a collapsed one contributing only its newest entry. Range selection
+    // and "select the next one after a delete" both need to agree with
+    // what you can see, not with the underlying list.
+    // Pure, so it can be tested with a literal instead of a bus.
+    function visibleOrderOf(gs, open) {
+        const out = [];
+        for (let i = 0; i < gs.length && i < 5; i++) {
+            const g = gs[i];
+            if (open[g.key] === true)
+                for (const it of g.items.slice(0, 6)) out.push(it.uid);
+            else
+                out.push(g.items[0].uid);
+        }
+        return out;
+    }
+
+    function visibleOrder() {
+        return visibleOrderOf(notifications.groups, expandedGroups);
+    }
+
+    // What to land on once `doomed` is gone: the first survivor below the
+    // selection, or failing that the last one above it. Pure, same reason.
+    function nextAfter(order, doomed) {
+        let after = "";
+        for (let i = order.length - 1; i >= 0; i--) {
+            if (doomed.indexOf(order[i]) >= 0) break;
+            after = order[i];
+        }
+        if (after === "") {
+            for (const uid of order) {
+                if (doomed.indexOf(uid) >= 0) break;
+                after = uid;
+            }
+        }
+        return after;
+    }
+
+    // Also pure: what a click should leave selected.
+    function selectionFor(order, current, anchor, uid, extend) {
+        if (extend && anchor !== "") {
+            const a = order.indexOf(anchor), b = order.indexOf(uid);
+            if (a >= 0 && b >= 0)
+                return order.slice(Math.min(a, b), Math.max(a, b) + 1);
+        }
+        if (current.length === 1 && current[0] === uid) return [];
+        return [uid];
+    }
+
+    function toggleGroup(key) {
+        const next = {};
+        for (const k in expandedGroups) next[k] = expandedGroups[k];
+        next[key] = !next[key];
+        expandedGroups = next;
+    }
+
+    // Plain click selects one. Shift extends from the anchor across
+    // everything between, in the order you see them.
+    function selectNotification(uid, extend) {
+        const next = selectionFor(visibleOrder(), selectedNotifications,
+                                  selectionAnchor, uid, extend);
+        selectedNotifications = next;
+        if (next.length !== 1 || next[0] !== uid) {
+            if (next.length === 0) selectionAnchor = "";
+        } else {
+            selectionAnchor = uid;
+        }
+    }
 
     NotificationServer {
         id: notifications
@@ -324,10 +402,18 @@ Scope {
         // Bound to mod+shift+z, which used to be makoctl dismiss.
         function clearNotifications(): void { notifications.clearAll() }
         // Delete, while the panel is up. Does nothing with no selection.
+        // Deletes everything selected and lands on what follows, so a
+        // backlog can be cleared with one finger on the key instead of a
+        // click between every press.
         function deleteSelected(): void {
-            if (root.selectedNotification === "") return;
-            notifications.dismissUid(root.selectedNotification);
-            root.selectedNotification = "";
+            const doomed = root.selectedNotifications;
+            if (doomed.length === 0) return;
+
+            const after = root.nextAfter(root.visibleOrder(), doomed);
+
+            for (const uid of doomed) notifications.dismissUid(uid);
+            root.selectedNotifications = after === "" ? [] : [after];
+            root.selectionAnchor = after;
         }
     }
 
@@ -636,10 +722,11 @@ Scope {
                                 height: parent.height - 36 * zones.s
                                 uiScale: panel.uiScale
                                 groups: notifications.groups
-                                selectedUid: root.selectedNotification
-                                onSelectRequested: uid =>
-                                    root.selectedNotification =
-                                        root.selectedNotification === uid ? "" : uid
+                                selectedUids: root.selectedNotifications
+                                expanded: root.expandedGroups
+                                onSelectRequested: (uid, extend) =>
+                                    root.selectNotification(uid, extend)
+                                onToggleRequested: key => root.toggleGroup(key)
 
                                 onClearAllAsked: notifications.clearAll()
                                 onGroupCleared: app => notifications.dismissGroup(app)

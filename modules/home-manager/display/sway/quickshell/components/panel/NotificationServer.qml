@@ -95,12 +95,17 @@ Item {
 
     readonly property int count: notifications.length
 
-    // Apps whose notifications must never be packed together. KDE Connect
-    // is a RELAY: everything your phone shows arrives under its name, so
+    // Relays: apps that forward other apps' notifications under their own
+    // name. Everything your phone shows arrives as "KDE Connect", so
     // packing by sender puts a message, a battery warning and a BeReal in
-    // one stack labelled "KDE Connect". They are not one thing that
-    // happened, they only share a courier.
-    property var ungroupedApps: ["KDE Connect"]
+    // one stack - they are not one thing that happened, they only share a
+    // courier.
+    //
+    // But they are not unrelated either. A relay puts the REAL sender in
+    // the summary, so three from Deezer pack together and Finamp stays
+    // its own group. Grouping by the courier is wrong; refusing to group
+    // at all is only less wrong.
+    property var relayApps: ["KDE Connect"]
 
     // Grouped by the app that sent them, newest group first, and each
     // group's items newest first. Five notifications from one chat app is
@@ -111,16 +116,22 @@ Item {
         const byKey = {};
         for (const n of notifications) {
             const app = n.appName || "Unknown app";
-            // A relay gets one group per notification. The key is what
-            // packs; the app name is only what is printed.
-            const key = ungroupedApps.indexOf(app) >= 0
-                ? app + "\u0000" + n.uid : app;
-            if (!byKey[key]) { byKey[key] = { app: app, items: [] }; order.push(key); }
+            const relay = relayApps.indexOf(app) >= 0;
+            // Through a relay the summary IS the sender, so that is what
+            // packs and what gets printed. The courier's name is dropped:
+            // "KDE Connect / Deezer / Detestable" says the same thing
+            // twice and buries the part you read.
+            const sender = relay ? (n.summary || app) : app;
+            const key = relay ? app + "\u0000" + sender : app;
+            if (!byKey[key])
+                { byKey[key] = { app: sender, relay: relay, items: [] };
+                  order.push(key); }
             byKey[key].items.push(n);
         }
         return order.map(key => ({
             key: key,
             app: byKey[key].app,
+            relay: byKey[key].relay,
             items: byKey[key].items,
             count: byKey[key].items.length
         }));

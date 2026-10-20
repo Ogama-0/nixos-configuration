@@ -24,8 +24,9 @@ Item {
     readonly property int maxGroups: 5
     readonly property int maxInGroup: 6
 
-    // Which app names are open. A plain object keyed by name, so it
-    // survives the list reshuffling underneath it - an index would not.
+    // Both owned by ControlPanel; this pane only draws them. Keyed by
+    // group key and by uid, never by index: the list reshuffles under
+    // them every time something arrives.
     property var expanded: ({})
 
     // The selected notification, by uid. Clicking one selects it and prints
@@ -38,21 +39,17 @@ Item {
     // to the IPC handler at the top of ControlPanel, so the Delete key
     // reached a `notifyPane` that did not exist. Keeping the state outside
     // also means two screens cannot disagree about what is selected.
-    property string selectedUid: ""
+    property var selectedUids: []
+
+    function isSelected(uid) { return selectedUids.indexOf(uid) >= 0 }
 
     signal clearAllAsked
     signal groupCleared(string app)
     signal dismissed(var item)
-    signal selectRequested(string uid)
+    signal selectRequested(string uid, bool extend)
+    signal toggleRequested(string key)
 
     default property alias footer: footerSlot.data
-
-    function toggle(app) {
-        const next = {};
-        for (const k in expanded) next[k] = expanded[k];
-        next[app] = !next[app];
-        expanded = next;
-    }
 
     readonly property int total: {
         let n = 0;
@@ -214,7 +211,7 @@ Item {
 
                         Rectangle {
                             visible: !group.stacked
-                                && root.selectedUid === group.modelData.items[0].uid
+                                && root.isSelected(group.modelData.items[0].uid)
                             x: -7 * root.uiScale
                             y: -3 * root.uiScale
                             width: parent.width + 14 * root.uiScale
@@ -228,9 +225,10 @@ Item {
                             width: parent.width
                             uiScale: root.uiScale
                             showApp: false
+                            showSummary: group.modelData.relay !== true
                             item: group.modelData.items[0]
                             expanded: !group.stacked
-                                && root.selectedUid === group.modelData.items[0].uid
+                                && root.isSelected(group.modelData.items[0].uid)
                         }
                     }
 
@@ -258,7 +256,7 @@ Item {
                             // green rectangle around the green edge it
                             // already had and read as a rendering fault.
                             Rectangle {
-                                visible: root.selectedUid === modelData.uid
+                                visible: root.isSelected(modelData.uid)
                                 x: -7 * root.uiScale
                                 y: row.y - 3 * root.uiScale
                                 width: parent.width + 14 * root.uiScale
@@ -273,8 +271,9 @@ Item {
                                 width: parent.width
                                 uiScale: root.uiScale
                                 showApp: false
+                                showSummary: group.modelData.relay !== true
                                 item: modelData
-                                expanded: root.selectedUid === modelData.uid
+                                expanded: root.isSelected(modelData.uid)
 
                                 // Each one a beat behind the last, so an
                                 // opening group reads as unfolding rather
@@ -294,7 +293,8 @@ Item {
                             // In an open group each entry is its own target.
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: root.selectRequested(modelData.uid)
+                                onClicked: mouse => root.selectRequested(modelData.uid,
+                                        (mouse.modifiers & Qt.ShiftModifier) !== 0)
                             }
                         }
                     }
@@ -315,9 +315,10 @@ Item {
                     anchors.fill: parent
                     anchors.bottomMargin: group.open
                         ? parent.height - 26 * root.uiScale : 0
-                    onClicked: {
-                        if (group.stacked) root.toggle(group.modelData.key);
-                        else root.selectRequested(group.modelData.items[0].uid);
+                    onClicked: mouse => {
+                        if (group.stacked) root.toggleRequested(group.modelData.key);
+                        else root.selectRequested(group.modelData.items[0].uid,
+                                    (mouse.modifiers & Qt.ShiftModifier) !== 0);
                     }
                 }
             }

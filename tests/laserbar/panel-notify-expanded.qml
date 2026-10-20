@@ -29,7 +29,7 @@ Scope {
             height: 400
             uiScale: 1
             expanded: ({ "Signal": true })
-            selectedUid: "u2"
+            selectedUids: ["u2"]
             groups: [
                 { key: "Signal", app: "Signal", count: 3, items: [
                     { uid: "u1", appName: "Signal", summary: "Marie", body: "On arrive dans 10 minutes" },

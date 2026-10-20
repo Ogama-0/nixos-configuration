@@ -10,6 +10,10 @@ Item {
     property real uiScale: 1
     property var item: null
     property bool showApp: true
+    // A relayed notification's summary is the phone app's name, which the
+    // group header already prints. Repeating it leaves the body - the only
+    // part you actually read - as the smallest text in the row.
+    property bool showSummary: true
     // Selected rows print the whole thing. A one-line body is the right
     // default for a list you are scanning and the wrong one the moment you
     // have picked the message you actually want to read.
@@ -62,6 +66,7 @@ Item {
         }
         Text {
             width: parent.width
+            visible: root.showSummary
             text: root.item
                 ? (root.item.summary || root.item.body || "(no title)") : ""
             color: "@clockColor@"
@@ -76,10 +81,13 @@ Item {
             // One line when scanning. A body can be kilobytes long and must
             // not be allowed to set this row's height - so even expanded it
             // stops at eight lines rather than taking the whole panel.
-            text: root.item && root.item.summary ? (root.item.body || "") : ""
+            text: root.item
+                ? (root.showSummary && !root.item.summary ? "" : (root.item.body || ""))
+                : ""
             visible: text.length > 0
-            color: "@mutedColor@"
-            font.pixelSize: Math.round(12 * root.uiScale)
+            color: root.showSummary ? "@mutedColor@" : "@clockColor@"
+            font.pixelSize: Math.round(12.5 * root.uiScale)
+            font.weight: root.showSummary ? Font.Normal : Font.DemiBold
             elide: Text.ElideRight
             wrapMode: root.expanded ? Text.Wrap : Text.NoWrap
             maximumLineCount: root.expanded ? 8 : 1
