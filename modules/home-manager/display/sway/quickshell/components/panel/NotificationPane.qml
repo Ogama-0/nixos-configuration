@@ -19,10 +19,12 @@ Item {
     // [{ app, items: [...], count }]
     property var groups: []
 
-    // Drawn at most; the rest exist in the model and are counted, not laid
-    // out. A flood of two hundred must not become two hundred delegates.
-    readonly property int maxGroups: 5
-    readonly property int maxInGroup: 6
+    // A flood of two hundred must not become two hundred delegates, so there
+    // is still a ceiling - but it sits far above a normal desktop's worth of
+    // noise. Below it everything is drawn and reached by scrolling; the "and
+    // N more" lines are now the pathological case, not the everyday one.
+    readonly property int maxGroups: 30
+    readonly property int maxInGroup: 30
 
     // Both owned by ControlPanel; this pane only draws them. Keyed by
     // group key and by uid, never by index: the list reshuffles under
@@ -50,6 +52,12 @@ Item {
     signal toggleRequested(string key)
 
     default property alias footer: footerSlot.data
+
+    // How far down the list we are. Writable, and the only handle a fixture
+    // has on the scroll: the render harness delivers no pointer events at
+    // all - a bare MouseArea in it never sees a press - so neither a wheel
+    // nor a drag can be asserted from a render.
+    property alias scrollY: listClip.contentY
 
     readonly property int total: {
         let n = 0;
@@ -93,21 +101,33 @@ Item {
         font.pixelSize: Math.round(12.5 * root.uiScale)
     }
 
-    // The list is BOUNDED and clipped. An expanded group of six on top of
-    // four other apps is taller than the zone, and without this it drew
-    // straight over the audio controls below and out of the sheet. The
-    // counts already say what is not shown; what must never happen is
-    // content landing somewhere it was not allocated.
-    Item {
+    // The list is clipped to its zone - content must never land over the
+    // audio controls below or outside the sheet - and SCROLLS inside it.
+    // Truncating instead ("and 8 more apps") made the apps underneath
+    // unreachable, which is the one thing a notification centre may not do.
+    Flickable {
         id: listClip
         y: head.height + 10 * root.uiScale
         width: parent.width
         height: Math.max(0, footerSlot.y - 14 * root.uiScale - y)
         clip: true
 
+        contentWidth: width
+        contentHeight: list.height
+        // No bounce. A rubber-band at the ends of a seven-centimetre column
+        // reads as the sheet itself coming loose.
+        boundsBehavior: Flickable.StopAtBounds
+
+        // The wheel moves contentY without ever setting `moving`, so the
+        // indicator cannot hang off that; it hangs off the position
+        // actually changing, and goes quiet when it stops.
+        property bool scrolling: false
+        onContentYChanged: { scrolling = true; idle.restart() }
+        Timer { id: idle; interval: 650; onTriggered: listClip.scrolling = false }
+
     Column {
         id: list
-        width: parent.width
+        width: listClip.width
         spacing: 8 * root.uiScale
 
         // Clearing one group slides the rest up into the gap.
@@ -331,6 +351,29 @@ Item {
             font.pixelSize: Math.round(11.5 * root.uiScale)
         }
     }
+    }
+
+    // How far down the list you are, and how much of it you are seeing. It
+    // shows itself while the list moves and gets out of the way afterwards -
+    // a permanent bar down the edge of a five-plate column is furniture.
+    Rectangle {
+        readonly property real ratio:
+            listClip.contentHeight > 0
+                ? Math.min(1, listClip.height / listClip.contentHeight) : 1
+
+        visible: listClip.contentHeight > listClip.height + 1
+        x: root.width - width
+        width: 3 * root.uiScale
+        height: Math.max(24 * root.uiScale, listClip.height * ratio)
+        y: listClip.y + (listClip.height - height)
+           * (listClip.contentHeight > listClip.height
+              ? listClip.contentY / (listClip.contentHeight - listClip.height)
+              : 0)
+        radius: width
+        color: "@mutedColor@"
+
+        opacity: listClip.scrolling ? 0.75 : 0
+        Behavior on opacity { NumberAnimation { duration: 200 } }
     }
 
     // Audio lives below a beam at the bottom of this column.

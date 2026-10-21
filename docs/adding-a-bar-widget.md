@@ -391,6 +391,13 @@ passing every probe you point at it.
   to *start*. Give-up logic hung off exit never runs. `MetricsModel` forked a
   doomed `nvidia-smi` eight times in two seconds before this was understood;
   it now counts attempts instead.
+- **The render harness delivers no pointer events.** `swaymsg seat - cursor
+  set/press` reports success and reaches nothing: a bare `MouseArea` in a
+  fixture never sees a press, so a click, a drag or a wheel cannot be
+  asserted from a render. Anything pointer-driven needs a writable property
+  a fixture can set instead - `NotificationPane.scrollY` is there for
+  exactly that. A fixture also needs its `mask: Region {}` dropped before it
+  could receive input at all.
 - **Tooltips need their own `PopupWindow`.** The sheet clips its children to
   its corners, so a tip drawn inside can never cross the top edge, which is
   exactly where a top-row tile's tip goes.
