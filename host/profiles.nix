@@ -99,7 +99,6 @@ rec {
       "AAAAC3NzaC1lZDI1NTE5AAAAILaKjKo1kaGVYdA5U6kvrjhDj1T3tp04CmiZE3YmA7id";
 
     extra = base: rec {
-      bg_path = "${base.home_path}/nixos-configuration/assets/background";
       share = rec {
         path = "${base.home_path}/Server/share";
         swapsev_path = "${path}/swapsev";
