@@ -18,8 +18,9 @@
 #         a subtly different shade inside the terminal.
 #
 # Both themes ship with helix; a name helix cannot resolve does not error, it
-# logs "failed to load theme" and silently falls back to the default, so the
-# suite asserts both files exist in the runtime.
+# logs "failed to load theme" and silently falls back to the default. Nothing
+# checks that for you - this repo has no test suite - so if you change either
+# name, confirm by hand that helix resolves it.
 { pkgs }:
 variant:
 if variant == "light" then

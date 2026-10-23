@@ -19,13 +19,15 @@
 #   * `ui` follows the base16 slot convention (base00 darkest ground ->
 #     base07 lightest text, base08-base0F accents). Consumers assume those
 #     roles; swapping a slot's role rather than its value will look wrong.
-#   * The light values were measured for contrast against their own grounds.
-#     `terminal.light` is guarded by a test that enforces >= 7:1 (WCAG AAA)
-#     against the light background, so a low-contrast pick there fails the
-#     suite rather than silently shipping. See the contrast notes below.
+#   * The light values were measured for contrast against their own grounds,
+#     to a >= 7:1 (WCAG AAA) floor for `light.terminal`. NOTHING ENFORCES
+#     THAT: the ratios in the comments below were computed by hand when the
+#     values were picked, and this repo has no test suite to re-check them
+#     (see tests/laserbar/README.md). A low-contrast pick here ships
+#     silently, so re-measure by hand when you change one.
 #
-# Not covered here: display/sway/barbar.nix and the swaylock modules keep
-# their own hardcoded colours and do not switch with darkman.
+# Not covered here: the swaylock module keeps its own hardcoded colours and
+# does not switch with darkman.
 {
   dark = {
     # NOT Horizon. This is the hand-picked terminal palette promoted to the
@@ -120,9 +122,10 @@
     # #FBE0D9, a measured 1.13:1 against the background - invisible - while
     # base0D "blue" is a crimson and base0C "cyan" a red-orange).
     #
-    # Every value below clears 7:1 (WCAG AAA) against #FDF0ED; ratios are
-    # measured, not estimated, and enforced by the suite. "Bright" is *darker*
-    # here, because on a light ground more emphasis means more contrast.
+    # Every value below clears 7:1 (WCAG AAA) against #FDF0ED; the ratios are
+    # measured rather than estimated, but measured by hand and unenforced -
+    # see the header. "Bright" is *darker* here, because on a light ground
+    # more emphasis means more contrast.
     terminal = {
       background = "#FDF0ED";
       foreground = "#2B2728"; # 13.3:1
