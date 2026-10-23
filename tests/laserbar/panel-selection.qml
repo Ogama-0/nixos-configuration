@@ -17,10 +17,26 @@ Scope {
                 { key: "g3", items: [{ uid: "e" }, { uid: "f" }] }
             ];
 
-            console.log("ORDER_COLLAPSED " + cp.visibleOrderOf(groups, ({})).join(","));
-            console.log("ORDER_OPEN      " + cp.visibleOrderOf(groups, ({ "g1": true })).join(","));
+            // The caps come off the panel, so this exercises the real ones
+            // rather than a pair of literals that can drift away from them -
+            // which is what they had done: the pane drew 30 groups of 30
+            // while the order was hardcoded to 5 and 6, and every selection
+            // past the fifth group was computed against a list that did not
+            // match the screen.
+            const gc = cp.maxGroups, ic = cp.maxInGroup;
+            console.log("CAPS            groups=" + gc + " items=" + ic);
 
-            const order = cp.visibleOrderOf(groups, ({ "g1": true }));  // a,b,c,d,e
+            console.log("ORDER_COLLAPSED " + cp.visibleOrderOf(groups, ({}), gc, ic).join(","));
+            console.log("ORDER_OPEN      " + cp.visibleOrderOf(groups, ({ "g1": true }), gc, ic).join(","));
+
+            // The caps still cap. Two groups of the three, two items of g1's
+            // three: b survives, c is past the item cap, g3 past the group
+            // cap. A cap that silently stopped applying would be just as
+            // wrong as one that disagrees with the pane.
+            console.log("ORDER_CAPPED    "
+                + cp.visibleOrderOf(groups, ({ "g1": true }), 2, 2).join(","));
+
+            const order = cp.visibleOrderOf(groups, ({ "g1": true }), gc, ic);  // a,b,c,d,e
 
             console.log("CLICK           " + cp.selectionFor(order, [], "", "b", false).join(","));
             console.log("CLICK_AGAIN     " + cp.selectionFor(order, ["b"], "b", "b", false).join(","));

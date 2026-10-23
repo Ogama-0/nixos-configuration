@@ -23,8 +23,13 @@ Item {
     // is still a ceiling - but it sits far above a normal desktop's worth of
     // noise. Below it everything is drawn and reached by scrolling; the "and
     // N more" lines are now the pathological case, not the everyday one.
-    readonly property int maxGroups: 30
-    readonly property int maxInGroup: 30
+    //
+    // Set by ControlPanel, which has to know them too: its visibleOrder()
+    // models what this pane renders, and the two drifting apart is a silent
+    // wrong answer rather than a visible fault. Defaults kept so the pane
+    // still renders sensibly on its own in a fixture.
+    property int maxGroups: 30
+    property int maxInGroup: 30
 
     // Both owned by ControlPanel; this pane only draws them. Keyed by
     // group key and by uid, never by index: the list reshuffles under

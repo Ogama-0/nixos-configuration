@@ -283,17 +283,32 @@ Scope {
     property string selectionAnchor: ""
     property var expandedGroups: ({})
 
+    // How much of the list the pane actually draws. Owned HERE and handed
+    // down, not read back out of the pane: the pane sits inside the Variants
+    // delegate, where ids are invisible to this scope - the same trap the
+    // Delete key fell into - so this is the only place both sides can agree.
+    //
+    // They had already drifted. The pane drew 30 groups of 30 while the
+    // order below was hardcoded to 5 and 6, so past the fifth group a
+    // shift-click fell through to selecting one (indexOf returned -1 for an
+    // anchor the order had never heard of) and a delete landed on the very
+    // first notification instead of the next one, because nothing in
+    // `doomed` was in the order for nextAfter to walk back from.
+    readonly property int maxGroups: 30
+    readonly property int maxInGroup: 30
+
     // The notifications as they are actually laid out: groups in order,
     // a collapsed one contributing only its newest entry. Range selection
     // and "select the next one after a delete" both need to agree with
     // what you can see, not with the underlying list.
-    // Pure, so it can be tested with a literal instead of a bus.
-    function visibleOrderOf(gs, open) {
+    // Pure, so it can be tested with a literal instead of a bus - the caps
+    // are arguments for the same reason.
+    function visibleOrderOf(gs, open, groupCap, itemCap) {
         const out = [];
-        for (let i = 0; i < gs.length && i < 5; i++) {
+        for (let i = 0; i < gs.length && i < groupCap; i++) {
             const g = gs[i];
             if (open[g.key] === true)
-                for (const it of g.items.slice(0, 6)) out.push(it.uid);
+                for (const it of g.items.slice(0, itemCap)) out.push(it.uid);
             else
                 out.push(g.items[0].uid);
         }
@@ -301,7 +316,8 @@ Scope {
     }
 
     function visibleOrder() {
-        return visibleOrderOf(notifications.groups, expandedGroups);
+        return visibleOrderOf(notifications.groups, expandedGroups,
+                              maxGroups, maxInGroup);
     }
 
     // What to land on once `doomed` is gone: the first survivor below the
@@ -744,6 +760,8 @@ Scope {
                                 height: parent.height - 36 * zones.s
                                 uiScale: panel.uiScale
                                 groups: notifications.groups
+                                maxGroups: root.maxGroups
+                                maxInGroup: root.maxInGroup
                                 selectedUids: root.selectedNotifications
                                 expanded: root.expandedGroups
                                 onSelectRequested: (uid, extend) =>
