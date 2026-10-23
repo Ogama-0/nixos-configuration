@@ -11,6 +11,44 @@ let
   down = "j";
   left = "h";
   right = "l";
+  # Shift+volume keys drive the phone instead of this machine. kdeconnect-cli
+  # has no volume command; the only desktop -> phone path is the mprisremote
+  # plugin, whose `volume` property is writable and maps to the phone's media
+  # stream. Every failure here is a silent exit 0: this runs under a keybind,
+  # where an unpaired phone or a phone with no media app loaded is normal and
+  # must not surface as an error.
+  kdeconnectVolume = pkgs.writeShellScript "kdeconnect-volume" ''
+    set -eu
+    STEP=$1
+    SVC=org.kde.kdeconnect
+    IFACE=org.kde.kdeconnect.device.mprisremote
+
+    # First paired-and-reachable device, rather than a hardcoded id, so this
+    # survives a re-pair.
+    DEVICE=$(${pkgs.kdePackages.kdeconnect-kde}/bin/kdeconnect-cli -a --id-only | ${pkgs.coreutils}/bin/head -n1)
+    if [ -z "$DEVICE" ]; then exit 0; fi
+    OBJ=/modules/kdeconnect/devices/$DEVICE/mprisremote
+
+    # busctl prints a list like: as 1 Deezer -- or just: as 0 -- for none; with
+    # no player there is no volume to set. The player stays registered while
+    # paused, so this only trips when no media app is loaded at all.
+    PLAYERS=$(${pkgs.systemd}/bin/busctl --user get-property $SVC "$OBJ" $IFACE playerList 2>/dev/null || true)
+    set -- $PLAYERS
+    if [ "$#" -lt 3 ]; then exit 0; fi
+
+    # "i 46" -> 46
+    CURRENT=$(${pkgs.systemd}/bin/busctl --user get-property $SVC "$OBJ" $IFACE volume 2>/dev/null || true)
+    set -- $CURRENT
+    if [ "$#" -lt 2 ] || [ "$1" != "i" ]; then exit 0; fi
+
+    NEXT=$(($2 + $STEP))
+    if [ "$NEXT" -lt 0 ]; then NEXT=0; fi
+    if [ "$NEXT" -gt 100 ]; then NEXT=100; fi
+
+    ${pkgs.systemd}/bin/busctl --user set-property $SVC "$OBJ" $IFACE volume i "$NEXT"
+    # Fixed replaces-id so holding the key repaints one toast instead of stacking.
+    ${pkgs.notify-desktop}/bin/notify-desktop -r 7311 -a kdeconnect "Phone Volume" "Volume: $NEXT%" >/dev/null
+  '';
 in
 {
   imports = [
@@ -82,17 +120,29 @@ in
           # Tiled it took the whole screen for a dialog whose job is to
           # pick one path.
           {
+            criteria.all = true;
+            command = "inhibit_idle fullscreen";
+          }
+          {
             criteria.app_id = "xdg-desktop-portal-gtk";
             command = "floating enable, resize set 760 480, move position center";
           }
 
-          # Everything KDE Connect puts on screen: the app, the handler and
-          # the transfer window. The whole family, because which of them
-          # appears depends on what you asked for, and they all want the
-          # same treatment - small, out of the way, top left.
+          # Just the SMS window. Each KDE Connect binary gets its own
+          # app_id off its desktop file - org.kde.kdeconnect.sms, .app,
+          # .handler - so an unanchored "^org\\.kde\\.kdeconnect" prefix
+          # grabbed the whole family. Anchor both ends: the device list and
+          # the share handler are better off with the default tiling.
           {
-            criteria.app_id = "^org\\.kde\\.kdeconnect";
+            criteria.app_id = "^org\\.kde\\.kdeconnect\\.sms$";
             command = "floating enable, resize set 480 320, move position 24 24";
+          }
+          {
+            criteria = {
+              app_id = "firefox";
+              title = "^Extension ?: \\(Bitwarden";
+            };
+            command = "floating enable, resize set 420 px 700 px, move position center";
           }
         ];
       };
@@ -181,18 +231,17 @@ in
         "XF86AudioNext" = "exec playerctl next";
         "XF86AudioPlay" = "exec playerctl play-pause";
 
-        "XF86AudioRaiseVolume" =
-          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+'';
+        "XF86AudioRaiseVolume" = "exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+";
 
-        "XF86AudioLowerVolume" =
-          ''exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%-'';
-        "XF86AudioMute" =
-          "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        "XF86AudioLowerVolume" = "exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%-";
 
-        "XF86MonBrightnessUp" =
-          ''exec brightnessctl --exponent=2 s +10%'';
-        "XF86MonBrightnessDown" =
-          ''exec brightnessctl --exponent=2 s 10%-'';
+        # Same keys with Shift, aimed at the phone over KDE Connect.
+        "Shift+XF86AudioRaiseVolume" = "exec ${kdeconnectVolume} 5";
+        "Shift+XF86AudioLowerVolume" = "exec ${kdeconnectVolume} -5";
+        "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+
+        "XF86MonBrightnessUp" = "exec brightnessctl --exponent=2 s +10%";
+        "XF86MonBrightnessDown" = "exec brightnessctl --exponent=2 s 10%-";
 
         "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
       };
