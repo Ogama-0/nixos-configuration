@@ -140,7 +140,3 @@ rebuild to turn both off.
 - build the hdd architectur with 2 2tb hdd with backup on the 4to hdd
 - use kristen's vps to let people access to my server (throught tailescale tunel)
 - FIX : joplin filling the routeur
-
-- docs/bar.qml :
-  - bug :
-    - with the music module, because the module is not allways showed, when it's not it , the lasers beams are compressed. to replic the bug : put music, then stop, kill deezer, this laggy state have consequence undefined behaviour on theplacement of the modules.

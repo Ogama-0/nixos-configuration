@@ -73,11 +73,23 @@ Components.RevealMask {
     height: shell.height
     visible: contentWidth > 0
 
-    // What the group actually draws, in panel coordinates: BarSlots places by
-    // this and BeamSide pinches the strands around it, so a group whose
-    // reservation is wider than its capsule still sits where it should.
+    // What the group actually draws, in the group's OWN coordinates: BarSlots
+    // places by this and BeamSide pinches the strands around it, so a group
+    // whose reservation is wider than its capsule still sits where it should.
+    // BarSlots adds the group's x to get panel coordinates.
+    //
+    // Group-local, and never `x + shell.x`, because BarSlots connects
+    // occupiedSpanChanged to its layout pass and that pass WRITES x. Reading x
+    // here closes the loop: placing a module re-emits the signal that placed
+    // it, re-entering relayout() midway through its own run. Qt reports it as
+    // a binding loop on this property and then stops re-evaluating it, which
+    // is worse than the churn - the span freezes holding the x the group had
+    // before it moved, so the beam gets pinched over a stretch where there is
+    // no longer a capsule and runs straight through the one there is. That is
+    // what the music widget used to trigger every time a player quit and the
+    // right capsule shrank by the widget's whole width.
     readonly property var occupiedSpan:
-        contentWidth > 0 ? [x + shell.x, x + shell.x + shell.width] : []
+        contentWidth > 0 ? [shell.x, shell.x + shell.width] : []
 
     default property alias content: widgetHost.data
 

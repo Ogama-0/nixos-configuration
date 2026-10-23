@@ -31,7 +31,13 @@ Item {
     required property real bodyHeight
     // Long and shallow: the taper reads as the beam narrowing into the module
     // rather than a bracket stuck on its end.
-    property real flare: 20
+    //
+    // Scaled, like every other dimension here. Left unscaled it was the only
+    // one: on an unscaled 4K output the body, outline, edgeMargin, spacing
+    // and BeamSide's pinchPad all doubled around a taper that did not, so
+    // the flare read half-length and the pinch ramp - which is 20 * uiScale
+    // and meant to match this - no longer agreed with the shape it ramps to.
+    property real flare: 20 * uiScale
     property real outline: 4.6 * uiScale
     property color fillColor: "@capsuleFill@"
     // A dark border with a thin filament of the rail's colour running down

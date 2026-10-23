@@ -78,15 +78,19 @@ Item {
         const baseAmplitude = (8 + (s % 3) * 4) * root.uiScale
         const wavelength = (11 + s * 1) * root.uiScale
         const pts = []
-        for (let t = 0; t <= root.extent; t += 3) {
+        // Scaled, which is what the header promises and what corePoints
+        // below already did. A bare `t += 3` made a 4K output cost twice the
+        // points per strand, five strands a side, rebuilt at 30Hz, with a
+        // pinchScale() call on every one of them.
+        const step = 3 * root.uiScale
+        for (let t = 0; t <= root.extent; t += step) {
             const px = root.isLeft ? t : root.panelWidth - t
             // No ramp at the screen edge, only at the travelling tip. The
             // edge ramp squashed every strand onto the centreline over the
             // first 20px, so the bar started as a single line and only became
             // a wave once clear of the border.
-            const ramp = Math.min(1, (root.extent - t) / 20) * root.pinchScale(px)
-            const amplitude = baseAmplitude
-            const y = midY + amplitude * ramp * Math.sin(t / wavelength + root.wavePhase * speedFactor + phaseOffset)
+            const ramp = Math.min(1, (root.extent - t) / (20 * root.uiScale)) * root.pinchScale(px)
+            const y = midY + baseAmplitude * ramp * Math.sin(t / wavelength + root.wavePhase * speedFactor + phaseOffset)
             pts.push(Qt.point(px, y))
         }
         return pts

@@ -28,6 +28,7 @@ Item {
     property real latitude: NaN
     property real longitude: NaN
     property real fixedAt: 0
+    property real fetchedAt: 0
 
     // How long a fix is trusted. The whole point of asking geoclue rather
     // than hardcoding coordinates is that the machine moves; a fix taken
@@ -37,6 +38,23 @@ Item {
     function needsFix(lat, fixAt, ttl) {
         if (isNaN(lat)) return true;
         return Date.now() - fixAt >= ttl;
+    }
+
+    // The same idea one step down, and the step that was missing: the fix
+    // had a TTL and the fetch did not, so the poll below - triggeredOnStart,
+    // gated on `active` - put a curl on the wire every time the panel
+    // opened. That is dozens an hour for a number that moves on the scale of
+    // ten minutes, and the in-flight guard in fetchWeather() only stops them
+    // overlapping, not happening.
+    //
+    // Deliberately under the poll interval rather than equal to it: fetchedAt
+    // is stamped when the reply LANDS, so at a 600000 TTL the tick 600s later
+    // is a round trip short of the threshold and the periodic refresh would
+    // skip every other turn.
+    readonly property int fetchTtlMs: 540000
+
+    function needsFetch(at, ttl) {
+        return Date.now() - at >= ttl;
     }
 
     // WMO weather codes, grouped the way a person reads a sky rather than
@@ -115,6 +133,7 @@ Item {
                         ? tz[tz.length - 1].replace(/_/g, " ")
                         : "";
                     root.ok = true;
+                    root.fetchedAt = Date.now();
                 } catch (e) {
                     if (!root.ok) {
                         root.ok = false;
@@ -136,8 +155,10 @@ Item {
     }
 
     Timer {
-        // Weather does not move fast, and a fix costs a wifi scan. Once on
-        // open, then every ten minutes for as long as the panel stays up.
+        // Weather does not move fast, and a fix costs a wifi scan. Ticks on
+        // every open and then every ten minutes, but only actually fetches
+        // when the reading it holds has aged past fetchTtlMs - so reopening
+        // the panel four times in a minute costs nothing.
         interval: 600000
         running: root.active
         repeat: true
@@ -145,7 +166,7 @@ Item {
         onTriggered: {
             if (root.needsFix(root.latitude, root.fixedAt, root.fixTtlMs)) {
                 if (!locate.running) locate.running = true;
-            } else {
+            } else if (root.needsFetch(root.fetchedAt, root.fetchTtlMs)) {
                 root.fetchWeather();
             }
         }

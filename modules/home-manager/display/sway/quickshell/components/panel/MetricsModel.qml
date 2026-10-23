@@ -32,6 +32,18 @@ Item {
     property real lastIdle: -1
     property real lastTotal: -1
 
+    // Dropped when the panel shuts, because the timer is triggeredOnStart
+    // and these would otherwise survive the gap: the first reading after an
+    // open was a delta across the entire closed period, i.e. the average
+    // since you last looked rather than a 2-second sample. -1 makes the
+    // handler below spend the opening tick re-taking a baseline instead.
+    //
+    // cpuPct itself is deliberately NOT cleared. The last real reading keeps
+    // showing for the 2s until the fresh one lands, which is the same call
+    // WeatherModel makes about a fetch that failed: a slightly old number
+    // beats blanking it to a dash on every single open.
+    onActiveChanged: if (!active) { lastIdle = -1; lastTotal = -1; }
+
     Process {
         id: cpuProc
         command: ["cat", "/proc/stat"]
@@ -49,7 +61,7 @@ Item {
                     const dI = idle - root.lastIdle;
                     if (dT > 0) {
                         root.cpuPct = Math.round(100 * (dT - dI) / dT);
-                        const h = root.cpuHistory.slice(-40);
+                        const h = root.cpuHistory.slice(-39);
                         h.push(root.cpuPct);
                         root.cpuHistory = h;
                     }

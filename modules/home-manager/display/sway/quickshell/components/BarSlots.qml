@@ -65,17 +65,28 @@ Item {
         return out;
     }
 
+    // Invisible modules are filtered here and not just out of the span list
+    // below: a module that draws nothing must not reserve its width and a
+    // gap either, or the remaining capsules sit off-centre around a hole.
+    // Nothing on the bar hides today - music collapsing still leaves wifi in
+    // the right capsule - so this is for the next module rather than a fix
+    // for a visible fault. visibleChanged is wired to relayout, so a module
+    // that starts hidden and grows is placed as soon as it does.
     function onSide(side) {
         return slotted()
-            .filter(c => c.slotSide === side)
+            .filter(c => c.slotSide === side && c.visible)
             .sort((a, b) => (a.slotOrder || 0) - (b.slotOrder || 0));
     }
 
     // A module's box can be wider than what it draws, so lay out by the drawn
     // span and keep the gaps between modules visually even.
+    //
+    // occupiedSpan is module-local (see BarGroup.qml) - deliberately, so that
+    // moving a module cannot invalidate its own span - so the lead is just its
+    // first edge and panel coordinates come from adding the module's x.
     function drawnLead(c) {
         const s = c.occupiedSpan;
-        return (s && s.length === 2) ? s[0] - c.x : 0;
+        return (s && s.length === 2) ? s[0] : 0;
     }
     function drawnWidth(c) {
         const s = c.occupiedSpan;
@@ -85,6 +96,15 @@ Item {
     // occupiedSpan is wired back to relayout - so only move what moved.
     function place(c, x) {
         if (Math.abs(c.x - x) > 0.01) c.x = x;
+    }
+    // Same rule for the span list, which place() alone cannot cover: a fresh
+    // array is a new value to QML however identical its contents, so writing
+    // it unconditionally re-emits to both BeamSides on every pass.
+    function sameSpans(a, b) {
+        if (!b || a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++)
+            if (a[i][0] !== b[i][0] || a[i][1] !== b[i][1]) return false;
+        return true;
     }
 
     function relayout() {
@@ -122,9 +142,23 @@ Item {
         for (const c of slotted()) {
             if (!c.visible || c.width <= 0) continue;
             const s = c.occupiedSpan;
-            spans.push((s && s.length === 2) ? s : [c.x, c.x + c.width]);
+            spans.push((s && s.length === 2)
+                ? [c.x + s[0], c.x + s[1]]
+                : [c.x, c.x + c.width]);
         }
-        moduleSpans = spans;
+        if (!sameSpans(spans, moduleSpans)) moduleSpans = spans;
+    }
+
+    // Deferred for exactly the reason onPanelWidthChanged is, and it was the
+    // signal connections rather than the property handlers that needed it: a
+    // module whose width animates - the workspace strip, every frame for
+    // 130ms on every switch - fires widthChanged AND occupiedSpanChanged per
+    // frame, and both are wired to this. Connected directly, that was two
+    // full passes a frame, each rebuilding slotted() five times and sorting
+    // three of those. Qt.callLater collapses every signal in one frame into
+    // a single pass.
+    function relayoutLater() {
+        Qt.callLater(relayout);
     }
 
     // Every input a module takes is bound here, guarded. Unguarded writes
@@ -155,16 +189,16 @@ Item {
         });
 
         if (!c.slotWired) {
-            c.widthChanged.connect(root.relayout);
+            c.widthChanged.connect(root.relayoutLater);
             // Width alone is not enough. A module whose item size is fixed
             // but whose drawn capsule grows - the workspace strip, which
             // reserves room for ten cells - never changes width, so its span
             // would keep whatever value it had when the bar started and the
             // beam would run straight through the capsule.
             if (c.occupiedSpanChanged !== undefined)
-                c.occupiedSpanChanged.connect(root.relayout);
+                c.occupiedSpanChanged.connect(root.relayoutLater);
             if (c.visibleChanged !== undefined)
-                c.visibleChanged.connect(root.relayout);
+                c.visibleChanged.connect(root.relayoutLater);
             c.slotWired = true;
         }
     }

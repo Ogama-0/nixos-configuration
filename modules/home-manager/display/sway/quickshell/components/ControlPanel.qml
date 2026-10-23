@@ -609,10 +609,23 @@ Scope {
                                 // needs them on the screen, so they are
                                 // walked out through the zone, the sheet and
                                 // the window's own margins.
+                                //
+                                // `stage` is the one that is easy to forget
+                                // and the one that matters most: the window
+                                // is the whole output and the sheet is
+                                // centred inside it, so stage.x alone is
+                                // ~490 on 1080p. Leaving it out put every
+                                // tip in the top-left corner of the screen.
+                                // clipper and sheet cancel out exactly
+                                // (sheet.x is -clipper.x, by construction),
+                                // and zones sits at the sheet's origin, so
+                                // those three contribute nothing.
                                 onTileHovered: (key, cx, ty, entered) => {
                                     if (!entered) { tip.label = ""; return; }
-                                    const gx = panel.x + toggleZone.x + 22 * zones.s;
-                                    const gy = panel.y + toggleZone.y + 18 * zones.s;
+                                    const gx = panel.x + stage.x
+                                             + toggleZone.x + 22 * zones.s;
+                                    const gy = panel.y + stage.y
+                                             + toggleZone.y + 18 * zones.s;
                                     tip.uiScale = panel.uiScale;
                                     tip.anchorX = gx + cx;
                                     tip.anchorY = gy + ty;
