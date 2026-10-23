@@ -31,6 +31,27 @@ Item {
     }
     readonly property bool hasIcon: iconSource !== ""
 
+    // The server advertises body-markup, so a sender writing "<b>" means
+    // bold. StyledText rather than AutoText because the heuristic that picks
+    // for us is not ours to rely on.
+    //
+    // Then the un-escaping, which is the whole reason this function exists.
+    // KDE Connect escapes the phone app's markup before forwarding it, so a
+    // WhatsApp message arrives as "&lt;b&gt;Helena&lt;/b&gt;&lt;br/&gt;" and
+    // renders - correctly, for what it literally says - as the characters
+    // <b>. Nobody meant those characters: the phone sent bold and a line
+    // break, and one courier along the way spelled them out. Only the tags
+    // the body-markup spec defines are put back, so a message that really
+    // does contain "&lt;3" keeps it.
+    //
+    // A collapsed row then flattens the line breaks rather than honouring
+    // them: it has one line to spend, and a <br> after the first word would
+    // spend it on nothing.
+    function markup(s) {
+        const t = s.replace(/&lt;(\/?(?:b|i|u|br)\s*\/?)&gt;/gi, "<$1>");
+        return expanded ? t : t.replace(/<br\s*\/?>/gi, " ");
+    }
+
     implicitHeight: Math.max(col.implicitHeight,
                              hasIcon ? 26 * uiScale : 0)
 
@@ -68,7 +89,8 @@ Item {
             width: parent.width
             visible: root.showSummary
             text: root.item
-                ? (root.item.summary || root.item.body || "(no title)") : ""
+                ? root.markup(root.item.summary || root.item.body || "(no title)") : ""
+            textFormat: Text.StyledText
             color: "@clockColor@"
             font.pixelSize: Math.round(12.5 * root.uiScale)
             font.weight: Font.DemiBold
@@ -82,8 +104,10 @@ Item {
             // not be allowed to set this row's height - so even expanded it
             // stops at eight lines rather than taking the whole panel.
             text: root.item
-                ? (root.showSummary && !root.item.summary ? "" : (root.item.body || ""))
+                ? (root.showSummary && !root.item.summary
+                   ? "" : root.markup(root.item.body || ""))
                 : ""
+            textFormat: Text.StyledText
             visible: text.length > 0
             color: root.showSummary ? "@mutedColor@" : "@clockColor@"
             font.pixelSize: Math.round(12.5 * root.uiScale)
