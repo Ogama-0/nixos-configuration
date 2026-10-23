@@ -252,10 +252,16 @@ Scope {
     // shell.qml owns the lock; the panel only asks.
     signal lockRequested
 
-    WeatherModel {
-        id: weather
-        active: root.readersActive
-    }
+    // Weather is NOT read here. shell.qml owns the one model the session
+    // shares, and hands the reading down - the desktop clock, the lock and
+    // this panel each used to run their own curl, three of them hardcoded to
+    // Paris. A fixture can drive these directly, which is what the head's
+    // own render fixtures already do.
+    property real weatherTempC: 0
+    property string weatherCondition: ""
+    property string weatherPlace: ""
+    property bool weatherOk: false
+    property string weatherFailure: "No location yet"
 
     CalendarModel {
         id: cal
@@ -703,11 +709,11 @@ Scope {
 
                                 timeText: Qt.formatTime(root.now, "HH:mm")
                                 dateText: Qt.formatDate(root.now, "dddd d MMMM")
-                                tempC: weather.tempC
-                                condition: weather.condition
-                                place: weather.place
-                                ok: weather.ok
-                                failure: weather.failure
+                                tempC: root.weatherTempC
+                                condition: root.weatherCondition
+                                place: root.weatherPlace
+                                ok: root.weatherOk
+                                failure: root.weatherFailure
                             }
 
                             CalendarPane {

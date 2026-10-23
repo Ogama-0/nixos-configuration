@@ -110,31 +110,19 @@ Scope {
         onTriggered: root.currentTime = new Date()
     }
 
-    property string tempText: "Paris --°"
-    Process {
-        id: weatherProc
-        command: [
-            "curl", "-s", "--max-time", "5",
-            "https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current=temperature_2m"
-        ]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const data = JSON.parse(this.text)
-                    root.tempText = "Paris " + data.current.temperature_2m.toFixed(1) + "°"
-                } catch (e) {
-                    root.tempText = "Paris --°"
-                }
-            }
-        }
-    }
-    Timer {
-        running: root.locked
-        repeat: true
-        interval: 10 * 60 * 1000
-        triggeredOnStart: true
-        onTriggered: weatherProc.running = true
-    }
+    // Weather arrives from shell.qml, which owns the one model the session
+    // shares. This used to be a curl of its own, hardcoded to Paris on a
+    // 10-minute timer, printing that name wherever the laptop actually was.
+    property real tempC: 0
+    property string place: ""
+    property bool weatherOk: false
+
+    // The place is dropped until geoclue has answered, rather than guessed:
+    // a temperature under the wrong city is worse than a temperature under
+    // no city at all.
+    readonly property string tempText:
+        (place === "" ? "" : place + " ")
+        + (weatherOk ? tempC.toFixed(1) + "°" : "--°")
 
     property var activePlayer: {
         const list = Mpris.players.values

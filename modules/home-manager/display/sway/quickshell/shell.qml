@@ -1,12 +1,40 @@
 import Quickshell
 import "components"
+import "components/panel"
 
 Scope {
+    // ONE weather reader for the whole session, and the only one that knows
+    // where the laptop actually is.
+    //
+    // The desktop clock, the lock surface and the panel each used to run
+    // their own curl on their own timer, and all but the panel's hardcoded
+    // 48.8566/2.3522 - they printed "Paris" from Lyon, from a train, from
+    // anywhere. Everything below is one process (this Scope), so sharing is
+    // a property binding; no daemon and no cache file is involved.
+    //
+    // The greeter keeps its own, unavoidably: it runs as the greetd user and
+    // cannot read /home, so it can share nothing of ours.
+    //
+    // Not gated on anything. The desktop clock shows weather at all times,
+    // so there is no window in which this would be idle - and WeatherModel
+    // only actually fetches when its reading has aged past fetchTtlMs, so
+    // "always on" is still one request per ten minutes for all three.
+    WeatherModel { id: weather; active: true }
+
     Wallpaper {}
-    Clock {}
+    Clock {
+        tempC: weather.tempC
+        place: weather.place
+        weatherOk: weather.ok
+    }
     Music {}
     Calendar {}
-    Lock { id: lock }
+    Lock {
+        id: lock
+        tempC: weather.tempC
+        place: weather.place
+        weatherOk: weather.ok
+    }
     LaserBar { id: bar; onPanelRequested: controlPanel.summon() }
     StatusPanel {}
     // An open panel must not survive into the lock screen.
@@ -14,6 +42,11 @@ Scope {
         id: controlPanel
         lockActive: lock.locked
         barVisible: bar.active
+        weatherTempC: weather.tempC
+        weatherCondition: weather.condition
+        weatherPlace: weather.place
+        weatherOk: weather.ok
+        weatherFailure: weather.failure
         // lock.locked, not lock.lock(). That function is defined on Lock's
         // IpcHandler and not on Lock itself, so calling it threw TypeError
         // every time and the tile did nothing. Its whole body is
