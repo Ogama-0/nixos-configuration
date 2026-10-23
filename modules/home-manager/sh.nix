@@ -55,6 +55,39 @@
 
   ];
 
+  # Enabling fish flips `programs.man.generateCaches` to true (home-manager's
+  # modules/programs/fish.nix, so `apropos` can complete `man`). That cache is
+  # a buildEnv of every home.packages entry re-indexed from scratch on each
+  # switch, because the env's store path changes every time. mandoc's
+  # makewhatis does the same job in 5s where man-db's mandb takes 115s on this
+  # package set, so use it for both indexing and viewing. man-db has to be
+  # turned off explicitly: it defaults to true, and leaving it on rebuilds the
+  # slow cache anyway.
+  programs.man = {
+    enable = true;
+    man-db.enable = false;
+    mandoc.enable = true;
+  };
+
+  # buildEnv symlinks a whole man section directory when a single package
+  # provides it (man2 -> man-pages), and makewhatis does not descend into
+  # symlinked directories - so those sections end up missing from mandoc.db
+  # entirely: `apropos open` finds nothing while `man 2 open` still works off
+  # the filesystem and warns the db is outdated. Expand such links into real
+  # directories of per-page symlinks first; mkBefore puts this ahead of the
+  # makewhatis call that programs.man.mandoc installs here.
+  home.extraProfileCommands = lib.mkBefore ''
+    for dir in "$out"/share/man/man*; do
+      if [ -L "$dir" ]; then
+        target=$(readlink -f "$dir")
+        rm "$dir"
+        mkdir "$dir"
+        # -exec + chunks the arguments: a plain glob overflows ARGV here.
+        find "$target"/ -mindepth 1 -maxdepth 1 -exec ln -s -t "$dir" {} +
+      fi
+    done
+  '';
+
   programs.fish = {
     enable = true;
 
