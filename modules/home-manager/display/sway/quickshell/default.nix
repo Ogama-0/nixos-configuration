@@ -157,6 +157,9 @@ in
           "${d}/components/Wallpaper.qml" = themedQmlFile variant ./components/Wallpaper.qml;
           "${d}/components/Clock.qml" = themedQmlFile variant ./components/Clock.qml;
           "${d}/components/Music.qml" = themedQmlFile variant ./components/Music.qml;
+          "${d}/components/MprisModel.qml" = themedQmlFile variant ./components/MprisModel.qml;
+          "${d}/components/RemoteSpectrum.qml" = themedQmlFile variant ./components/RemoteSpectrum.qml;
+          "${d}/components/RemoteBadge.qml" = themedQmlFile variant ./components/RemoteBadge.qml;
           "${d}/components/Calendar.qml" = themedQmlFile variant ./components/Calendar.qml;
           "${d}/components/RevealMask.qml" = themedQmlFile variant ./components/RevealMask.qml;
           "${d}/components/GlassPill.qml" = themedQmlFile variant ./components/GlassPill.qml;

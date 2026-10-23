@@ -21,21 +21,46 @@ Scope {
     // "always on" is still one request per ten minutes for all three.
     WeatherModel { id: weather; active: true }
 
+    // ONE MPRIS choice for the whole session: the music card, the bar
+    // capsule and the progress poll all obey this, so a button on the bar
+    // cannot address a different player than the card is showing. See
+    // MprisModel.qml for why the choice has to remember anything at all.
+    MprisModel { id: mpris }
+
+    // The phone's audio never reaches this machine, so when the phone is the
+    // player the wave gets generated bands instead of cava's - see
+    // RemoteSpectrum.qml. One generator, so the card and the bar capsule
+    // move together rather than drifting a frame apart.
+    RemoteSpectrum { id: remoteWave; running: mpris.remote && mpris.playing }
+
     Wallpaper {}
     Clock {
         tempC: weather.tempC
         place: weather.place
         weatherOk: weather.ok
     }
-    Music {}
+    Music {
+        activePlayer: mpris.player
+        playerctlName: mpris.playerctlName
+        remote: mpris.remote
+        remoteLevels: remoteWave.levels
+    }
     Calendar {}
     Lock {
         id: lock
+        activePlayer: mpris.player
+        playerctlName: mpris.playerctlName
         tempC: weather.tempC
         place: weather.place
         weatherOk: weather.ok
     }
-    LaserBar { id: bar; onPanelRequested: controlPanel.summon() }
+    LaserBar {
+        id: bar
+        mprisPlayer: mpris.player
+        mprisRemote: mpris.remote
+        mprisRemoteLevels: remoteWave.levels
+        onPanelRequested: controlPanel.summon()
+    }
     StatusPanel {}
     // An open panel must not survive into the lock screen.
     ControlPanel {

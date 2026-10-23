@@ -18,6 +18,13 @@ Scope {
     property bool active: false
     property real batteryFraction: 0.5
 
+    // Passed straight through to the music capsule. The bar runs no models
+    // of its own for this one: shell.qml owns the MPRIS choice, because the
+    // music card obeys the same one.
+    property var mprisPlayer: null
+    property bool mprisRemote: false
+    property var mprisRemoteLevels: []
+
     // Raised when the clock capsule is clicked. shell.qml owns the panel;
     // the bar only reports the click.
     signal panelRequested
@@ -322,7 +329,12 @@ Scope {
                 BarGroup {
                     slotSide: "right"
 
-                    MusicWidget { pos: 1 }
+                    MusicWidget {
+                        pos: 1
+                        mprisPlayer: root.mprisPlayer
+                        remote: root.mprisRemote
+                        remoteLevels: root.mprisRemoteLevels
+                    }
 
                     WifiWidget {
                         pos: 2

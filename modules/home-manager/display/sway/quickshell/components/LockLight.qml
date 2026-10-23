@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import Quickshell.Services.Pam
-import Quickshell.Services.Mpris
 
 // Quickshell-native lockscreen. Stays idle in the background (no WlSessionLock
 // held) until `root.locked` is flipped true over IPC, at which point it grabs
@@ -107,22 +106,19 @@ Scope {
         (place === "" ? "" : place + "  ")
         + (weatherOk ? tempC.toFixed(1) + "°C" : "--°C")
 
-    property var activePlayer: {
-        const list = Mpris.players.values
-        for (let i = 0; i < list.length; i++) {
-            if (list[i].isPlaying) return list[i]
-        }
-        for (let i = 0; i < list.length; i++) {
-            if (list[i].playbackState !== MprisPlaybackState.Stopped) return list[i]
-        }
-        return null
-    }
+    // Bound to the session's one MprisModel, like the music card and the bar
+    // capsule - the lock surface must not offer a play button that addresses
+    // a different player than the one it is showing.
+    property var activePlayer: null
+    property string playerctlName: ""
 
     property real livePosition: 0
     Process {
         id: positionProc
         running: false
-        command: ["playerctl", "position"]
+        // -p: see Music.qml. Bare playerctl answers for whichever player it
+        // likes best, which with a phone on the bus is the wrong song.
+        command: ["playerctl", "-p", root.playerctlName, "position"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const v = parseFloat(this.text)

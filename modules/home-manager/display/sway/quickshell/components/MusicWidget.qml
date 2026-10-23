@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
-import Quickshell.Services.Mpris
 
 // The music widget, miniature: a spinning cover disc, a cava-driven wave,
 // and the track title with its artist underneath.
@@ -41,22 +40,20 @@ Item {
     property real uiScale: 1
     property color railColor: "@capsuleInk@"
 
-    // The player, chosen the way Music.qml chooses it: whatever is playing,
-    // else whatever is loaded but paused.
-    readonly property var mprisPlayer: {
-        const list = Mpris.players ? Mpris.players.values : []
-        for (let i = 0; i < list.length; i++) {
-            if (list[i].isPlaying) return list[i]
-        }
-        for (let i = 0; i < list.length; i++) {
-            if (list[i].playbackState !== MprisPlaybackState.Stopped) return list[i]
-        }
-        return null
-    }
+    // The player, handed down from the session's one MprisModel so the
+    // capsule and the music card can never be looking at, or talking to,
+    // two different players. Null here is a fixture, or no bar at all.
+    property var mprisPlayer: null
+
+    // Playing on the phone: no cava feed exists for it, so the wave runs off
+    // the bands handed down from RemoteSpectrum and the capsule grows a
+    // phone mark on its right. A fixture sets these like the five below.
+    property bool remote: false
+    property var remoteLevels: []
 
     // Everything the widget draws comes through these five, defaulted off
-    // Mpris. A render fixture assigns them directly, which replaces the
-    // binding and needs no player on the bus.
+    // the player above. A render fixture assigns them directly, which
+    // replaces the binding and needs no player on the bus.
     property bool hasPlayer: root.mprisPlayer !== null
     property bool playing: root.mprisPlayer !== null && root.mprisPlayer.isPlaying
     property string title: root.mprisPlayer ? root.mprisPlayer.trackTitle : ""
@@ -95,9 +92,13 @@ Item {
     readonly property real waveX: discX + discSize + 8 * uiScale
     readonly property real textX: waveX + waveWidth + 9 * uiScale
 
+    // What the phone mark costs on the right, nothing when it is not shown.
+    readonly property real remoteMarkGap:
+        (root.remote && root.hasPlayer) ? 6 * uiScale + remoteBadge.width : 0
+
     // Collapses to nothing with no player, so the capsule is just the wifi
     // readout until something is playing.
-    implicitWidth: hasPlayer ? textX + textWidth + 11 * uiScale : 0
+    implicitWidth: hasPlayer ? textX + textWidth + remoteMarkGap + 11 * uiScale : 0
     width: implicitWidth
 
     // Music.qml's trick for players that publish no art but do publish a
@@ -129,7 +130,7 @@ Item {
         // One per bar, so one per screen on a multi-head setup - but only
         // while that bar is revealed.
         id: cavaProc
-        running: root.cavaFeed && root.running && root.playing
+        running: root.cavaFeed && root.running && root.playing && !root.remote
         command: ["cava", "-p", Quickshell.shellDir + "/cava.conf"]
         stdout: SplitParser {
             splitMarker: "\n"
@@ -187,7 +188,7 @@ Item {
         // there.
         running: root.running && (root.playing || root.displayLevels.length > 0)
         onTriggered: {
-            const target = root.playing ? root.levels : []
+            const target = root.playing ? (root.remote ? root.remoteLevels : root.levels) : []
             const n = root.playing ? target.length : root.displayLevels.length
             if (n === 0) {
                 root.displayLevels = []
@@ -444,5 +445,15 @@ Item {
             font.pixelSize: Math.round(9 * root.uiScale)
             elide: Text.ElideRight
         }
+    }
+
+    // ── The phone mark ──────────────────────────────────────────────
+    RemoteBadge {
+        id: remoteBadge
+        x: root.textX + root.textWidth + 6 * root.uiScale
+        anchors.verticalCenter: parent.verticalCenter
+        visible: root.remote && root.hasPlayer
+        tint: root.railColor
+        glyphHeight: 12 * root.uiScale
     }
 }

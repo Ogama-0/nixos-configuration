@@ -1,7 +1,6 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
-import Quickshell.Services.Mpris
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
@@ -11,16 +10,20 @@ PanelWindow {
 
     property var cavaValues: []
 
-    property var activePlayer: {
-        const list = Mpris.players.values
-        for (let i = 0; i < list.length; i++) {
-            if (list[i].isPlaying) return list[i]
-        }
-        for (let i = 0; i < list.length; i++) {
-            if (list[i].playbackState !== MprisPlaybackState.Stopped) return list[i]
-        }
-        return null
-    }
+    // Both bound to the session's one MprisModel, in shell.qml - which player
+    // is "the" player is a decision with memory, and the bar capsule has to
+    // make the same one.
+    property var activePlayer: null
+    property string playerctlName: ""
+
+    // Playing on the phone, through kdeconnect. Its audio is not on this
+    // machine, so the wave runs off RemoteSpectrum instead of cava - and the
+    // artist line carries the marker that says so.
+    property bool remote: false
+    property var remoteLevels: []
+
+    // What the ring draws: this machine's real output, or the stand-in.
+    readonly property var waveLevels: root.remote ? root.remoteLevels : root.cavaValues
 
     property bool deezerRunning: false
 
@@ -254,14 +257,20 @@ PanelWindow {
     implicitWidth: 440
     implicitHeight: 400
     color: "transparent"
-    visible: root.activePlayer !== null && root.deezerRunning
+    // deezerRunning gates the card on the desktop app being open - it is a
+    // wallpaper widget, not a notification. A phone track over kdeconnect
+    // has no local app to be open, so it counts on its own; otherwise the
+    // remote wave and its marker would only ever appear on the bar.
+    visible: root.activePlayer !== null && (root.deezerRunning || root.remote)
 
     WlrLayershell.namespace: "music-widget"
     WlrLayershell.layer: WlrLayer.Background
 
     Process {
         id: cavaProc
-        running: root.activePlayer !== null && root.activePlayer.isPlaying
+        // Not while the phone is playing: cava would be reading this
+        // machine's silence, at 60fps, for a wave that already has a feed.
+        running: root.activePlayer !== null && root.activePlayer.isPlaying && !root.remote
         command: ["cava", "-p", Quickshell.shellDir + "/cava.conf"]
         stdout: SplitParser {
             splitMarker: "\n"
@@ -303,7 +312,10 @@ PanelWindow {
     Process {
         id: positionProc
         running: false
-        command: ["playerctl", "position"]
+        // -p, or playerctl answers for whichever player it likes best - with
+        // a phone on the bus through kdeconnect that is a position from a
+        // different song entirely.
+        command: ["playerctl", "-p", root.playerctlName, "position"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const v = parseFloat(this.text)
@@ -451,7 +463,7 @@ PanelWindow {
                     repeat: true
                     onTriggered: {
                         const playing = root.activePlayer !== null && root.activePlayer.isPlaying
-                        const target = playing ? root.cavaValues : []
+                        const target = playing ? root.waveLevels : []
                         const n = playing ? target.length : artArea.displayValues.length
                         if (n === 0) return
                         if (artArea.displayValues.length !== n) {
@@ -482,14 +494,40 @@ PanelWindow {
                 font.weight: Font.DemiBold
             }
 
-            Text {
+            // The artist, with the remote marker beside it when the track
+            // is the phone's. Centred as a pair: a Row inside a filling Item,
+            // rather than a RowLayout, so the badge stays next to the name
+            // instead of being pushed out to the card's edge.
+            Item {
+                id: artistLine
                 Layout.fillWidth: true
-                horizontalAlignment: Text.AlignHCenter
-                elide: Text.ElideRight
+                implicitHeight: artistRow.implicitHeight
                 visible: root.activePlayer !== null
-                text: root.activePlayer ? root.activePlayer.trackArtist : ""
-                color: "@dateColor@"
-                font.pixelSize: 16
+
+                Row {
+                    id: artistRow
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 7
+
+                    Text {
+                        id: artistText
+                        width: Math.min(implicitWidth,
+                                        artistLine.width
+                                        - (remoteBadge.visible ? remoteBadge.width + artistRow.spacing : 0))
+                        elide: Text.ElideRight
+                        text: root.activePlayer ? root.activePlayer.trackArtist : ""
+                        color: "@dateColor@"
+                        font.pixelSize: 16
+                    }
+
+                    RemoteBadge {
+                        id: remoteBadge
+                        anchors.verticalCenter: artistText.verticalCenter
+                        visible: root.remote
+                        tint: "@dateColor@"
+                        glyphHeight: 13
+                    }
+                }
             }
 
             RowLayout {
