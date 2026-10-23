@@ -1,4 +1,4 @@
-{ config, cfg, ... }: {
+{ cfg, ... }: {
   imports = [
     # global import
     ../../modules/home-manager/sh.nix
@@ -17,7 +17,6 @@
     homeDirectory = cfg.home_path;
     sessionVariables = {
       swp = "${cfg.path.ssd.share.swapsev_path}";
-      # TORR_DIR = "${config.services.transmission.settings.watch-dir}";
     };
 
     stateVersion = "24.11";

@@ -58,13 +58,11 @@
         orbitron-font = self.packages.${system}.orbitron-font;
         greetd-proxy = self.packages.${system}.greetd-proxy;
         calino = self.packages.${system}.calino;
-        # free-claude-code = self.packages.${system}.free-claude-code;
       };
       upkgs = (
         {
           zen-browser = self.inputs.zen-browser.packages.${pkgs.system}.default;
           quickshell = self.inputs.quickshell.packages.${pkgs.system}.default;
-          # mindustry = self.inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.mindustry;
         }
         // import nixpkgs-unstable { inherit system; }
       );
@@ -83,7 +81,6 @@
         calino = pkgs.callPackage ./pkgs/calino.nix {
           siteUrl = "http://calino.tail.${cfg-server.server.domain}";
         };
-        # free-claude-code = pkgs.callPackage ./pkgs/freeclaudecode.nix { };
       };
 
       nixosConfigurations = {

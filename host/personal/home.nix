@@ -22,7 +22,6 @@
     ../../modules/home-manager/calendar-sync.nix
     ../../modules/home-manager/nix-gc.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
-    # ./vm-compose.nix
   ];
 
   sops.age.keyFile = "${cfg.home_path}/.config/sops/age/keys.txt";

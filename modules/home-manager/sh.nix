@@ -4,9 +4,6 @@
   cfg,
   ...
 }:
-let
-  script-path = ../../scripts;
-in
 {
   home.packages = with pkgs; [
     xsel
@@ -128,12 +125,6 @@ in
       #   set tp_name $argv[3]
       #   python $PATH_SCRIPTS/init-tp.py $repository_link $tree $tp_name
       # '';
-
-      # wgup = builtins.readFile "${script-path}/fish/wgup.fish";
-
-      # wgdn = builtins.readFile "${script-path}/fish/wgdn.fish";
-
-      # togglewg = builtins.readFile "${script-path}/fish/togglewg.fish";
 
       cdtmp = ''
         set ash (openssl rand -hex 4)

@@ -35,7 +35,6 @@
     gnome-disk-utility
     testdisk
     vlc
-    # lpkgs.free-claude-code
     claude-code
 
     # Android tools :

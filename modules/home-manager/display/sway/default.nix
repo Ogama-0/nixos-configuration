@@ -14,7 +14,6 @@ let
 in
 {
   imports = [
-    # ./barbar.nix
     ./effects.nix
     ./quickshell
     ../../gammastep.nix
@@ -27,7 +26,6 @@ in
     slurp
     wlroots
   ];
-  # swaylock-effect
   services.autotiling.enable = true;
   wayland.windowManager.sway = {
     enable = true;
