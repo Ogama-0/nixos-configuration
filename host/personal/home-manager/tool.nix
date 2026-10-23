@@ -23,6 +23,7 @@
     thunderbird
     # spotify
     deezer-enhanced
+    # lpkgs.deezer-cli
     gimp
     # bitwarden-desktop elecron issue : https://github.com/NixOS/nixpkgs/issues/528213
     nautilus

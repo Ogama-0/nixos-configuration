@@ -54,6 +54,7 @@
       };
       lpkgs = {
         librepods = self.packages.${system}.librepods;
+        deezer-cli = self.packages.${system}.deezer-cli;
         corpta-font = self.packages.${system}.corpta-font;
         orbitron-font = self.packages.${system}.orbitron-font;
         greetd-proxy = self.packages.${system}.greetd-proxy;
@@ -73,6 +74,7 @@
 
       packages.${system} = {
         librepods = pkgs.callPackage ./pkgs/librepods.nix { };
+        deezer-cli = pkgs.callPackage ./pkgs/deezer-cli.nix { };
         corpta-font = pkgs.callPackage ./pkgs/corpta-font.nix { };
         orbitron-font = pkgs.callPackage ./pkgs/orbitron-font.nix { };
         greetd-proxy = pkgs.callPackage ./pkgs/greetd-proxy.nix { };
