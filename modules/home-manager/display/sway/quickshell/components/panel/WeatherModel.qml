@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Io
 
 // Where the laptop is, and what the sky is doing there.
@@ -57,6 +58,69 @@ Item {
         return Date.now() - at >= ttl;
     }
 
+    // ---------------- the fix, kept across restarts ----------------
+    //
+    // A fix takes up to twenty seconds (see fixTimeoutSec) and quickshell is
+    // restarted on every darkman flip, so without this each sunrise and
+    // sunset costs twenty seconds of blank temperature on every surface that
+    // reads this model - which is now all of them. With it, startup goes
+    // straight to the fetch on the last known coordinates and the sky is up
+    // in one round trip.
+    //
+    // Staleness does not matter at this resolution. The fix is geoclue's
+    // ipf/wifi fallback, good to about 25km, so a day-old one names the same
+    // city. needsFix still governs re-fixing, so a machine that has actually
+    // moved corrects itself on the tick either way - the cache only decides
+    // what to show WHILE that is happening.
+    readonly property string fixPath:
+        Quickshell.env("HOME") + "/.local/state/quickshell/weather-fix.json"
+
+    function saveFix() {
+        fixStore.setText(JSON.stringify({
+            latitude: root.latitude,
+            longitude: root.longitude,
+            fixedAt: root.fixedAt
+        }));
+    }
+
+    // The state directory is not created by anything else and FileView will
+    // not make it; the same dance NotificationServer.qml does for its list.
+    Process {
+        running: true
+        command: ["mkdir", "-p",
+                  Quickshell.env("HOME") + "/.local/state/quickshell"]
+        onExited: fixStore.reload()
+    }
+
+    FileView {
+        id: fixStore
+        path: root.fixPath
+        atomicWrites: true
+        // Our own writes would otherwise bounce straight back as a change.
+        watchChanges: false
+
+        onLoaded: {
+            try {
+                const d = JSON.parse(text());
+                const lat = parseFloat(d.latitude);
+                const lon = parseFloat(d.longitude);
+                if (isNaN(lat) || isNaN(lon)) return;
+                // A live fix that landed first always wins: it is the one
+                // that knows where the machine is NOW.
+                if (!isNaN(root.latitude)) return;
+                root.latitude = lat;
+                root.longitude = lon;
+                root.fixedAt = d.fixedAt || 0;
+                root.fetchWeather();
+            } catch (e) {
+                // A corrupt or half-written file is a cold start, not an
+                // error - geoclue is still running and will say where we are.
+            }
+        }
+        // No file yet is the normal case on a fresh machine.
+        onLoadFailed: {}
+    }
+
     // WMO weather codes, grouped the way a person reads a sky rather than
     // the way the standard enumerates it.
     function describe(code) {
@@ -107,6 +171,7 @@ Item {
                 root.longitude = parseFloat(lon[1]);
                 root.fixedAt = Date.now();
                 fixRetry.attempt = 0;
+                root.saveFix();
                 root.fetchWeather();
             }
         }
