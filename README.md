@@ -19,6 +19,10 @@ My personal NixOS + Home Manager flake, covering a main desktop, a home server, 
 - `modules/`: reusable building blocks, one file (or folder) per concern
   - `home-manager/`: user-level config (shell, editors, `display/` for window managers, etc.)
   - `nixosconf/`: system-level config (services, networking, etc.)
+  - `lib/`: not modules — plain functions and data shared between them (the colour palette, the QML theme substitution, the swayfx package)
+  - `qml/`: the greeter's QML, which is rendered by a NixOS module rather than a Home Manager one
+- `docs/`: runbooks for the parts that bite (see below), plus `superpowers/` design specs and plans, one topic per dated file
+- `tests/`: render fixtures for the laser bar — there is no unit-test framework, so the bar is verified by screenshotting it
 - `pkgs/`: standalone package derivations exposed as flake outputs
 - `templates/`: `nix flake init` templates for quick project scaffolding
 - `sops/`: encrypted secrets committed to the repo (via [sops-nix](https://github.com/Mic92/sops-nix))
@@ -43,9 +47,40 @@ Check the flake evaluates without switching:
 nix flake check
 ```
 
-## Desktop widgets
+## Desktop shell
 
-The `personal` profile's Sway session runs a small [Quickshell](https://quickshell.org) setup (`modules/home-manager/display/sway/quickshell/`) instead of a traditional bar: a floating clock/weather card, a media-player card (MPRIS + PipeWire controls, a `cava`-driven equalizer ring, real album art), and a read-only calendar card (month grid + next events, synced from a Proton Calendar share link via `vdirsyncer`/`khal`). Each widget is its own file under `components/`, themed from the active Stylix color scheme.
+The `personal` profile's Sway session runs [Quickshell](https://quickshell.org)
+(`modules/home-manager/display/sway/quickshell/`) instead of a traditional bar:
+
+- the **laser bar** — a top bar drawn as two beams that collide at a point
+  driven by battery charge, carrying workspace, wifi, clock and media modules;
+- a **control panel** that slides out of it — toggles, audio, disks, oserv
+  metrics, weather, calendar, and a notification centre (Quickshell is the
+  notification server; KDE Connect relays arrive grouped by real sender);
+- an **oserv status widget** reading the server's Gatus and Prometheus APIs;
+- the **lockscreen**, a different design per variant rather than one recoloured
+  skin.
+
+Each widget is its own file under `components/`. Colours come from one palette
+file and are rendered into a dark tree and a light tree that `darkman` swaps at
+sunrise and sunset — there is no Stylix any more. See `docs/theming.md`.
+
+To add a widget or a panel zone, read `docs/adding-a-bar-widget.md` first: it
+records the performance rules that are already scar tissue, and the headless
+render harness that stands in for a test suite.
+
+## Documentation
+
+The parts with non-obvious failure modes have runbooks:
+
+| Doc | Read it before |
+|---|---|
+| `docs/theming.md` | changing any colour, or adding an app to the dark/light switch |
+| `docs/adding-a-bar-widget.md` | touching the laser bar or its control panel |
+| `docs/adding-a-server-service.md` | putting a new service on `oserv` |
+| `docs/calendar-stack.md` | touching RustiCal, `calendar_syncer` or Calino |
+| `docs/greeter.md` | touching greetd, the greeter QML or the login path |
+| `docs/status-widget.md` | touching the oserv status widget or its APIs |
 
 ## Templates
 
@@ -61,7 +96,12 @@ Available: `python`, `c`, `epita-c` (EPITA-style C practical), `asm68k`.
 nix shell github:Ogama-0/nixos-configuration#<pkg>
 ```
 
-Available: `librepods` ([kavishdevar's package](https://github.com/kavishdevar/librepods)), `calino` ([Ivan-Malinovski's web CalDAV client](https://github.com/Ivan-Malinovski/calino), built for this server's own hostname)
+Available:
+
+- `librepods` — [kavishdevar's package](https://github.com/kavishdevar/librepods)
+- `calino` — [Ivan-Malinovski's web CalDAV client](https://github.com/Ivan-Malinovski/calino), built for this server's own hostname
+- `greetd-proxy` — the greeter's bridge to greetd's socket (see `docs/greeter.md`)
+- `corpta-font`, `orbitron-font` — display faces used by the bar and greeter
 
 The server also self-hosts its calendars — RustiCal (CalDAV), `calendar_syncer`
 and Calino. See `docs/calendar-stack.md` for the setup that cannot be
@@ -100,4 +140,3 @@ rebuild to turn both off.
 - build the hdd architectur with 2 2tb hdd with backup on the 4to hdd
 - use kristen's vps to let people access to my server (throught tailescale tunel)
 - FIX : joplin filling the routeur
-
