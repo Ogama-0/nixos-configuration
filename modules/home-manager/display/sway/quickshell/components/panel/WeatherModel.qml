@@ -72,9 +72,17 @@ Item {
         return "Thunderstorm";
     }
 
+    // A cold geoclue is much slower than a warm one: the wifi scan and the
+    // trilateration round trip both have to happen before it answers at all.
+    // 8 seconds was enough warm and not enough cold, and cold is exactly the
+    // case that matters - a login, a nixos switch, or darkman restarting the
+    // shell at sunrise. Every surface on the desktop reads this one model
+    // now, so a fix that times out is a blank temperature everywhere.
+    property int fixTimeoutSec: 20
+
     Process {
         id: locate
-        command: ["@whereAmIBin@", "-t", "8"]
+        command: ["@whereAmIBin@", "-t", "" + root.fixTimeoutSec]
         stdout: StdioCollector {
             onStreamFinished: {
                 // where-am-i prints a human report, not JSON:
@@ -82,16 +90,23 @@ Item {
                 const lat = /Latitude:\s*(-?[\d.]+)/.exec(this.text);
                 const lon = /Longitude:\s*(-?[\d.]+)/.exec(this.text);
                 if (!lat || !lon) {
-                    root.ok = false;
-                    // geoclue refuses an app that is not in its appConfig by
-                    // never returning a fix, which reads identically to no
-                    // signal. Say both.
-                    root.failure = "No location";
+                    // Only blank a reading we never had. Re-fixing on a
+                    // machine that already knows where it is must not wipe
+                    // the temperature, same rule the fetch below follows.
+                    if (isNaN(root.latitude)) {
+                        root.ok = false;
+                        // geoclue refuses an app that is not in its appConfig
+                        // by never returning a fix, which reads identically
+                        // to no signal. Say both.
+                        root.failure = "No location";
+                    }
+                    fixRetry.restart();
                     return;
                 }
                 root.latitude = parseFloat(lat[1]);
                 root.longitude = parseFloat(lon[1]);
                 root.fixedAt = Date.now();
+                fixRetry.attempt = 0;
                 root.fetchWeather();
             }
         }
@@ -99,7 +114,32 @@ Item {
             if (exitCode !== 0 && isNaN(root.latitude)) {
                 root.ok = false;
                 root.failure = "No location";
+                fixRetry.restart();
             }
+        }
+    }
+
+    // A fix that failed retries in seconds, not at the next poll.
+    //
+    // The poll is ten minutes apart, which is right for weather and absurd
+    // for "we still do not know where we are" - and the fix most likely to
+    // fail is the cold one at startup, so without this a restart meant a
+    // blank temperature on every surface for ten full minutes. That is the
+    // regression that came with sharing one model: the old desktop clock
+    // asked Open-Meteo directly and never depended on a fix at all.
+    //
+    // Backed off, and capped, so a machine where geoclue is broken or
+    // disabled settles into a slow retry instead of scanning wifi forever.
+    Timer {
+        id: fixRetry
+        property int attempt: 0
+        interval: Math.min(300000, 15000 * Math.pow(2, attempt))
+        repeat: false
+        onTriggered: {
+            attempt = Math.min(attempt + 1, 5);
+            if (root.active && !locate.running
+                && root.needsFix(root.latitude, root.fixedAt, root.fixTtlMs))
+                locate.running = true;
         }
     }
 
