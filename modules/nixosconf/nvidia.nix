@@ -39,7 +39,11 @@
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
-  boot.kernelPackages = pkgs.linuxPackages_7_1;
+  # The nvidia-open module only builds (and is only cached by hydra) against
+  # the default LTS kernel: 595.71.05 fails to compile on 7.3 (implicit
+  # strncpy), and no 7.x/driver combination is prebuilt. Hence the LTS default
+  # rather than _latest or a version pin that goes EOL every few months.
+  boot.kernelPackages = pkgs.linuxPackages;
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

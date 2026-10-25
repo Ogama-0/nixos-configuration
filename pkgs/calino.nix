@@ -6,7 +6,7 @@
 # index.html's canonical/OpenGraph tags), so the package is per-deployment
 # rather than generic — it is instantiated from flake.nix with the server's
 # own hostname.
-{ lib, stdenv, fetchFromGitHub, fetchPnpmDeps, pnpmConfigHook, pnpm_10
+{ lib, stdenv, fetchFromGitHub, fetchPnpmDeps, pnpmConfigHook, pnpm_10_latest
 , nodejs_22, siteUrl }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -22,12 +22,14 @@ stdenv.mkDerivation (finalAttrs: {
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
-    pnpm = pnpm_10;
+    # pnpm_10 is pinned at 10.34.0 upstream, which 26.05 marks insecure;
+    # _latest is the 10.34.5 patch release.
+    pnpm = pnpm_10_latest;
     fetcherVersion = 3;
     hash = "sha256-VB/DQoqIv5OWmoSqBr0LEHxtxrG9C/4MUPUu8N+9up4=";
   };
 
-  nativeBuildInputs = [ nodejs_22 pnpm_10 pnpmConfigHook ];
+  nativeBuildInputs = [ nodejs_22 pnpm_10_latest pnpmConfigHook ];
 
   env = {
     VITE_SITE_URL = siteUrl;

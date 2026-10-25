@@ -49,7 +49,16 @@
     direnv
     gnumake
     vulkan-tools
-    linux-manual
+    # linux-manual builds the kernel's man9 pages from linuxPackages_latest's
+    # source. Since 7.0 that goes through tools/docs/sphinx-build-wrapper,
+    # which reads $srctree - and nixpkgs' buildPhase calls the wrapper
+    # directly instead of via the Makefile, so the variable is unset and the
+    # build dies with KeyError: 'srctree'. Set it ourselves until nixpkgs does.
+    (linux-manual.overrideAttrs (old: {
+      preBuild = (old.preBuild or "") + ''
+        export srctree=$PWD
+      '';
+    }))
     man-pages
     man-pages-posix
 
