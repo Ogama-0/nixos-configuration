@@ -260,7 +260,13 @@ binds it. The house pattern for reaching Quickshell from a binding is
 **Messages is the first part of the panel that has to hold keyboard focus,
 and the panel is built on the opposite assumption.**
 
-The control panel deliberately never takes focus — you are meant to carry on
+Correction to an earlier reading of this: `ControlPanel.qml` does set
+`focusable: true` with `WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand`,
+so the surface *can* take focus when clicked. What it never does is take
+focus unprompted, and that is the gap `mod+m` falls into — it opens the pane
+with no click to grant focus.
+
+The control panel deliberately never takes focus unasked — you are meant to carry on
 typing into the window underneath it. Because a layer surface cannot receive
 a key it does not have focus for, Escape is handled by `modes.panel`, a sway
 mode that exists for exactly one key: it intercepts Escape, copies in every
@@ -341,12 +347,10 @@ is reversible and none changes what gets built.
   (`MobileModel` + `MobilePane`). Remember `treeFor` in
   `quickshell/default.nix` — a new QML file that is not listed there does not
   reach the store.
-- **The database layer.** `QtQuick.LocalStorage` ships with the
-  `qtdeclarative` that Quickshell links against and gives SQLite in-process
-  with no extra daemon; confirm it is on the wrapped Quickshell's QML import
-  path before committing to it. If it is not, a small helper process is the
-  fallback. Whether search uses `LIKE` or an FTS5 table is the builder's
-  call; FTS5 may not be compiled into Qt's bundled SQLite.
+- **The database layer.** Settled: `QtQuick.LocalStorage` was run inside
+  this machine's Quickshell and works, and **FTS5 is compiled in** — a
+  `CREATE VIRTUAL TABLE ... USING fts5` plus a `MATCH` query both succeeded.
+  Search uses FTS5. No helper process, no extra dependency.
 - **Fetch orchestration.** How `requestConversation` calls are debounced,
   what happens when two threads are opened quickly, and how a reply that
   never arrives is timed out. The plugin's own source warns
@@ -358,11 +362,16 @@ is reversible and none changes what gets built.
 - **Virtualisation.** The conversation list and the message river both need
   to not instantiate everything they hold. The performance rules in
   `docs/adding-a-bar-widget.md` apply in full.
-- **The render fixture.** `tests/laserbar/` is the only thing resembling a
-  test here: a QML scene screenshotted headlessly by
-  `scripts/laserbar-preview.sh` and asserted on with
-  `scripts/laserbar-probe.sh`. At least one fixture for the Messages pane —
-  populated list, open thread, unread ring — is expected, in both variants.
+- **The render fixture.** `tests/laserbar/` is the pixel half of this: a QML
+  scene screenshotted headlessly by `scripts/laserbar-preview.sh` and
+  asserted on with `scripts/laserbar-probe.sh`. At least one fixture for the
+  Messages pane — populated list, open thread, unread ring — is expected, in
+  both variants.
+- **Logic tests are possible after all.** Quickshell runs under
+  `QT_QPA_PLATFORM=offscreen` and `console.log` reaches stdout, verified on
+  this machine. That gives the store, the contact resolver and the hue
+  function real assertions without rendering anything, which the pixel
+  harness cannot do. The plan adds a small runner for it.
 - **Group conversation addressing.** `sendSms` takes a list of addresses;
   how a group reply is assembled from a `ConversationMessage`'s address list
   is determined by the real payload captured in Preconditions.
