@@ -55,7 +55,11 @@ Item {
             body: n.body || "",
             appIcon: n.appIcon || "",
             image: n.image || "",
-            live: true,
+            // An OSD (the volume keys, the mic toggle) is not tracked, so
+            // there is no live notification left to act on or dismiss - the
+            // record is a copy the toast renders and then forgets.
+            live: !n.transient,
+            transient: n.transient === true,
             ref: n
         };
     }
@@ -208,6 +212,16 @@ Item {
         imageSupported: true
 
         onNotification: notification => {
+            // Transient means "show it, do not keep it": one per volume
+            // keypress. Tracking those would walk a 50-entry centre full of
+            // readings you only wanted at the moment you pressed the key,
+            // and push the messages that matter off the end. It still goes
+            // through `posted`, so the toast is unaffected.
+            if (notification.transient) {
+                if (!root.dnd) root.posted(root.recordFor(notification));
+                return;
+            }
+
             // Without this the notification is closed the moment this
             // handler returns and the centre never sees it.
             notification.tracked = true;

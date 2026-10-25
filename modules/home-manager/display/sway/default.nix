@@ -49,6 +49,64 @@ let
     # Fixed replaces-id so holding the key repaints one toast instead of stacking.
     ${pkgs.notify-desktop}/bin/notify-desktop -r 7311 -a kdeconnect "Phone Volume" "Volume: $NEXT%" >/dev/null
   '';
+
+  # wpctl is silent, and this laptop has no volume LED: a keypress that
+  # changed nothing looks exactly like one that did not register. So the
+  # audio keys say what they did.
+  #
+  # Sent transient (`boolean:transient:true`): the laser bar's notification
+  # server shows a transient as a toast and does NOT keep it, because a
+  # reading you wanted at the instant you pressed a key is not a message,
+  # and twenty of them would push the real ones out of the centre.
+  #
+  # One script for all four keys so the reading is parsed in one place -
+  # mute and volume share an output line, and the mic's is the same shape.
+  audioOsd = pkgs.writeShellScript "audio-osd" ''
+    set -eu
+
+    wpctl=${pkgs.wireplumber}/bin/wpctl
+
+    # "Volume: 0.45 [MUTED]" -> "45 [MUTED]", the tag absent when unmuted.
+    reading() {
+      $wpctl get-volume "$1" \
+        | ${pkgs.gawk}/bin/awk '{ printf "%.0f %s", $2 * 100, $3 }'
+    }
+
+    # One app name per device, because the toasts pack by app: the volume
+    # and the mic each keep a toast of their own rather than fighting over
+    # one.
+    osd() {
+      ${pkgs.libnotify}/bin/notify-send \
+        -a "$1" -i "$2" -h boolean:transient:true "$3"
+    }
+
+    case "$1" in
+      up) $wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+      down) $wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- ;;
+      mute) $wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+      mic) $wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
+    esac
+
+    if [ "$1" = mic ]; then
+      set -- $(reading @DEFAULT_AUDIO_SOURCE@)
+      if [ "''${2-}" = "[MUTED]" ]; then
+        osd Microphone microphone-sensitivity-muted "Mic muted"
+      else
+        osd Microphone microphone-sensitivity-high "Mic live"
+      fi
+    else
+      set -- $(reading @DEFAULT_AUDIO_SINK@)
+      if [ "''${2-}" = "[MUTED]" ]; then
+        osd Volume audio-volume-muted "Muted"
+      elif [ "$1" -ge 66 ]; then
+        osd Volume audio-volume-high "$1%"
+      elif [ "$1" -ge 33 ]; then
+        osd Volume audio-volume-medium "$1%"
+      else
+        osd Volume audio-volume-low "$1%"
+      fi
+    fi
+  '';
 in
 {
   imports = [
@@ -231,14 +289,15 @@ in
         "XF86AudioNext" = "exec playerctl next";
         "XF86AudioPlay" = "exec playerctl play-pause";
 
-        "XF86AudioRaiseVolume" = "exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+";
+        "XF86AudioRaiseVolume" = "exec ${audioOsd} up";
 
-        "XF86AudioLowerVolume" = "exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%-";
+        "XF86AudioLowerVolume" = "exec ${audioOsd} down";
 
         # Same keys with Shift, aimed at the phone over KDE Connect.
         "Shift+XF86AudioRaiseVolume" = "exec ${kdeconnectVolume} 5";
         "Shift+XF86AudioLowerVolume" = "exec ${kdeconnectVolume} -5";
-        "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        "XF86AudioMute" = "exec ${audioOsd} mute";
+        "XF86AudioMicMute" = "exec ${audioOsd} mic";
 
         "XF86MonBrightnessUp" = "exec brightnessctl --exponent=2 s +10%";
         "XF86MonBrightnessDown" = "exec brightnessctl --exponent=2 s 10%-";

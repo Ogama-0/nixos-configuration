@@ -47,9 +47,16 @@ PanelWindow {
         for (let i = 0; i < live.length; i++) {
             if (live[i].leaving || live[i].app !== app) continue;
             const next = live.slice();
-            next[i] = { items: [record].concat(live[i].items).slice(0, maxInToast),
-                        born: now, leaving: false, app: app,
-                        open: live[i].open };
+            // An OSD REPLACES its predecessor instead of packing into it.
+            // Five volume presses are one reading that changed, not five
+            // things that happened: a count badge and a backlog to open
+            // would both be lying about what you did.
+            next[i] = record.transient
+                ? { items: [record], born: now, leaving: false, app: app,
+                    open: false }
+                : { items: [record].concat(live[i].items).slice(0, maxInToast),
+                    born: now, leaving: false, app: app,
+                    open: live[i].open };
             live = next;
             return;
         }
