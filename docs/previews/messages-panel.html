@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Messages panel — approved visual reference</title>
+<style>
+  :root {
+    --page: #16161a; --page-ink: #e8e6e3; --page-dim: #8e8a85;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 28px 72px; background: var(--page);
+         color: var(--page-ink); font-size: 15px; line-height: 1.6;
+         font-family: -apple-system, "Inter", "Segoe UI", system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 650; margin: 0 0 6px; letter-spacing: -.01em; }
+  h2 { font-size: 15px; font-weight: 600; margin: 48px 0 14px;
+       color: var(--page-dim); }
+  p.lede { color: var(--page-dim); margin: 0 0 8px; max-width: 70ch; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .9em; }
+
+  /* ---------- the panel stage, 940x700 at 1:1 ---------- */
+  .stage { width: 940px; height: 700px; border-radius: 22px; overflow: hidden;
+           display: flex; position: relative; }
+  .stage.dk { background: #000; color: #FFFAF3;
+              box-shadow: inset 0 0 0 1px rgba(255,250,243,.13),
+                          0 18px 50px rgba(0,0,0,.5); }
+  .stage.lt { background: #FDF0ED; color: #403C3D;
+              box-shadow: inset 0 0 0 1px rgba(64,60,61,.15),
+                          0 18px 50px rgba(0,0,0,.35); }
+  .scaled { width: 100%; max-width: 940px; aspect-ratio: 940 / 700;
+            position: relative; }
+  .scaled .stage { position: absolute; top: 0; left: 0;
+                   transform-origin: top left; }
+
+  /* ---------- sidebar ---------- */
+  .side { width: 340px; display: flex; flex-direction: column; flex: 0 0 auto; }
+  .dk .side { border-right: 1px solid rgba(255,250,243,.10);
+              background: rgba(255,250,243,.025); }
+  .lt .side { border-right: 1px solid rgba(64,60,61,.12);
+              background: rgba(64,60,61,.022); }
+
+  .side-head { padding: 18px 18px 12px; display: flex; align-items: center;
+               gap: 10px; }
+  .search { flex: 1; height: 32px; border-radius: 16px; display: flex;
+            align-items: center; gap: 8px; padding: 0 13px; font-size: 13px; }
+  .dk .search { background: rgba(255,250,243,.07); color: #B5B0AA; }
+  .lt .search { background: rgba(64,60,61,.06); color: #948C8A; }
+  .newmsg { width: 32px; height: 32px; border-radius: 9px; flex: 0 0 auto;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; }
+  .dk .newmsg { background: rgba(255,250,243,.07); color: #008DF8; }
+  .lt .newmsg { background: rgba(64,60,61,.06); color: #1D8991; }
+
+  /* ---------- pinned grid ---------- */
+  .pins { display: grid; grid-template-columns: repeat(3, 1fr);
+          gap: 16px 4px; padding: 16px 14px 18px; }
+  .pin { text-align: center; }
+  .disc { width: 62px; height: 62px; border-radius: 50%; margin: 0 auto;
+          position: relative; display: flex; align-items: center;
+          justify-content: center; font-size: 20px; font-weight: 600; }
+  .dk .glass { background: rgba(255,250,243,.07); }
+  .lt .glass { background: rgba(64,60,61,.05); }
+  .ring  { box-shadow: 0 0 0 2px var(--hue) inset; }
+  .quiet { box-shadow: 0 0 0 2px color-mix(in srgb, var(--hue) 34%, transparent) inset; }
+  .fill  { background: var(--hue); }
+  .dk .fill { color: #000; } .lt .fill { color: #FDF0ED; }
+  .pin .nm { font-size: 11px; margin-top: 7px; overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+  .dk .pin .nm { color: #B5B0AA; } .lt .pin .nm { color: #948C8A; }
+  .arc { position: absolute; inset: 0; border-radius: 50%;
+         background: conic-gradient(from -90deg, var(--hue) 0deg,
+                     var(--hue) 250deg, transparent 251deg);
+         -webkit-mask: radial-gradient(circle, transparent 0 27px, #000 27px);
+                 mask: radial-gradient(circle, transparent 0 27px, #000 27px);
+         animation: sweep .62s cubic-bezier(.22,.9,.3,1) 1 both; }
+  @keyframes sweep { 0% { transform: rotate(-110deg); opacity: .2 }
+                     60% { opacity: 1 } 100% { transform: rotate(250deg); opacity: 1 } }
+  .pair .back  { position:absolute; left:0; top:4px; width:44px; height:44px;
+                 border-radius:50%; font-size:14px; display:flex;
+                 align-items:center; justify-content:center; }
+  .pair .front { position:absolute; right:0; bottom:2px; width:46px; height:46px;
+                 border-radius:50%; font-size:15px; display:flex;
+                 align-items:center; justify-content:center; }
+  .dk .pair .front { box-shadow: 0 0 0 3px #000, 0 0 0 5px rgba(108,67,165,.34) inset; }
+  .lt .pair .front { box-shadow: 0 0 0 3px #FDF0ED, 0 0 0 5px rgba(29,137,145,.34) inset; }
+
+  /* ---------- thread list ---------- */
+  .threads { flex: 1; overflow: hidden; }
+  .dk .threads { border-top: 1px solid rgba(255,250,243,.08); }
+  .lt .threads { border-top: 1px solid rgba(64,60,61,.10); }
+  .row { display: flex; align-items: flex-start; gap: 10px;
+         padding: 11px 14px 11px 0; position: relative; }
+  .rail { width: 2px; border-radius: 2px; align-self: stretch; margin-right: 10px;
+          background: var(--hue); }
+  .rail.off { background: transparent; }
+  .row.sel { border-radius: 0 12px 12px 0; }
+  .dk .row.sel { background: rgba(255,250,243,.08); }
+  .lt .row.sel { background: rgba(64,60,61,.07); }
+  .rdisc { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 auto;
+           display: flex; align-items: center; justify-content: center;
+           font-size: 12px; font-weight: 600; }
+  .rbody { min-width: 0; flex: 1; }
+  .rname { font-size: 13px; font-weight: 600; }
+  .rprev { font-size: 12px; line-height: 1.35; display: -webkit-box;
+           -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .dk .rprev { color: #B5B0AA; } .lt .rprev { color: #948C8A; }
+  .rtime { font-size: 11px; flex: 0 0 auto; padding-top: 1px; }
+  .dk .rtime { color: #6A6A6A; } .lt .rtime { color: #BDB3B1; }
+
+  /* ---------- conversation ---------- */
+  .conv { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .conv-head { height: 52px; flex: 0 0 auto; display: flex; align-items: center;
+               justify-content: space-between; padding: 0 20px; }
+  .dk .conv-head { border-bottom: 1px solid rgba(255,250,243,.10); }
+  .lt .conv-head { border-bottom: 1px solid rgba(64,60,61,.12); }
+  .conv-who { display: flex; align-items: center; gap: 10px;
+              font-size: 14px; font-weight: 600; }
+  .conv-who .mini { width: 26px; height: 26px; border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 10px; font-weight: 600; }
+  .conv-act { display: flex; gap: 14px; font-size: 15px; }
+  .dk .conv-act { color: #6A6A6A; } .lt .conv-act { color: #BDB3B1; }
+
+  .msgs { flex: 1; padding: 18px 20px; display: flex; flex-direction: column;
+          gap: 7px; overflow: hidden; }
+  .day { text-align: center; font-size: 11px; margin: 4px 0 10px; }
+  .dk .day { color: #6A6A6A; } .lt .day { color: #BDB3B1; }
+  .b { max-width: 64%; padding: 9px 14px; border-radius: 17px; font-size: 13.5px;
+       line-height: 1.4; }
+  .dk .b.in { background: #222; align-self: flex-start;
+              border-bottom-left-radius: 6px; }
+  .lt .b.in { background: #FADAD1; align-self: flex-start;
+              border-bottom-left-radius: 6px; }
+  .dk .b.out { background: #008DF8; color: #000; align-self: flex-end;
+               border-bottom-right-radius: 6px; }
+  .lt .b.out { background: #DA103F; color: #FDF0ED; align-self: flex-end;
+               border-bottom-right-radius: 6px; }
+  .b.photo { padding: 0; overflow: hidden; width: 188px; height: 126px;
+             align-self: flex-end; border-radius: 17px 17px 6px 17px;
+             background: linear-gradient(142deg, #F1895C, #E95678 58%, #6C43A5); }
+  .lt .b.photo { background: linear-gradient(142deg, #F6661E, #DA103F 58%, #1D8991); }
+  .meta { align-self: flex-end; font-size: 10.5px; margin-top: -2px; }
+  .dk .meta { color: #6A6A6A; } .lt .meta { color: #BDB3B1; }
+  .pending { align-self: center; font-size: 11px; padding: 5px 12px;
+             border-radius: 11px; margin-bottom: 4px; }
+  .dk .pending { background: rgba(255,250,243,.05); color: #6A6A6A; }
+  .lt .pending { background: rgba(64,60,61,.05); color: #BDB3B1; }
+
+  .compose { flex: 0 0 auto; padding: 12px 18px 14px; display: flex;
+             align-items: center; gap: 10px; }
+  .dk .compose { border-top: 1px solid rgba(255,250,243,.10); }
+  .lt .compose { border-top: 1px solid rgba(64,60,61,.12); }
+  .plus { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 17px; }
+  .dk .plus { background: rgba(255,250,243,.08); color: #B5B0AA; }
+  .lt .plus { background: rgba(64,60,61,.07); color: #948C8A; }
+  .field { flex: 1; min-height: 32px; border-radius: 16px; font-size: 13px;
+           display: flex; align-items: center; padding: 0 14px; }
+  .dk .field { border: 1px solid rgba(255,250,243,.16); color: #6A6A6A; }
+  .lt .field { border: 1px solid rgba(64,60,61,.18); color: #BDB3B1; }
+  .send { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 14px; }
+  .dk .send { background: #008DF8; color: #000; }
+  .lt .send { background: #DA103F; color: #FDF0ED; }
+
+  /* ---------- toast ---------- */
+  .toast { width: 380px; border-radius: 16px; padding: 13px 15px;
+           display: flex; gap: 11px; align-items: flex-start; }
+  .dk .toast { background: #0b0b0b; color: #FFFAF3;
+               box-shadow: inset 0 0 0 1px rgba(255,250,243,.13),
+                           0 10px 30px rgba(0,0,0,.55); }
+  .lt .toast { background: #FDF0ED; color: #403C3D;
+               box-shadow: inset 0 0 0 1px rgba(64,60,61,.15),
+                           0 10px 30px rgba(0,0,0,.25); }
+  .toast .tbody { flex: 1; min-width: 0; }
+  .toast .tname { font-size: 13px; font-weight: 600; }
+  .toast .ttext { font-size: 12.5px; line-height: 1.4; margin-top: 2px; }
+  .dk .toast .ttext { color: #B5B0AA; } .lt .toast .ttext { color: #948C8A; }
+  .toast .treply { margin-top: 10px; height: 30px; border-radius: 15px;
+                   display: flex; align-items: center; justify-content: space-between;
+                   padding: 0 5px 0 13px; font-size: 12px; }
+  .dk .toast .treply { border: 1px solid rgba(255,250,243,.16); color: #6A6A6A; }
+  .lt .toast .treply { border: 1px solid rgba(64,60,61,.18); color: #BDB3B1; }
+  .toast .treply .s { width: 22px; height: 22px; border-radius: 50%;
+                      display: flex; align-items: center; justify-content: center;
+                      font-size: 11px; }
+  .dk .toast .treply .s { background: #008DF8; color: #000; }
+  .lt .toast .treply .s { background: #DA103F; color: #FDF0ED; }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+         align-items: start; }
+  .cap { font-size: 12.5px; color: var(--page-dim); margin-top: 10px; }
+  .legend { color: var(--page-dim); font-size: 13.5px; max-width: 74ch; }
+  .legend b { color: var(--page-ink); font-weight: 600; }
+  .legend ul { padding-left: 18px; }
+  .legend li { margin-bottom: 6px; }
+  hr { border: 0; border-top: 1px solid rgba(255,255,255,.08); margin: 44px 0 0; }
+
+  @media (max-width: 1040px) {
+    .scaled .stage { transform: scale(calc((100vw - 56px) / 940)); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Messages panel — approved visual reference</h1>
+<p class="lede">Layout A, beam-ring avatars. Both variants drawn with the real
+<code>palette.nix</code> values: dark <code>base00 #000000</code> /
+<code>base0D #008DF8</code>, light <code>base00 #FDF0ED</code> /
+<code>base0D #DA103F</code>. Stage is 940×700, the control panel's own size.</p>
+
+<h2>Dark</h2>
+<div class="scaled"><div class="stage dk">
+  <div class="side">
+    <div class="side-head">
+      <div class="search">⌕<span>Search</span></div>
+      <div class="newmsg">✎</div>
+    </div>
+    <div class="pins">
+      <div class="pin"><div class="disc glass quiet" style="--hue:#00D7EB;color:#00D7EB">MA</div><div class="nm">Maman</div></div>
+      <div class="pin"><div class="disc glass ring" style="--hue:#27D796;color:#27D796"><div class="arc"></div>BP</div><div class="nm">Benjamin</div></div>
+      <div class="pin"><div class="disc fill" style="--hue:#008DF8">LU</div><div class="nm">Lauren</div></div>
+      <div class="pin"><div class="disc pair"><div class="back glass quiet" style="--hue:#F1895C;color:#F1895C">TG</div><div class="front glass" style="--hue:#6C43A5;color:#6C43A5;background:#0b0b0b">AC</div></div><div class="nm">Appart 4B</div></div>
+      <div class="pin"><div class="disc glass quiet" style="--hue:#FFB900;color:#FFB900">JS</div><div class="nm">Justin</div></div>
+      <div class="pin"><div class="disc glass quiet" style="--hue:#E95678;color:#E95678">ZK</div><div class="nm">Zoé</div></div>
+    </div>
+    <div class="threads">
+      <div class="row"><div class="rail" style="--hue:#27D796"></div><div class="rdisc glass quiet" style="--hue:#27D796;color:#27D796">BP</div><div class="rbody"><div class="rname">Benjamin Poussart</div><div class="rprev">On se voit demain ? J'ai récupéré les clés.</div></div><div class="rtime">9:01</div></div>
+      <div class="row sel"><div class="rail off"></div><div class="rdisc fill" style="--hue:#008DF8">LU</div><div class="rbody"><div class="rname">Lauren Ulrich</div><div class="rprev">Thanks so much! I should be there by 9:00.</div></div><div class="rtime">8:25</div></div>
+      <div class="row"><div class="rail off"></div><div class="rdisc glass quiet" style="--hue:#00D7EB;color:#00D7EB">MA</div><div class="rbody"><div class="rname">Maman</div><div class="rprev">Tu rentres ce week-end ?</div></div><div class="rtime">Hier</div></div>
+      <div class="row"><div class="rail off"></div><div class="rdisc glass quiet" style="--hue:#6C43A5;color:#6C43A5">AC</div><div class="rbody"><div class="rname">Appart 4B</div><div class="rprev">Thomas : je passe l'aspirateur ce soir, laissez le couloir libre</div></div><div class="rtime">Hier</div></div>
+      <div class="row"><div class="rail off"></div><div class="rdisc glass quiet" style="--hue:#B5B0AA;color:#B5B0AA;font-size:9px">32665</div><div class="rbody"><div class="rname">32665</div><div class="rprev">Votre code de confirmation est 418293.</div></div><div class="rtime">Lun.</div></div>
+    </div>
+  </div>
+  <div class="conv">
+    <div class="conv-head">
+      <div class="conv-who"><div class="mini fill" style="--hue:#008DF8">LU</div><span>Lauren Ulrich</span></div>
+      <div class="conv-act"><span>⇅</span><span>ⓘ</span></div>
+    </div>
+    <div class="msgs">
+      <div class="pending">Loading earlier messages…</div>
+      <div class="day">Today 8:14</div>
+      <div class="b out">Morning — still good for the 9am?</div>
+      <div class="b in">Hey!</div>
+      <div class="b in">Thanks so much! I should be there by 9:00.</div>
+      <div class="b out">Perfect. Here's the entrance, it's the side door.</div>
+      <div class="b photo"></div>
+      <div class="meta">Delivered</div>
+    </div>
+    <div class="compose">
+      <div class="plus">+</div>
+      <div class="field">Text message</div>
+      <div class="send">↑</div>
+    </div>
+  </div>
+</div></div>
+<p class="cap">Benjamin is unread: the ring sweeps once and stays lit, and his row
+carries the notification pane's 2px rail. Lauren is the open thread, so her disc
+is filled and her initials flip to the on-accent ink.</p>
+
+<h2>Light</h2>
+<div class="scaled"><div class="stage lt">
+  <div class="side">
+    <div class="side-head">
+      <div class="search">⌕<span>Search</span></div>
+      <div class="newmsg">✎</div>
+    </div>
+    <div class="pins">
+      <div class="pin"><div class="disc glass quiet" style="--hue:#1D8991;color:#1D8991">MA</div><div class="nm">Maman</div></div>
+      <div class="pin"><div class="disc glass ring" style="--hue:#F6661E;color:#F6661E"><div class="arc"></div>BP</div><div class="nm">Benjamin</div></div>
+      <div class="pin"><div class="disc fill" style="--hue:#DA103F">LU</div><div class="nm">Lauren</div></div>
+      <div class="pin"><div class="disc pair"><div class="back glass quiet" style="--hue:#DC3318;color:#DC3318">TG</div><div class="front glass" style="--hue:#1D8991;color:#1D8991;background:#f7e6e2">AC</div></div><div class="nm">Appart 4B</div></div>
+      <div class="pin"><div class="disc glass quiet" style="--hue:#94E1B0;color:#2f7a57">JS</div><div class="nm">Justin</div></div>
+      <div class="pin"><div class="disc glass quiet" style="--hue:#E58C92;color:#b8545c">ZK</div><div class="nm">Zoé</div></div>
+    </div>
+    <div class="threads">
+      <div class="row"><div class="rail" style="--hue:#F6661E"></div><div class="rdisc glass quiet" style="--hue:#F6661E;color:#F6661E">BP</div><div class="rbody"><div class="rname">Benjamin Poussart</div><div class="rprev">On se voit demain ? J'ai récupéré les clés.</div></div><div class="rtime">9:01</div></div>
+      <div class="row sel"><div class="rail off"></div><div class="rdisc fill" style="--hue:#DA103F">LU</div><div class="rbody"><div class="rname">Lauren Ulrich</div><div class="rprev">Thanks so much! I should be there by 9:00.</div></div><div class="rtime">8:25</div></div>
+      <div class="row"><div class="rail off"></div><div class="rdisc glass quiet" style="--hue:#1D8991;color:#1D8991">MA</div><div class="rbody"><div class="rname">Maman</div><div class="rprev">Tu rentres ce week-end ?</div></div><div class="rtime">Hier</div></div>
+      <div class="row"><div class="rail off"></div><div class="rdisc glass quiet" style="--hue:#DC3318;color:#DC3318">AC</div><div class="rbody"><div class="rname">Appart 4B</div><div class="rprev">Thomas : je passe l'aspirateur ce soir, laissez le couloir libre</div></div><div class="rtime">Hier</div></div>
+      <div class="row"><div class="rail off"></div><div class="rdisc glass quiet" style="--hue:#948C8A;color:#948C8A;font-size:9px">32665</div><div class="rbody"><div class="rname">32665</div><div class="rprev">Votre code de confirmation est 418293.</div></div><div class="rtime">Lun.</div></div>
+    </div>
+  </div>
+  <div class="conv">
+    <div class="conv-head">
+      <div class="conv-who"><div class="mini fill" style="--hue:#DA103F">LU</div><span>Lauren Ulrich</span></div>
+      <div class="conv-act"><span>⇅</span><span>ⓘ</span></div>
+    </div>
+    <div class="msgs">
+      <div class="pending">Loading earlier messages…</div>
+      <div class="day">Today 8:14</div>
+      <div class="b out">Morning — still good for the 9am?</div>
+      <div class="b in">Hey!</div>
+      <div class="b in">Thanks so much! I should be there by 9:00.</div>
+      <div class="b out">Perfect. Here's the entrance, it's the side door.</div>
+      <div class="b photo"></div>
+      <div class="meta">Delivered</div>
+    </div>
+    <div class="compose">
+      <div class="plus">+</div>
+      <div class="field">Text message</div>
+      <div class="send">↑</div>
+    </div>
+  </div>
+</div></div>
+<p class="cap">Horizon light has no blue at <code>base0D</code> — it is crimson —
+so the outgoing bubble and the accents are crimson here. That is the palette
+being obeyed, not a second design.</p>
+
+<h2>Toast</h2>
+<div class="duo">
+  <div>
+    <div class="toast dk">
+      <div class="disc glass quiet" style="--hue:#27D796;color:#27D796;width:38px;height:38px;font-size:13px;flex:0 0 auto">BP</div>
+      <div class="tbody">
+        <div class="tname">Benjamin Poussart</div>
+        <div class="ttext">On se voit demain ? J'ai récupéré les clés.</div>
+        <div class="treply"><span>Reply</span><span class="s">↑</span></div>
+      </div>
+    </div>
+    <p class="cap">Dark. Type and send without the panel ever opening;
+    double-click anywhere else on it to open Messages on this thread.</p>
+  </div>
+  <div>
+    <div class="toast lt">
+      <div class="disc glass quiet" style="--hue:#F6661E;color:#F6661E;width:38px;height:38px;font-size:13px;flex:0 0 auto">BP</div>
+      <div class="tbody">
+        <div class="tname">Benjamin Poussart</div>
+        <div class="ttext">On se voit demain ? J'ai récupéré les clés.</div>
+        <div class="treply"><span>Reply</span><span class="s">↑</span></div>
+      </div>
+    </div>
+    <p class="cap">Light. Same component, same tokens.</p>
+  </div>
+</div>
+
+<h2>Reading the avatar</h2>
+<div class="legend">
+<ul>
+  <li><b>Hue per person.</b> The phone number is hashed onto the palette's
+  accent slots, so a contact keeps one colour forever. The usable slots differ
+  per variant: light's <code>base0A</code> is nearly white and is excluded.</li>
+  <li><b>Resting</b> — glass disc, initials in the hue, ring at 34%.</li>
+  <li><b>Unread</b> — the ring sweeps once (the bar's travelling edge) and stays
+  at full strength; the list row gains the 2px accent rail.</li>
+  <li><b>Open</b> — the disc fills with the hue and the initials take the
+  on-accent ink, as <code>ToggleTile</code> already does.</li>
+  <li><b>Group</b> — two discs stacked, the front one cut out of the ground.</li>
+  <li><b>No contact card</b> — shortcodes and unknown numbers drop the initials
+  and wear the number itself in <code>base04</code>.</li>
+</ul>
+</div>
+
+<hr>
+</div>
+</body>
+</html>
