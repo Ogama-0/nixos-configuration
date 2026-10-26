@@ -249,7 +249,10 @@ in
           "${d}/components/panel/messages/ConversationView.qml" = themedQmlFile variant ./components/panel/messages/ConversationView.qml;
           "${d}/components/panel/messages/MessagesModel.qml" = themedQmlFile variant ./components/panel/messages/MessagesModel.qml;
           "${d}/components/panel/messages/ComposeRow.qml" = themedQmlFile variant ./components/panel/messages/ComposeRow.qml;
+          "${d}/components/panel/messages/MessagesCore.qml" = themedQmlFile variant ./components/panel/messages/MessagesCore.qml;
           "${d}/components/panel/messages/MessagesPane.qml" = themedQmlFile variant ./components/panel/messages/MessagesPane.qml;
+          "${d}/components/panel/messages/MessageToast.qml" = themedQmlFile variant ./components/panel/messages/MessageToast.qml;
+          "${d}/components/panel/messages/MessageToasts.qml" = themedQmlFile variant ./components/panel/messages/MessageToasts.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };

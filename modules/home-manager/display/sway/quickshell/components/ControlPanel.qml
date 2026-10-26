@@ -485,6 +485,33 @@ Scope {
         }
     }
 
+    // One of these for the whole shell, NOT one per screen. The window below
+    // is inside a Variants over Quickshell.screens, and putting the models
+    // in the pane gave a two-monitor session two SQLite connections, two
+    // reads of the 229 vCards and two busctl monitors racing each other.
+    MessagesCore {
+        id: messages
+        deviceId: mobile.device ? mobile.device.id : ""
+        active: root.messagesOpen
+        // Kept alive with every pane shut: a toast for a text that arrived
+        // while you were not looking is the entire point.
+        listening: true
+        onMessageArrived: msg => {
+            // Your own sent messages come back through the same stream.
+            if (msg.outgoing) return;
+            // Already reading that thread? The bubble is the notification.
+            if (root.messagesOpen && messages.activeId === msg.convId) return;
+            messageToasts.show(msg);
+        }
+    }
+
+    MessageToasts {
+        id: messageToasts
+        core: messages
+        uiScale: 1
+        onPaneAsked: convId => root.openMessages(convId)
+    }
+
     Variants {
         model: Quickshell.screens
 
@@ -855,6 +882,7 @@ Scope {
 
                                 MessagesPane {
                                     id: messagesPane
+                                    core: messages
                                     // Laid out at full size and clipped, not
                                     // scaled: text that grew with the box
                                     // would reflow every frame.
@@ -863,7 +891,6 @@ Scope {
                                     uiScale: panel.uiScale
                                     opacity: messagesLayer.t
                                     active: root.messagesOpen
-                                    deviceId: mobile.device ? mobile.device.id : ""
                                     pendingConvId: root.messagesPending
                                     onCloseAsked: root.closeMessages()
                                 }

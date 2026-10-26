@@ -19,8 +19,15 @@ import Quickshell.Io
 Item {
     id: root
 
-    // Gates every subprocess. Closed pane, no monitor, no polling.
+    // Gates the things that cost something per use: the conversation-list
+    // refresh and the page requests. Closed pane, no polling.
     property bool active: false
+
+    // The signal monitor, separately, because you cannot toast a message you
+    // were not listening for. One idle `busctl monitor` is the price of a
+    // text arriving while the panel is shut, and it replaces polling rather
+    // than adding to it.
+    property bool listening: false
     // Fixtures set this false and drive ingest* directly.
     property bool transportEnabled: true
 
@@ -310,7 +317,8 @@ Item {
     // carries a lot of traffic that is none of our business.
     Process {
         id: monitorProc
-        running: root.active && root.transportEnabled && root.connected
+        running: (root.active || root.listening)
+                 && root.transportEnabled && root.connected
         command: ["busctl", "--user", "--json=short", "monitor",
                   "org.kde.kdeconnect"]
         stdout: SplitParser {
