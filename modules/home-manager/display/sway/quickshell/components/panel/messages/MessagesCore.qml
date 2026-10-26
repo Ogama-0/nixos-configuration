@@ -36,6 +36,23 @@ Item {
         return model.send(text, attachments);
     }
 
+    // Conversation ids whose CACHED message bodies match. Only threads that
+    // have been opened are in the index - the rest of the history is still on
+    // the phone - which is why the sidebar says so rather than implying the
+    // message is not there.
+    function searchBodies(query: string): var {
+        if (!query || query.trim().length < 2) return [];
+        const hits = store.search(query, 80);
+        let seen = {};
+        let out = [];
+        for (const h of hits) {
+            if (seen[h.convId]) continue;
+            seen[h.convId] = true;
+            out.push(h.convId);
+        }
+        return out;
+    }
+
     function conversationFor(convId: string): var {
         return model.conversations.filter(c => c.convId === convId)[0];
     }

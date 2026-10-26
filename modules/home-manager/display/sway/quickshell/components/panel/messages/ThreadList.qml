@@ -24,6 +24,11 @@ Item {
     // so the empty line can say which kind of nothing it is.
     property bool searchedBodies: true
 
+    // Conversation ids whose cached message BODIES match the query. The
+    // owner computes these - a view does not get to hold a database - and
+    // they are unioned with the name/number/preview match below.
+    property var bodyMatches: []
+
     signal conversationPicked(string convId)
     signal pinToggled(string convId)
     signal composeAsked()
@@ -43,7 +48,10 @@ Item {
         return all.filter(c =>
             String(c.title || "").toLowerCase().indexOf(q) >= 0
             || String(c.number || "").toLowerCase().indexOf(q) >= 0
-            || String(c.preview || "").toLowerCase().indexOf(q) >= 0);
+            || String(c.preview || "").toLowerCase().indexOf(q) >= 0
+            // The preview is only the newest message; this is the rest of
+            // the thread, as far as it has been cached.
+            || root.bodyMatches.indexOf(c.convId) >= 0);
     }
 
     function relativeTime(ts: real): string {

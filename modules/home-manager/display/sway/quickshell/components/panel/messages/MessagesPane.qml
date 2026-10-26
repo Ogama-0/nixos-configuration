@@ -53,9 +53,11 @@ Item {
         uiScale: root.uiScale
         conversations: root.core ? root.core.conversations : []
         activeId: root.core ? root.core.activeId : ""
-        // Body search only reaches what has been cached, and the empty state
-        // has to say so rather than implying the message is not there.
+        // Body search reaches what has been cached and no further, and the
+        // empty state says which kind of nothing it found.
         searchedBodies: false
+        bodyMatches: root.core && query.length >= 2
+            ? root.core.searchBodies(query) : []
 
         onConversationPicked: convId => { if (root.core) root.core.openConversation(convId) }
         onPinToggled: convId => { if (root.core) root.core.togglePin(convId) }
