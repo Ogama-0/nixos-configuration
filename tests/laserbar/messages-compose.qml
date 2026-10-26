@@ -36,12 +36,27 @@ ShellRoot {
         transportEnabled: false
     }
 
+    MessageStore { id: awayStore; dbName: "qs-messages-away-test" }
+
+    // Paired, known, and not on the network.
+    MessagesModel {
+        id: away
+        contacts: fakeContacts
+        palette: fakeHue
+        store: awayStore
+        deviceId: "test-device"
+        reachable: false
+        transportEnabled: false
+    }
+
     Component.onCompleted: {
         let bad = [];
         const check = (ok, why) => { if (!ok) bad.push(why); };
 
         store.init();
         store.wipe();
+        awayStore.init();
+        awayStore.wipe();
 
         // A thread to send into.
         model.ingestMessage([1, "ok à demain", [["+33766417775"]],
@@ -98,6 +113,30 @@ ShellRoot {
         model.openConversation("29");
         check(model.activeMessages.length === n,
               "an empty send created a bubble");
+
+        // --- a paired phone that has wandered off ---
+        //
+        // kdeconnect-cli -a lists only REACHABLE devices, so a phone that is
+        // asleep or off the wifi reports nothing even though it is paired.
+        // That must not take the cache with it: everything already
+        // downloaded is still readable, and the reason it cannot be added to
+        // is "the phone is away", not "pair a phone".
+        away.ingestMessage([1, "déjà lu", [["+33766417775"]],
+                            1792742900000, 1, 1, 44, 700, -1, []]);
+        away.openConversation("44");
+        check(away.activeMessages.length === 1,
+              "a paired-but-unreachable device lost its cache: "
+              + away.activeMessages.length);
+        check(away.conversations.length === 1,
+              "a paired-but-unreachable device lost its conversation list");
+        // Knowing which device we are is what makes the cache and the
+        // contacts reachable at all.
+        check(away.deviceId === "test-device",
+              "the paired device id did not survive unreachability");
+        // But it is NOT connected, so nothing may be sent and nothing may
+        // shell out at a phone that is not there.
+        check(away.connected === false,
+              "an unreachable device reported itself connected");
 
         if (bad.length > 0) { console.log("COMPOSE_FAIL " + bad.join(" | ")); return; }
         console.log("COMPOSE_OK");

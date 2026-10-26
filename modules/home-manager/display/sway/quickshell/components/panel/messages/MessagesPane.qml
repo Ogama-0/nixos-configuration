@@ -120,12 +120,17 @@ Item {
             anchors.centerIn: parent
             width: parent.width * 0.6
             horizontalAlignment: Text.AlignHCenter
+            // "Pair one in KDE Connect" is the wrong thing to tell someone
+            // whose phone IS paired and merely asleep - it asks them to do
+            // something they have already done.
             text: !root.core ? ""
                 : root.core.conversations.length > 0
                     ? "Pick a conversation."
-                    : root.core.connected
-                        ? "No conversations yet."
-                        : "No phone connected. Pair one in KDE Connect."
+                    : !root.core.known
+                        ? "No phone paired. Pair one in KDE Connect."
+                        : !root.core.connected
+                            ? "Your phone is not on the network. Anything already downloaded is still here."
+                            : "No conversations yet."
             color: "@mutedColor@"
             font.pixelSize: Math.round(13 * root.uiScale)
             wrapMode: Text.WordWrap

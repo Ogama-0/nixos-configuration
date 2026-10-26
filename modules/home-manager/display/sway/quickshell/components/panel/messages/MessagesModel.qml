@@ -31,8 +31,19 @@ Item {
     // Fixtures set this false and drive ingest* directly.
     property bool transportEnabled: true
 
+    // Which phone. Set from the PAIRED device, not the reachable one - it is
+    // what names the cache's contacts and builds the DBus paths, and it
+    // stays valid while the phone is asleep.
     property string deviceId: ""
-    property bool connected: deviceId !== ""
+
+    // Whether that phone is actually on the network. A separate input
+    // because `kdeconnect-cli -a` lists only reachable devices, so a paired
+    // phone that has wandered off reports nothing at all - and inferring
+    // reachability from "do we have an id" took the cache away with it.
+    property bool reachable: false
+
+    // Only when both: we know who, and they are there.
+    readonly property bool connected: deviceId !== "" && reachable
 
     // Injected rather than owned, so one ContactsModel and one MessageHue
     // serve the pane, the toasts and anything else - and so a fixture can
@@ -317,8 +328,12 @@ Item {
     // carries a lot of traffic that is none of our business.
     Process {
         id: monitorProc
+        // Gated on KNOWING the device, not on it being reachable. An idle
+        // monitor on a sleeping phone costs nothing and is already in place
+        // the moment the daemon emits something; waiting for reachability
+        // would mean missing the first message after every wake.
         running: (root.active || root.listening)
-                 && root.transportEnabled && root.connected
+                 && root.transportEnabled && root.deviceId !== ""
         command: ["busctl", "--user", "--json=short", "monitor",
                   "org.kde.kdeconnect"]
         stdout: SplitParser {

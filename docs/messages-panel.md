@@ -46,6 +46,25 @@ Paging is by **index** (`requestConversation(threadId, start, end)`), not by
 timestamp. The `/sms` object has a timestamp form; it is on the other
 interface and is not the one that answers.
 
+## Paired is not reachable
+
+Two different questions, and conflating them cost a whole cache.
+
+- `kdeconnect-cli -a` lists **reachable** devices. The Mobile zone uses it,
+  correctly — a battery readout for a phone that is not there is a lie.
+- `kdeconnect-cli -l` lists **paired** devices. Messages uses that, through
+  `MobileModel.pairedId`, because knowing *which* phone is what names the
+  cached conversations and finds the contact cards.
+
+So `MessagesModel` takes `deviceId` and `reachable` as separate inputs and
+`connected` is both. A sleeping phone still gives you every conversation you
+have already downloaded, read-only, and says so in those words rather than
+telling you to pair a phone you have already paired.
+
+The signal monitor is gated on `deviceId`, not on `connected`: an idle
+monitor costs nothing and is already in place when the phone wakes, where
+waiting for reachability would miss the first message every time.
+
 ## Things the interface cannot do
 
 - **No `markRead`.** Unread is the panel's own state, kept in `conversations.unread`,
@@ -141,6 +160,7 @@ bubble reads `#131312` across its padding and `#565451` across its words.
 | What you see | What it is |
 |---|---|
 | No conversations, phone connected | SMS permission on Android. Run the probe. |
+| Mobile zone empty, `--list-devices` finds the phone | Paired but not **reachable**. The zone runs `kdeconnect-cli -a`, which lists reachable devices only; `--list-devices` lists paired ones. Check `isReachable` on the device object. Messages still opens and shows the cache. |
 | Every thread named by its number | The vCard read failed, or `relabel()` did not fire. |
 | All shortcode senders one colour | A normaliser regression — alphanumeric ids have no digits and must fold to an `id:` key. |
 | A message stuck on "Sent" | Honest. The phone never echoed it back. |

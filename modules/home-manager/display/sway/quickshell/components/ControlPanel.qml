@@ -491,7 +491,12 @@ Scope {
     // reads of the 229 vCards and two busctl monitors racing each other.
     MessagesCore {
         id: messages
-        deviceId: mobile.device ? mobile.device.id : ""
+        // The PAIRED device, not the reachable one. A phone that is asleep
+        // still has a cache worth reading and contacts worth naming it
+        // with; keying this off mobile.device meant it went dark the moment
+        // the phone left the wifi.
+        deviceId: mobile.pairedId
+        reachable: mobile.connected
         active: root.messagesOpen
         // Kept alive with every pane shut: a toast for a text that arrived
         // while you were not looking is the entire point.
@@ -761,6 +766,7 @@ Scope {
                                 uiScale: panel.uiScale
                                 device: mobile.device
                                 connected: mobile.connected
+                                everPaired: mobile.pairedId !== ""
                                 // Both of these put a window on screen, and
                                 // a layer-shell overlay is above every
                                 // normal window by protocol - the dialog

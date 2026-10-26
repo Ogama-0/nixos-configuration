@@ -165,8 +165,12 @@ Item {
             uiScale: root.uiScale
             icon: "bell"
             label: "Messages"
-            opacity: root.connected ? 1 : 0.45
-            onActivated: if (root.connected) root.messagesAsked()
+            // Enabled whenever a phone is PAIRED, not only when it is
+            // reachable: everything already downloaded is still worth
+            // reading, and sending is refused further in rather than by
+            // making the door unopenable.
+            opacity: root.everPaired ? 1 : 0.45
+            onActivated: if (root.everPaired) root.messagesAsked()
         }
 
         Row {

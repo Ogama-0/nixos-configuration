@@ -24,6 +24,17 @@ Item {
     property var device: null
     readonly property bool connected: device !== null
 
+    // The paired device, whether or not it is on the network right now.
+    //
+    // `kdeconnect-cli -a` below lists only REACHABLE devices, so a phone
+    // that is asleep or off the wifi reports nothing - which is right for
+    // the battery readout and wrong for everything that only needs to know
+    // WHICH phone this is. Messages needs that to name its cached
+    // conversations and find the contact cards; without it a phone going to
+    // sleep took the whole message history with it.
+    property string pairedId: ""
+    property string pairedName: ""
+
     function openGui(): void { guiProc.running = true }
 
     // Pushes THIS machine's clipboard to the phone. The daemon reads the
@@ -55,6 +66,28 @@ Item {
     Process {
         id: guiProc
         command: ["kdeconnect-app"]
+    }
+
+    // Once at startup, not only while the zone is active. Messages listens
+    // for incoming texts with the panel shut, and it cannot do that without
+    // knowing which device it is listening about.
+    Component.onCompleted: pairedProc.running = true
+
+    // -l, not -a: every paired device, reachable or not.
+    Process {
+        id: pairedProc
+        command: ["kdeconnect-cli", "-l", "--id-name-only"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const line = this.text.split("\n")
+                    .map(l => l.trim())
+                    .filter(l => l.length > 0)[0];
+                if (!line) { root.pairedId = ""; root.pairedName = ""; return; }
+                const sep = line.indexOf(" ");
+                root.pairedId = sep < 0 ? line : line.slice(0, sep);
+                root.pairedName = sep < 0 ? line : line.slice(sep + 1);
+            }
+        }
     }
 
     Process {
@@ -173,6 +206,6 @@ Item {
         running: root.active
         repeat: true
         triggeredOnStart: true
-        onTriggered: listProc.running = true
+        onTriggered: { listProc.running = true; pairedProc.running = true }
     }
 }

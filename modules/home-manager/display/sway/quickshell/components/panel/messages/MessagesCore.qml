@@ -15,6 +15,7 @@ Item {
     id: root
 
     property string deviceId: ""
+    property bool reachable: false
 
     // Polling. Only while a pane is actually open.
     property bool active: false
@@ -29,6 +30,9 @@ Item {
     readonly property alias activeMessages: model.activeMessages
     readonly property alias loadingOlder: model.loadingOlder
     readonly property alias connected: model.connected
+    // Paired at all. Drives whether Messages can be opened to browse the
+    // cache, as opposed to whether anything can be sent.
+    readonly property bool known: root.deviceId !== ""
 
     function openConversation(convId: string): void { model.openConversation(convId) }
     function fetchOlder(): void { model.fetchOlder() }
@@ -78,6 +82,7 @@ Item {
     MessagesModel {
         id: model
         deviceId: root.deviceId
+        reachable: root.reachable
         contacts: contacts
         palette: hues
         store: store
