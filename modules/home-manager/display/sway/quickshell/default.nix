@@ -34,6 +34,36 @@ let
     then { capsuleFill = "#F2${c.base00}"; capsuleInk = "#FF${c.base05}"; }
     else { capsuleFill = "#F2${c.base05}"; capsuleInk = "#FF${c.base00}"; };
 
+  # Messages' identity-hue pool: one accent slot per contact, hashed from the
+  # phone number so a person keeps one colour forever.
+  #
+  # Not the same slots in both variants. Horizon light's base0A is #FBE0D9 -
+  # near-white - and initials painted in it disappear into the cream sheet, so
+  # light gets seven slots and dark gets eight. Dropping it from both instead
+  # would cost dark a perfectly good yellow for a problem it does not have.
+  msgHuesFor = variant:
+    let c = allColors.${variant};
+        opaque = v: "#FF" + v;
+        slots = if variant == "light"
+                then [ c.base08 c.base09 c.base0B c.base0C c.base0D c.base0E c.base0F ]
+                else [ c.base08 c.base09 c.base0A c.base0B c.base0C c.base0D c.base0E c.base0F ];
+    in { msgHues = builtins.concatStringsSep "," (map opaque slots); };
+
+  # The outgoing bubble, and the ink on it. base0D is the slot the bar already
+  # treats as THE UI accent; base0B (@greenColor@) is this panel's "a thing is
+  # on" colour and would make every message you sent read as a status light.
+  #
+  # In light that lands on #DA103F, a crimson rather than a blue. That is
+  # Horizon light, not a mistake - the palette is not a recolour of the dark
+  # set and no single slot means "blue" in both.
+  msgAccentFor = variant:
+    let c = allColors.${variant}; in {
+      msgAccent = "#FF" + c.base0D;
+      msgAccentInk = if variant == "light"
+                     then "#FF" + c.base07
+                     else "#FF" + c.base00;
+    };
+
   # Ink on an accent (base0B) fill: base00 in dark, base07 in light. Light's
   # base00 is the cream ground, so an icon in it would vanish into the green.
   onAccentInkFor = variant:
@@ -89,7 +119,8 @@ let
     sheetBg = if variant == "light"
               then "#F2${allColors.light.base00}"
               else "#EF${allColors.dark.base00}";
-  } // statusColorsFor variant // capsuleColorsFor variant);
+  } // statusColorsFor variant // capsuleColorsFor variant
+    // msgHuesFor variant // msgAccentFor variant);
 
   themedQmlFile = variant: path: {
     text = themeFor variant (builtins.readFile path);
@@ -204,6 +235,7 @@ in
           "${d}/components/panel/MobilePane.qml" = themedQmlFile variant ./components/panel/MobilePane.qml;
           "${d}/components/panel/MobileAction.qml" = themedQmlFile variant ./components/panel/MobileAction.qml;
           "${d}/components/panel/messages/ContactsModel.qml" = themedQmlFile variant ./components/panel/messages/ContactsModel.qml;
+          "${d}/components/panel/messages/MessageHue.qml" = themedQmlFile variant ./components/panel/messages/MessageHue.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };

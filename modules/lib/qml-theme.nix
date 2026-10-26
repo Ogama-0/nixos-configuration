@@ -41,6 +41,23 @@
 , swaymsgBin ? "swaymsg"
 , capsuleFill ? "#F2${colors.base05}"
 , capsuleInk ? "#FF${colors.base00}"
+  # Messages' per-contact identity colours, comma-separated. Not a single slot
+  # and not derivable here: the pool differs by variant because Horizon light's
+  # base0A is #FBE0D9, near-white, and initials painted in it disappear into
+  # the cream sheet. The quickshell module passes the polarity-correct list;
+  # this default is the dark one, for the callers that render no Messages.
+, msgHues ? builtins.concatStringsSep "," (map (c: "#FF${c}") [
+    colors.base08 colors.base09 colors.base0A colors.base0B
+    colors.base0C colors.base0D colors.base0E colors.base0F
+  ])
+  # The outgoing bubble. base0D, the slot the bar already treats as THE UI
+  # accent - not @greenColor@ (base0B), which is this panel's "a thing is on"
+  # colour and would make every message you sent read as a status light.
+  #
+  # Its ink is base00 in dark but base07 in light, for the same reason
+  # onAccentInk is: light's base00 IS the cream ground.
+, msgAccent ? "#FF${colors.base0D}"
+, msgAccentInk ? "#FF${colors.base00}"
   # Ink on an accent fill. Not derivable from `colors` alone: it is base00 in
   # dark but base07 in light, because light's base00 IS the cream ground and
   # an icon painted in it would disappear into the fill. Same reason
@@ -100,6 +117,13 @@ builtins.replaceStrings
     "@plateBg@"
     "@whereAmIBin@"
     "@sheetBg@"
+    # Messages tokens. @msgHues@ is a comma-separated list, not a colour -
+    # MessageHue.qml splits it. Named msg* and not hues/accent because this
+    # list is matched in order and a short, generic name is the one most
+    # likely to collide with a token added later.
+    "@msgHues@"
+    "@msgAccent@"
+    "@msgAccentInk@"
   ]
   [
     "#B3${colors.base00}"
@@ -142,4 +166,7 @@ builtins.replaceStrings
     "#12${colors.base05}"
     whereAmIBin
     sheetBg
+    msgHues
+    msgAccent
+    msgAccentInk
   ]
