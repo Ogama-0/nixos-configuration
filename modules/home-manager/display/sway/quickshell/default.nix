@@ -203,6 +203,7 @@ in
           "${d}/components/panel/MobileModel.qml" = themedQmlFile variant ./components/panel/MobileModel.qml;
           "${d}/components/panel/MobilePane.qml" = themedQmlFile variant ./components/panel/MobilePane.qml;
           "${d}/components/panel/MobileAction.qml" = themedQmlFile variant ./components/panel/MobileAction.qml;
+          "${d}/components/panel/messages/ContactsModel.qml" = themedQmlFile variant ./components/panel/messages/ContactsModel.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
