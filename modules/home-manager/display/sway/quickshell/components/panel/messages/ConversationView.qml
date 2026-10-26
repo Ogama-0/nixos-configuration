@@ -43,7 +43,7 @@ Item {
     // exactly why it is the ink on the accent fill in the first place.
     readonly property color accentInk: "@msgAccentInk@"
     readonly property color bubbleRecess: Qt.rgba(accentInk.r, accentInk.g,
-                                                  accentInk.b, 0.20)
+                                                  accentInk.b, 0.32)
 
     function dayLabel(ts: real): string {
         const d = new Date(ts);

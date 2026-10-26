@@ -41,6 +41,29 @@ ShellRoot {
         dbName: "qs-messages-model-test"
     }
 
+    // A contacts stub that only starts knowing the name partway through,
+    // standing in for the vCard read finishing after the first messages.
+    QtObject {
+        id: lateContacts
+        property bool known: false
+        function resolve(number) {
+            if (known && number === "+33611111111")
+                return { name: "Late Arrival", initials: "LA",
+                         number: number, known: true };
+            return { name: number, initials: "", number: number, known: false };
+        }
+    }
+
+    MessageStore { id: lateStore; dbName: "qs-messages-model-late-test" }
+
+    MessagesModel {
+        id: lateModel
+        contacts: lateContacts
+        palette: fakeHue
+        store: lateStore
+        transportEnabled: false
+    }
+
     MessagesModel {
         id: model
         contacts: fakeContacts
@@ -78,6 +101,8 @@ ShellRoot {
 
         store.init();
         store.wipe();
+        lateStore.init();
+        lateStore.wipe();
 
         for (const m of root.captured) model.ingestMessage(m);
 
@@ -155,6 +180,25 @@ ShellRoot {
         model.openConversation("29");
         check(model.activeMessages.length === 2,
               "re-ingesting duplicated messages: " + model.activeMessages.length);
+
+        // --- names that arrive late ---
+        // The 229 vCards are read asynchronously, and the first
+        // conversations usually land before that finishes. Without a relabel
+        // every thread keeps whatever it was built with - its phone number -
+        // until the next message arrives, which for a quiet thread is never.
+        lateContacts.known = false;
+        lateModel.ingestMessage([1, "salut", [["+33611111111"]],
+                                 1792742983591, 1, 1, 77, 900, -1, []]);
+        check(lateModel.conversations[0].title === "+33611111111",
+              "unresolved thread should be titled by its number, got "
+              + lateModel.conversations[0].title);
+        lateContacts.known = true;
+        lateModel.relabel();
+        check(lateModel.conversations[0].title === "Late Arrival",
+              "relabel did not rename the thread: "
+              + lateModel.conversations[0].title);
+        check(lateModel.conversations[0].initials === "LA",
+              "relabel did not update the initials");
 
         if (bad.length > 0) { console.log("MODEL_FAIL " + bad.join(" | ")); return; }
         console.log("MODEL_OK");

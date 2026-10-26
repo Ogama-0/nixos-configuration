@@ -132,6 +132,26 @@ Item {
         root.messageArrived(msg);
     }
 
+    // Re-resolves every thread's name, initials and colour.
+    //
+    // The 229 vCards are read asynchronously and the first conversations
+    // almost always land before that finishes, so threads get built titled by
+    // their phone numbers. Without this they keep those numbers until the
+    // next message arrives in each - which for a quiet thread is never.
+    function relabel(): void {
+        for (const id in root.threads) {
+            const t = root.threads[id];
+            const primary = t.addresses && t.addresses.length > 0
+                ? t.addresses[0] : "";
+            const who = root.contacts ? root.contacts.resolve(primary)
+                                      : { name: primary, initials: "" };
+            t.title = who.name;
+            t.initials = who.initials;
+            t.hue = root.palette ? root.palette.hueFor(primary) : t.hue;
+        }
+        root.rebuild();
+    }
+
     // Re-reads pins and unread out of the store. Cheap, and called whenever
     // something outside this object has changed one of them.
     function reloadFlags(): void {
