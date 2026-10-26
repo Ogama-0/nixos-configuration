@@ -1,4 +1,8 @@
 import QtQuick
+// Quickshell, not just Quickshell.Io: load() reads Quickshell.env, and
+// without this it is a ReferenceError the first time a real device id is
+// passed. The fixture used loadFrom() and never touched it.
+import Quickshell
 import Quickshell.Io
 
 // Who a phone number belongs to. Non-visual.

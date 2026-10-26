@@ -139,7 +139,11 @@ Item {
         x: 0
         y: head.y + head.height + 10 * root.uiScale
         width: parent.width
-        height: Math.min(pinGrid.implicitHeight, 2 * 92 * root.uiScale)
+        // Two rows, exactly: two 88px cells plus the 14px between them. The
+        // first version capped at 2*92 and clipped 6px off the bottom row's
+        // names - visible only when a seventh pin made the grid scroll.
+        readonly property real twoRows: (2 * 88 + 14) * root.uiScale
+        height: Math.min(pinGrid.implicitHeight, twoRows)
         contentHeight: pinGrid.implicitHeight
         clip: true
         visible: root.pinned.length > 0

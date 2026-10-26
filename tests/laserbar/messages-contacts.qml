@@ -21,6 +21,8 @@ ShellRoot {
 
     readonly property string dir: "/tmp/qs-messages-contacts-test"
 
+    property bool probed: false
+
     readonly property var cases: [
         { number: "076-724-8570", name: "Benjamin Poussart", initials: "BP", known: true },
         { number: "+33767248570", name: "Benjamin Poussart", initials: "BP", known: true },
@@ -45,6 +47,22 @@ ShellRoot {
                     + " number=" + got.number);
             }
         }
+        // load() is the path the panel actually uses - loadFrom() is what
+        // the fixture needs. Nothing exercised load() until this, and it was
+        // reaching for Quickshell.env with only Quickshell.Io imported, which
+        // is a ReferenceError the moment a real device id is passed.
+        //
+        // Guarded by `probed` because load() resets `ready` and would
+        // re-enter check() against an empty map.
+        if (!root.probed) {
+            root.probed = true;
+            try {
+                contacts.load("no-such-device-id");
+            } catch (e) {
+                bad.push("load() threw: " + e);
+            }
+        }
+
         if (bad.length > 0) {
             console.log("CONTACTS_FAIL " + bad.join(" | "));
             return;
