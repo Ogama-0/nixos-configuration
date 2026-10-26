@@ -98,6 +98,17 @@ Item {
             return { s: ["M -8 -2 L 8 -2 A 2 2 0 0 1 10 0 L 10 7 A 2 2 0 0 1 8 9 L -8 9 A 2 2 0 0 1 -10 7 L -10 0 A 2 2 0 0 1 -8 -2 Z",
                          "M -4 -2 L -4 -5 A 4 4 0 0 1 4 -5 L 4 -2", ""],
                      f: "" };
+        // A ring and a tail. Drawn as a full circle rather than the usual
+        // open arc because at the 13px this renders at, an arc's two end
+        // caps read as a break in the glass.
+        case "search":
+            return { s: ["M -2 -2 m -6 0 a 6 6 0 1 0 12 0 a 6 6 0 1 0 -12 0",
+                         "M 2.4 2.4 L 8 8", ""], f: "" };
+        // A pencil over a baseline: the compose button. No paper behind it -
+        // at this size the sheet outline and the pencil merge into a smudge.
+        case "edit":
+            return { s: ["M -8 4 L -8 8 L -4 8 L 7 -3 L 3 -7 L -8 4 Z",
+                         "M 2 -6 L 6 -2", ""], f: "" };
         }
         return { s: ["", "", ""], f: "" };
     }

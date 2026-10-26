@@ -58,6 +58,18 @@ ShellRoot {
         for (const got of Object.keys(seen))
             if (pool.indexOf(got) < 0) bad.push("hue outside the pool: " + got);
 
+        // Every hue must be visible on the sheet it is drawn on. This is the
+        // assertion the light variant needed and did not have: Horizon
+        // light's base0B (#94E1B0) and base0F (#E58C92) sit at about 1.3:1
+        // against the cream sheet, so a contact assigned one had unreadable
+        // initials and an invisible ring - a correct-looking component with
+        // no avatar in it.
+        for (const c of hue.hues) {
+            const ratio = hue.contrast(Qt.color(c), hue.sheet);
+            if (ratio < 4.5)
+                bad.push("hue " + c + " is " + ratio.toFixed(2) + ":1 on the sheet");
+        }
+
         // An empty number still has to render something rather than throw.
         if (!String(hue.hueFor(""))) bad.push("empty number yielded no colour");
 

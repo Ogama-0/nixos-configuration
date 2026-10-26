@@ -31,7 +31,12 @@ Item {
     // A group conversation stacks a second disc behind the first.
     property string secondInitials: ""
     property color secondHue: "@mutedColor@"
+    // Stacked only when there is room to read both. At the 34px a list row
+    // gives it, two discs and four letters collapse into a smudge that says
+    // less than one clear initial pair does - so below the threshold a group
+    // is drawn as a single avatar and the row's name carries the rest.
     readonly property bool isGroup: secondInitials.length > 0
+                                    && size * uiScale >= 48
 
     implicitWidth: size * uiScale
     implicitHeight: size * uiScale
