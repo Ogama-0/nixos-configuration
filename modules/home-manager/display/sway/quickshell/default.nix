@@ -237,6 +237,7 @@ in
           "${d}/components/panel/messages/ContactsModel.qml" = themedQmlFile variant ./components/panel/messages/ContactsModel.qml;
           "${d}/components/panel/messages/MessageHue.qml" = themedQmlFile variant ./components/panel/messages/MessageHue.qml;
           "${d}/components/panel/messages/MessageStore.qml" = themedQmlFile variant ./components/panel/messages/MessageStore.qml;
+          "${d}/components/panel/messages/MessageAvatar.qml" = themedQmlFile variant ./components/panel/messages/MessageAvatar.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
