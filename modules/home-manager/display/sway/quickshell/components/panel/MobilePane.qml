@@ -152,45 +152,46 @@ Item {
 
         // ---- the actions ----
         //
-        // Messages gets its own full-width row above the other two. It is the
-        // one you reach for, the other two are occasional, and a third of a
-        // 262px zone is not enough for a word plus a glyph.
+        // One row, and Messages takes half of it. The first version gave
+        // Messages its own full-width row above the other two, which is the
+        // right emphasis and does not fit: the zone is 168 tall, already
+        // holds a name, a battery and the KDE Connect link, and a third row
+        // pushed that link straight through the buttons.
+        //
+        // So Messages keeps its word and the other two lose theirs. They are
+        // occasional and their glyphs carry them; Messages is the one you
+        // reach for and the one whose name has to be readable.
 
-        MobileAction {
-            id: messagesButton
+        Row {
+            id: actions
             y: battery.visible
                 ? battery.y + battery.height + 10 * root.uiScale
                 : phoneIcon.height + 12 * root.uiScale
             width: parent.width
-            uiScale: root.uiScale
-            icon: "bell"
-            label: "Messages"
-            // Enabled whenever a phone is PAIRED, not only when it is
-            // reachable: everything already downloaded is still worth
-            // reading, and sending is refused further in rather than by
-            // making the door unopenable.
-            opacity: root.everPaired ? 1 : 0.45
-            onActivated: if (root.everPaired) root.messagesAsked()
-        }
-
-        Row {
-            id: actions
-            y: messagesButton.y + messagesButton.height + 7 * root.uiScale
-            width: parent.width
             spacing: 7 * root.uiScale
 
             MobileAction {
-                width: (actions.width - 7 * root.uiScale) / 2
+                width: (actions.width - 14 * root.uiScale) / 2
+                uiScale: root.uiScale
+                icon: "message"
+                label: "Messages"
+                // Enabled whenever a phone is PAIRED, not only when it is
+                // reachable: everything already downloaded is still worth
+                // reading, and sending is refused further in rather than by
+                // making the door unopenable.
+                opacity: root.everPaired ? 1 : 0.45
+                onActivated: if (root.everPaired) root.messagesAsked()
+            }
+            MobileAction {
+                width: (actions.width - 14 * root.uiScale) / 4
                 uiScale: root.uiScale
                 icon: "clipboard"
-                label: "Clipboard"
                 onActivated: root.clipboardAsked()
             }
             MobileAction {
-                width: (actions.width - 7 * root.uiScale) / 2
+                width: (actions.width - 14 * root.uiScale) / 4
                 uiScale: root.uiScale
                 icon: "upload"
-                label: "Send file"
                 onActivated: root.fileAsked()
             }
         }

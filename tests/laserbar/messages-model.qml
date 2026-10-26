@@ -181,6 +181,23 @@ ShellRoot {
         check(model.activeMessages.length === 2,
               "re-ingesting duplicated messages: " + model.activeMessages.length);
 
+        // --- refresh happens on every open, eviction only once ---
+        //
+        // These were one statement guarded by one flag, so the conversation
+        // list was requested exactly once per shell lifetime. Open the panel
+        // before the phone is awake and it said "No conversations yet."
+        // forever - every later open returned early.
+        const r0 = lateModel.refreshCount;
+        lateModel.active = true;
+        check(lateModel.refreshCount === r0 + 1, "first open did not refresh");
+        lateModel.active = false;
+        lateModel.active = true;
+        check(lateModel.refreshCount === r0 + 2,
+              "a second open did not refresh: " + lateModel.refreshCount);
+        check(lateModel.evictCount === 1,
+              "eviction ran more than once: " + lateModel.evictCount);
+        lateModel.active = false;
+
         // --- names that arrive late ---
         // The 229 vCards are read asynchronously, and the first
         // conversations usually land before that finishes. Without a relabel

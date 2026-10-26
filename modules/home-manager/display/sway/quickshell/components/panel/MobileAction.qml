@@ -35,6 +35,10 @@ Item {
             color: area.containsMouse ? "@clockColor@" : "@mutedColor@"
         }
         Text {
+            // Icon-only buttons exist now (the narrow ones in the phone
+            // zone), and a Row still reserves its spacing for a zero-width
+            // child - which pushes the glyph off centre.
+            visible: root.label !== ""
             anchors.verticalCenter: parent.verticalCenter
             text: root.label
             color: area.containsMouse ? "@clockColor@" : "@mutedColor@"

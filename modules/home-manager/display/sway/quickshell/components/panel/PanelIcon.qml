@@ -98,6 +98,12 @@ Item {
             return { s: ["M -8 -2 L 8 -2 A 2 2 0 0 1 10 0 L 10 7 A 2 2 0 0 1 8 9 L -8 9 A 2 2 0 0 1 -10 7 L -10 0 A 2 2 0 0 1 -8 -2 Z",
                          "M -4 -2 L -4 -5 A 4 4 0 0 1 4 -5 L 4 -2", ""],
                      f: "" };
+        // A bubble with a tail off the bottom-left. Not the bell: that one
+        // is do-not-disturb's, and a Messages button wearing it reads as
+        // notifications rather than as texts.
+        case "message":
+            return { s: ["M -9 -8 L 9 -8 A 2 2 0 0 1 11 -6 L 11 4 A 2 2 0 0 1 9 6 L -3 6 L -8 10 L -8 6 L -9 6 A 2 2 0 0 1 -11 4 L -11 -6 A 2 2 0 0 1 -9 -8 Z",
+                         "", ""], f: "" };
         // A ring and a tail. Drawn as a full circle rather than the usual
         // open arc because at the 13px this renders at, an arc's two end
         // caps read as a break in the glass.

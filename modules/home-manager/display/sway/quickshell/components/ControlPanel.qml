@@ -858,7 +858,12 @@ Scope {
                             id: messagesLayer
                             z: 100
                             anchors.fill: parent
-                            visible: messagesBox.width > 1
+                            // NOT "is the box wider than a pixel". At rest
+                            // the box is still the mobile zone's 262x168,
+                            // so that test was always true and the layer sat
+                            // permanently on top of the zone drawing a
+                            // clipped corner of the pane over it.
+                            visible: root.messagesOpen || messagesLayer.t > 0.001
                             // Nothing underneath is reachable while this is
                             // up, and a stray click on a zone behind it
                             // would be a surprise.

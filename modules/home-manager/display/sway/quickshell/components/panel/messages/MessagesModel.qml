@@ -365,13 +365,25 @@ Item {
         }
     }
 
-    // Retention runs once, when the model wakes up. Not on a timer: nothing
-    // about a 30-day window needs to be noticed within the minute.
+    // Two different lifetimes, and the first version gave them one flag.
+    //
+    // Retention runs ONCE per shell: nothing about a 30-day window needs
+    // noticing within the minute. But the conversation list has to be asked
+    // for on EVERY open - share the guard and a panel opened before the
+    // phone is awake says "No conversations yet." for the rest of the
+    // session, because every later open returns early.
     property bool evicted: false
+    property int refreshCount: 0
+    property int evictCount: 0
+
     onActiveChanged: {
-        if (!active || root.evicted) return;
-        root.evicted = true;
-        if (root.store) root.store.evictStale();
+        if (!active) return;
+        if (!root.evicted) {
+            root.evicted = true;
+            root.evictCount += 1;
+            if (root.store) root.store.evictStale();
+        }
+        root.refreshCount += 1;
         root.refresh();
     }
 }
