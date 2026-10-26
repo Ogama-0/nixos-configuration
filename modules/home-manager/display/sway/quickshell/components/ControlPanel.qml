@@ -5,6 +5,10 @@ import Quickshell.Io
 import Quickshell.I3
 // The zones live one directory down; QML needs that said explicitly.
 import "panel"
+// And Messages one further - a subdirectory is not covered by its parent's
+// import, which fails as "MessagesPane is not a type" rather than as a
+// missing import.
+import "panel/messages"
 
 // The panel summoned out of the laser bar's clock: one glass sheet carrying
 // the things that do not fit on a strip you can only read while a key is
@@ -56,14 +60,52 @@ Scope {
             selectedNotifications = []; selectionAnchor = "";
         }
 
-        // sway only intercepts Escape while this mode is active, so the
-        // mode's lifetime is the panel's. Leaving it on every close -
-        // however the close happened - is what keeps a killed shell from
-        // stranding the session in a mode nobody asked for.
-        swayMode.command = ["@swaymsgBin@", "mode",
-                            isOpen ? "panel" : "default"];
+        root.syncSwayMode();
+    }
+
+    // ---- Messages ----
+    //
+    // The one part of the panel that holds the keyboard. Everything else is
+    // read with your hands still on whatever you were typing in; a compose
+    // field cannot be.
+    property bool messagesOpen: false
+    // Where the expansion grows from and collapses back to, in stage
+    // coordinates. Defaults to the mobile zone; the toast route overrides it
+    // so the pane unfolds from the toast you double-clicked.
+    property rect messagesOrigin: Qt.rect(678, 0, 262, 168)
+    property string messagesPending: ""
+
+    function openMessages(convId): void {
+        if (!root.isOpen) root.summon();
+        root.messagesOrigin = Qt.rect(678, 0, 262, 168);
+        if (convId) root.messagesPending = String(convId);
+        root.messagesOpen = true;
+    }
+
+    function closeMessages(): void {
+        root.messagesOpen = false;
+        root.messagesPending = "";
+    }
+
+    onMessagesOpenChanged: root.syncSwayMode()
+
+    // Two mutually exclusive ways of getting Escape, and running both at
+    // once is the bug this function exists to avoid.
+    //
+    // Normally the panel holds no keyboard focus, so sway has to intercept
+    // Escape for it - that is modes.panel. But Messages DOES hold focus, and
+    // a sway mode binding fires before the focused client ever sees the key:
+    // Escape would dismiss the whole panel instead of collapsing Messages
+    // back into it. So while Messages is up we leave the mode and let the
+    // key arrive normally.
+    function syncSwayMode(): void {
+        const want = (root.isOpen && !root.messagesOpen) ? "panel" : "default";
+        if (want === root.swayModeNow) return;
+        root.swayModeNow = want;
+        swayMode.command = ["@swaymsgBin@", "mode", want];
         swayMode.running = true;
     }
+    property string swayModeNow: "default"
 
     readonly property bool readersActive: isOpen && warmedUp
 
@@ -421,6 +463,10 @@ Scope {
         function toggle(): void {
             if (root.isOpen) root.dismiss(); else root.summon();
         }
+        // mod+m, from anywhere, panel open or not.
+        function messages(): void { root.openMessages("") }
+        // The toast route: open straight onto one thread.
+        function messagesFor(convId: string): void { root.openMessages(convId) }
         // Bound to mod+shift+z, which used to be makoctl dismiss.
         function clearNotifications(): void { notifications.clearAll() }
         // Delete, while the panel is up. Does nothing with no selection.
@@ -483,7 +529,13 @@ Scope {
             // Escape and Delete do not depend on this either way - sway
             // intercepts those two in modes.panel and passes everything
             // else through to the focused window.
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            // OnDemand normally: click the panel and it takes the keyboard,
+            // summon it and leave it alone and your typing stays where it
+            // was. Exclusive while Messages is up, because mod+m opens it
+            // with no click to grant focus and a compose field you cannot
+            // type into is not a compose field.
+            WlrLayershell.keyboardFocus: root.messagesOpen
+                ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
             focusable: true
 
             // The clock capsule is 38 tall centred on beamY, which puts its
@@ -693,6 +745,9 @@ Scope {
                                 onFileAsked: { mobile.sendFile(); root.dismiss(); }
                                 // Clipboard opens nothing, so the panel stays.
                                 onClipboardAsked: mobile.sendClipboard()
+                                // Expands rather than dismissing: this one
+                                // opens nothing outside the panel.
+                                onMessagesAsked: root.openMessages("")
                             }
                         }
 
@@ -755,6 +810,84 @@ Scope {
                                 freeTotal: diskModel.freeTotal
                             }
                         }
+                        // ---- Messages ----
+                        //
+                        // Grows out of whatever asked for it until it has
+                        // taken the whole stage. One animated rect with the
+                        // pane clipped inside it, so the expansion IS the
+                        // pane arriving rather than a fade over the top of
+                        // one that was already there.
+                        //
+                        // Collapsing replays it backwards, which means
+                        // leaving by Escape after a toast folds back toward
+                        // where the toast was.
+                        Item {
+                            id: messagesLayer
+                            z: 100
+                            anchors.fill: parent
+                            visible: messagesBox.width > 1
+                            // Nothing underneath is reachable while this is
+                            // up, and a stray click on a zone behind it
+                            // would be a surprise.
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: root.messagesOpen
+                                acceptedButtons: Qt.AllButtons
+                                onClicked: {}
+                            }
+
+                            Rectangle {
+                                id: messagesBox
+                                clip: true
+                                color: "@sheetBg@"
+                                radius: (1 - messagesLayer.t) * 14 * zones.s
+
+                                // t runs 0 (folded into the origin) to 1
+                                // (the whole stage).
+                                readonly property real t: messagesLayer.t
+
+                                x: (root.messagesOrigin.x * (1 - t)) * zones.s
+                                y: (root.messagesOrigin.y * (1 - t)) * zones.s
+                                width: (root.messagesOrigin.width
+                                        + (940 - root.messagesOrigin.width) * t) * zones.s
+                                height: (root.messagesOrigin.height
+                                         + (700 - root.messagesOrigin.height) * t) * zones.s
+
+                                MessagesPane {
+                                    id: messagesPane
+                                    // Laid out at full size and clipped, not
+                                    // scaled: text that grew with the box
+                                    // would reflow every frame.
+                                    width: 940 * zones.s
+                                    height: 700 * zones.s
+                                    uiScale: panel.uiScale
+                                    opacity: messagesLayer.t
+                                    active: root.messagesOpen
+                                    deviceId: mobile.device ? mobile.device.id : ""
+                                    pendingConvId: root.messagesPending
+                                    onCloseAsked: root.closeMessages()
+                                }
+                            }
+
+                            property real t: root.messagesOpen ? 1 : 0
+                            Behavior on t {
+                                NumberAnimation {
+                                    duration: 210
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            // Escape reaches here as a real key because the
+                            // surface holds Exclusive focus while Messages
+                            // is up - see syncSwayMode for why the sway mode
+                            // has to stand down for that to work.
+                            focus: root.messagesOpen
+                            Keys.onEscapePressed: event => {
+                                event.accepted = true;
+                                root.closeMessages();
+                            }
+                        }
+
                         Item { id: notifyZone
                             x: 678 * zones.s; y: 169 * zones.s
                             width: 262 * zones.s; height: (700 - 169) * zones.s

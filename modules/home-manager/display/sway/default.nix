@@ -255,6 +255,11 @@ in
         # here where a bare-modifier one would not: sway only stops firing
         # the --release of the modifier ITSELF once it has been used as one.
         "${modifier}+n" = "exec quickshell ipc -c widgets call panel toggle";
+        # Messages, from anywhere, panel open or not. Unlike every other
+        # binding here this one leaves the panel holding the keyboard - the
+        # compose field needs it - so ControlPanel drops out of modes.panel
+        # while it is up and handles Escape itself.
+        "${modifier}+m" = "exec quickshell ipc -c widgets call panel messages";
 
         # Workspace related keys
         "${modifier}+grave" = "workspace 10";

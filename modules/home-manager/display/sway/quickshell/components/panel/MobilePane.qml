@@ -16,6 +16,14 @@ Item {
     signal guiAsked
     signal clipboardAsked
     signal fileAsked
+    // Unlike the other three this one opens nothing and dismisses nothing -
+    // it expands the panel into Messages, so the panel must stay up.
+    signal messagesAsked
+
+    // Drawn only when a device has been paired at all. With one paired but
+    // out of reach the button is there and disabled, same as the compose
+    // field: a control that disappears looks like a broken panel.
+    property bool everPaired: connected
 
     readonly property int lowAt: 20
 
@@ -142,13 +150,28 @@ Item {
             }
         }
 
-        // ---- the two actions ----
+        // ---- the actions ----
+        //
+        // Messages gets its own full-width row above the other two. It is the
+        // one you reach for, the other two are occasional, and a third of a
+        // 262px zone is not enough for a word plus a glyph.
 
-        Row {
-            id: actions
+        MobileAction {
+            id: messagesButton
             y: battery.visible
                 ? battery.y + battery.height + 10 * root.uiScale
                 : phoneIcon.height + 12 * root.uiScale
+            width: parent.width
+            uiScale: root.uiScale
+            icon: "bell"
+            label: "Messages"
+            opacity: root.connected ? 1 : 0.45
+            onActivated: if (root.connected) root.messagesAsked()
+        }
+
+        Row {
+            id: actions
+            y: messagesButton.y + messagesButton.height + 7 * root.uiScale
             width: parent.width
             spacing: 7 * root.uiScale
 
