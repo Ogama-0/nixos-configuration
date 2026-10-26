@@ -141,6 +141,12 @@ in
     pkgs.curl
     pkgs.cava
     pkgs.imagemagick
+    # Messages shells out to both, and MobileModel.sendFile has been relying
+    # on zenity being here by accident since it was written. Declared now:
+    # a file picker that is missing fails as a silently cancelled dialog,
+    # which looks exactly like the user changing their mind.
+    pkgs.zenity
+    pkgs.wl-clipboard
   ];
 
   xdg.configFile =
@@ -242,6 +248,7 @@ in
           "${d}/components/panel/messages/ThreadList.qml" = themedQmlFile variant ./components/panel/messages/ThreadList.qml;
           "${d}/components/panel/messages/ConversationView.qml" = themedQmlFile variant ./components/panel/messages/ConversationView.qml;
           "${d}/components/panel/messages/MessagesModel.qml" = themedQmlFile variant ./components/panel/messages/MessagesModel.qml;
+          "${d}/components/panel/messages/ComposeRow.qml" = themedQmlFile variant ./components/panel/messages/ComposeRow.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };

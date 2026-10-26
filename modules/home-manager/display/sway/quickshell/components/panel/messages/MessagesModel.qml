@@ -216,6 +216,11 @@ Item {
     function send(text: string, attachments: var): string {
         const pendingId = "pending-" + Date.now();
         if (!root.activeId) return pendingId;
+        // An empty field is not a message. Enter on an empty compose box is
+        // the commonest way to hit this, and a blank bubble that can never
+        // be confirmed would sit in the thread forever.
+        const hasAttachments = (attachments || []).length > 0;
+        if (!String(text).trim() && !hasAttachments) return "";
 
         const atts = (attachments || []).map(a => String(a));
         let cmd = ["busctl", "--user", "call", "org.kde.kdeconnect",
