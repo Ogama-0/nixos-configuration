@@ -240,6 +240,7 @@ in
           "${d}/components/panel/messages/MessageAvatar.qml" = themedQmlFile variant ./components/panel/messages/MessageAvatar.qml;
           "${d}/components/panel/messages/MessageTokens.qml" = themedQmlFile variant ./components/panel/messages/MessageTokens.qml;
           "${d}/components/panel/messages/ThreadList.qml" = themedQmlFile variant ./components/panel/messages/ThreadList.qml;
+          "${d}/components/panel/messages/ConversationView.qml" = themedQmlFile variant ./components/panel/messages/ConversationView.qml;
           "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
           "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
         };
