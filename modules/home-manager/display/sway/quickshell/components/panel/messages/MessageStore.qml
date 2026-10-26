@@ -105,6 +105,34 @@ Item {
         });
     }
 
+    // Every message, whatever conversation it belongs to, in ONE transaction.
+    //
+    // putMessages per conversation means a transaction per conversation, and
+    // a refresh brings back fifty of them at once. SQLite's per-transaction
+    // cost is the whole cost here; the inserts are nothing.
+    function putAll(msgs: var): void {
+        if (!msgs || msgs.length === 0) return;
+        root.db().transaction(tx => {
+            let convs = {};
+            for (const m of msgs) {
+                const id = String(m.id);
+                const atts = m.attachments ? JSON.stringify(m.attachments) : "";
+                tx.executeSql('INSERT OR REPLACE INTO messages '
+                    + '(id, convId, body, ts, outgoing, address, attachments) '
+                    + 'VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [id, m.convId, m.body || "", m.ts || 0,
+                     m.outgoing ? 1 : 0, m.address || "", atts]);
+                tx.executeSql('DELETE FROM messages_fts WHERE id = ?', [id]);
+                if (m.body)
+                    tx.executeSql('INSERT INTO messages_fts (id, convId, body) VALUES (?, ?, ?)',
+                                  [id, m.convId, m.body]);
+                convs[m.convId] = true;
+            }
+            for (const c in convs)
+                tx.executeSql('INSERT OR IGNORE INTO conversations (convId) VALUES (?)', [c]);
+        });
+    }
+
     // Newest first. beforeTs of 0 means "from the newest"; anything else means
     // strictly older than that, which is what paging backwards needs.
     function messages(convId: string, limit: int, beforeTs: real): var {

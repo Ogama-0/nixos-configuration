@@ -69,6 +69,11 @@ Item {
     readonly property string devPath: "/modules/kdeconnect/devices/" + deviceId
     readonly property string convIface: "org.kde.kdeconnect.device.conversations"
 
+    // Message ids we already hold, so a re-announced message does not toast
+    // a second time. Bounded by the retention window in practice - the store
+    // is what remembers across restarts; this only has to survive a session.
+    property var seen: ({})
+
     // Threads we have seen, by id. Kept separately from `conversations` so
     // rebuilding the sorted list is a map over this rather than a merge into
     // an array that is also being read by a ListView.
@@ -116,10 +121,53 @@ Item {
         return "";
     }
 
-    function ingestMessage(raw: var): void {
+    // `fromSignal` is the difference between news and catching up.
+    //
+    // A conversationCreated off the wire is something that just happened and
+    // deserves a toast. The 50 conversations that come back from a refresh
+    // every time the pane opens are the same texts you read days ago, and
+    // toasting them was the panel shouting your whole inbox at you on every
+    // single open.
+    function ingestMessage(raw: var, fromSignal: bool): void {
         const msg = root.parseMessage(raw);
-        if (root.store) root.store.putMessages(msg.convId, [msg]);
+        // Seen before? Then whatever this is, it is not news. The daemon
+        // re-emits conversationCreated for threads it already told us about
+        // while a refresh is in flight, so "arrived as a signal" is not
+        // enough on its own.
+        const fresh = root.seen[msg.id] === undefined;
+        root.seen[msg.id] = true;
 
+        if (root.store) root.store.putMessages(msg.convId, [msg]);
+        root.fold(msg);
+        if (msg.convId === root.activeId) root.refreshActive();
+        root.rebuild();
+        if (fromSignal && fresh) root.messageArrived(msg);
+    }
+
+    // One store transaction and one rebuild for the whole lot.
+    //
+    // The single-message path does a DB write, a full re-sort and a
+    // re-render each time. Fifty of those back to back on the UI thread, at
+    // the same moment the open animation is running, is the freeze you can
+    // feel when the pane appears.
+    //
+    // Raises nothing: a refresh is not news. See ingestMessage.
+    function ingestBatch(rawList: var): void {
+        if (!rawList || rawList.length === 0) return;
+        let parsed = [];
+        for (const raw of rawList) parsed.push(root.parseMessage(raw));
+
+        if (root.store) root.store.putAll(parsed);
+
+        for (const m of parsed) { root.seen[m.id] = true; root.fold(m); }
+        root.refreshActive();
+        root.rebuild();
+    }
+
+    // Folds one parsed message into the thread map. No store write, no
+    // rebuild, no signal - the callers above own those, which is what lets
+    // the batch path do them once.
+    function fold(msg: var): void {
         const prev = root.threads[msg.convId];
         // Only the newest message names the thread and writes the preview; a
         // page of history scrolling in must not rewrite the list.
@@ -144,10 +192,6 @@ Item {
             unread: prev ? prev.unread : !msg.read,
             pinned: prev ? prev.pinned : false
         };
-
-        if (msg.convId === root.activeId) root.refreshActive();
-        root.rebuild();
-        root.messageArrived(msg);
     }
 
     // Re-resolves every thread's name, initials and colour.
@@ -303,6 +347,14 @@ Item {
         listProc.running = true;
     }
 
+    // Coalesces a burst of conversationLoaded into one re-read.
+    Timer {
+        id: settle
+        interval: 120
+        repeat: false
+        onTriggered: root.refreshActive()
+    }
+
     Process { id: pageProc }
     Process { id: sendProc }
     Process { id: attProc }
@@ -313,7 +365,7 @@ Item {
             onStreamFinished: {
                 try {
                     const payload = JSON.parse(this.text).data[0];
-                    for (const entry of payload) root.ingestMessage(entry.data);
+                    root.ingestBatch(payload.map(e => e.data));
                 } catch (e) {
                     // No SMS plugin, no permission, a phone that wandered
                     // off: the pane shows what it has cached and says the
@@ -348,12 +400,14 @@ Item {
                     // ten-field array.
                     const v = ev.payload && ev.payload.data;
                     const msg = v && v.data ? v.data : v;
-                    if (msg) root.ingestMessage(msg);
+                    if (msg) root.ingestMessage(msg, true);
                 } else if (ev.member === "conversationLoaded") {
-                    // A completion notice carrying no content: the page we
-                    // asked for has finished arriving message by message.
+                    // A completion notice carrying no content. A refresh
+                    // produces one of these PER THREAD - fifty in a burst -
+                    // and re-reading the open conversation out of SQLite
+                    // fifty times is a visible stall. Coalesced.
                     root.loadingOlder = false;
-                    root.refreshActive();
+                    settle.restart();
                 } else if (ev.member === "conversationRemoved") {
                     const id = String(ev.payload.data[0]);
                     delete root.threads[id];

@@ -463,8 +463,15 @@ Scope {
         function toggle(): void {
             if (root.isOpen) root.dismiss(); else root.summon();
         }
-        // mod+m, from anywhere, panel open or not.
-        function messages(): void { root.openMessages("") }
+        // mod+m, from anywhere. A toggle, like mod+n: pressing it with
+        // Messages already up puts the whole panel away rather than
+        // collapsing to a control panel you did not ask for. Escape is the
+        // key that means "back to the panel"; the binding that opened
+        // Messages means "away".
+        function messages(): void {
+            if (root.messagesOpen) { root.closeMessages(); root.dismiss(); }
+            else root.openMessages("");
+        }
         // The toast route: open straight onto one thread.
         function messagesFor(convId: string): void { root.openMessages(convId) }
         // Bound to mod+shift+z, which used to be makoctl dismiss.

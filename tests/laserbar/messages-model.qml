@@ -55,6 +55,24 @@ ShellRoot {
     }
 
     MessageStore { id: lateStore; dbName: "qs-messages-model-late-test" }
+    MessageStore { id: batchStore; dbName: "qs-messages-model-batch-test" }
+    MessageStore { id: oneStore; dbName: "qs-messages-model-one-test" }
+
+    MessagesModel {
+        id: batchModel
+        contacts: fakeContacts
+        palette: fakeHue
+        store: batchStore
+        transportEnabled: false
+    }
+
+    MessagesModel {
+        id: oneByOne
+        contacts: fakeContacts
+        palette: fakeHue
+        store: oneStore
+        transportEnabled: false
+    }
 
     MessagesModel {
         id: lateModel
@@ -103,6 +121,10 @@ ShellRoot {
         store.wipe();
         lateStore.init();
         lateStore.wipe();
+        batchStore.init();
+        batchStore.wipe();
+        oneStore.init();
+        oneStore.wipe();
 
         for (const m of root.captured) model.ingestMessage(m);
 
@@ -180,6 +202,44 @@ ShellRoot {
         model.openConversation("29");
         check(model.activeMessages.length === 2,
               "re-ingesting duplicated messages: " + model.activeMessages.length);
+
+        // --- a bulk refresh is not news ---
+        //
+        // Opening the pane re-reads all 50 conversations off the phone and
+        // folds them in. Every one of those used to raise messageArrived,
+        // so the panel toasted the entire inbox at you - texts you had read
+        // days ago, every single time you opened it.
+        //
+        // A signal means something happened. A refresh means catching up.
+        let heard = 0;
+        batchModel.messageArrived.connect(() => heard += 1);
+
+        batchModel.ingestBatch(root.captured);
+        check(heard === 0, "a bulk refresh raised " + heard + " arrivals");
+        check(batchModel.conversations.length === 4,
+              "ingestBatch built the wrong list: "
+              + batchModel.conversations.length);
+
+        // A message we already hold is not news, even arriving as a signal.
+        // The daemon re-emits conversationCreated for existing threads while
+        // a refresh is in flight, so "did it come off the wire" is not
+        // enough on its own - it has to be a message we have not seen.
+        batchModel.ingestMessage(root.captured[0], true);
+        check(heard === 0,
+              "a message already in the list toasted again: " + heard);
+
+        // ...and one off the wire still is news.
+        batchModel.ingestMessage([1, "nouveau", [["+33700000000"]],
+                                  Date.now(), 1, 0, 99, 999, -1, []], true);
+        check(heard === 1, "a signalled message did not raise an arrival");
+
+        // Same result either way - the batch path must not be a second,
+        // subtly different parser.
+        for (const m of root.captured) oneByOne.ingestMessage(m, false);
+        check(oneByOne.conversations.length === batchModel.conversations.length - 1,
+              "batch and single ingest disagree: "
+              + oneByOne.conversations.length + " vs "
+              + (batchModel.conversations.length - 1));
 
         // --- refresh happens on every open, eviction only once ---
         //

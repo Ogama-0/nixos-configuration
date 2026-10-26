@@ -77,6 +77,23 @@ waiting for reachability would miss the first message every time.
 - **No contact photos.** All 229 vCards carry `FN` and `TEL` and not one
   `PHOTO`. That is why avatars are two letters and a colour.
 
+## Refreshes are not news
+
+Opening the pane re-reads every conversation off the phone, and the daemon
+also re-emits `conversationCreated` for threads it has already announced. Two
+rules keep that from shouting your whole inbox at you:
+
+- `ingestBatch` (the refresh path) raises nothing, and does one SQLite
+  transaction and one re-sort for the whole lot. The per-message path did a
+  write, a re-sort and a re-render each — fifty of those during the open
+  animation is a visible freeze.
+- `ingestMessage(raw, fromSignal)` only raises `messageArrived` when the
+  message is both off the wire **and** unseen, tracked by `uID` in
+  `MessagesModel.seen`. "Arrived as a signal" alone is not enough.
+
+`conversationLoaded` also fires once per thread — fifty in a burst — so the
+re-read it triggers is coalesced through a 120ms timer.
+
 ## Adding a field to a message
 
 1. Find it in `docs/kdeconnect-sms-payload.md`, or re-run the probe.
@@ -121,7 +138,7 @@ Messages cannot work that way — a compose field needs the keyboard. So:
 
 | | |
 |---|---|
-| `mod+m` | `quickshell ipc -c widgets call panel messages` |
+| `mod+m` | `quickshell ipc -c widgets call panel messages` — a toggle: pressing it with Messages up dismisses the whole panel, where Escape collapses back to the control panel |
 | Mobile zone button | `MobilePane.messagesAsked` → `ControlPanel.openMessages("")` |
 | Toast, double-clicked | `MessageToasts.paneAsked` → `openMessages(convId)` |
 
