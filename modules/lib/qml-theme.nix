@@ -56,6 +56,12 @@
   #
   # Its ink is base00 in dark but base07 in light, for the same reason
   # onAccentInk is: light's base00 IS the cream ground.
+  # Messages' store. Mutable state, so it lives in ~/.local/state and not the
+  # store; what is declarative is the shape of it - the name, how much a page
+  # is, and how long a conversation keeps its bodies after you last opened it.
+, msgDbName ? "quickshell-messages"
+, msgPageSize ? 30
+, msgRetentionDays ? 30
 , msgAccent ? "#FF${colors.base0D}"
 , msgAccentInk ? "#FF${colors.base00}"
   # Ink on an accent fill. Not derivable from `colors` alone: it is base00 in
@@ -124,6 +130,9 @@ builtins.replaceStrings
     "@msgHues@"
     "@msgAccent@"
     "@msgAccentInk@"
+    "@msgDbName@"
+    "@msgPageSize@"
+    "@msgRetentionDays@"
   ]
   [
     "#B3${colors.base00}"
@@ -169,4 +178,7 @@ builtins.replaceStrings
     msgHues
     msgAccent
     msgAccentInk
+    msgDbName
+    (toString msgPageSize)
+    (toString msgRetentionDays)
   ]
