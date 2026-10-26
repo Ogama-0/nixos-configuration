@@ -95,10 +95,14 @@ Item {
     // one colour. This duplicates ContactsModel.normalize deliberately: a hue
     // must still be stable when no contacts have loaded, and taking a
     // reference to that model here would couple every avatar to it.
+    // Kept in step with ContactsModel.normalize, including the no-digit case:
+    // "Uber", "SIGNAL" and every other alphanumeric sender id would otherwise
+    // hash the empty string and come out the same colour.
     function keyFor(number: string): string {
         if (!number) return "";
         const digits = String(number).replace(/[^0-9]/g, "");
-        if (digits.length === 0) return "";
+        if (digits.length === 0)
+            return "id:" + String(number).toLowerCase().replace(/\s+/g, "");
         return digits.length > 9 ? digits.slice(-9) : digits;
     }
 

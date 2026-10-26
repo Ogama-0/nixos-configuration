@@ -28,7 +28,14 @@ ShellRoot {
         { number: "+33767248570", name: "Benjamin Poussart", initials: "BP", known: true },
         { number: "0760000001",   name: "Zoe",               initials: "Z",  known: true },
         { number: "32665",        name: "32665",             initials: "",   known: false },
-        { number: "",             name: "",                  initials: "",   known: false }
+        { number: "",             name: "",                  initials: "",   known: false },
+        // Alphanumeric sender IDs. Real traffic on this phone is full of them
+        // - Uber, SIGNAL, "imagine R", LBPCF - and they contain NO DIGITS, so
+        // a normaliser that strips to digits folds every one of them onto the
+        // empty key: one contact, one colour, for the whole of your 2FA.
+        { number: "Uber",         name: "Uber",              initials: "",   known: false },
+        { number: "SIGNAL",       name: "SIGNAL",            initials: "",   known: false },
+        { number: "imagine R",    name: "imagine R",         initials: "",   known: false }
     ]
 
     ContactsModel {
@@ -54,6 +61,14 @@ ShellRoot {
         //
         // Guarded by `probed` because load() resets `ready` and would
         // re-enter check() against an empty map.
+        // The collision itself, not just the rendering: two different sender
+        // IDs must not normalise to the same key.
+        const keys = ["Uber", "SIGNAL", "imagine R", "LBPCF"].map(n => contacts.normalize(n));
+        if (new Set(keys).size !== keys.length)
+            bad.push("sender IDs collided: " + JSON.stringify(keys));
+        if (keys.indexOf("") >= 0)
+            bad.push("a sender ID normalised to the empty key");
+
         if (!root.probed) {
             root.probed = true;
             try {

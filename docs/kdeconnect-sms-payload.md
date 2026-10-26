@@ -1,77 +1,101 @@
 # KDE Connect SMS payload reference
 
-> **STATUS: BLOCKED — no payload captured yet.**
->
-> Run `scripts/kdeconnect-sms-probe.sh`. While it exits 1, the field table
-> below is empty and **Tasks 4, 5, 9 and 12 of the Messages plan cannot be
-> built honestly** — they read column names out of this file.
+Captured 2026-10-26 from KDE Connect 26.04.3, device `Ogama phone`, with
+`scripts/kdeconnect-sms-probe.sh`. Re-run it if any of this stops matching.
 
-## What the desktop can ask for
+## The correction that matters
 
-Verified on KDE Connect 26.04.3. Service `org.kde.kdeconnect`, object
-`/modules/kdeconnect/devices/<id>/sms`, interface
-`org.kde.kdeconnect.device.sms`:
+The design doc said the conversations interface lives on the `sms` object. It
+does not. There are **two objects**, and the useful one is the device itself:
 
-```
-requestAllConversations()
-requestConversation(x)              # conversationID
-requestConversation(xx)             # + rangeStartTimestamp
-requestConversation(xxx)            # + numberToRequest
-sendSms(av addresses, s message, av attachments)
-sendSms(av addresses, s message, av attachments, x subID)
-requestAttachment(x partID, s uniqueIdentifier)
-getAttachment(x partID, s uniqueIdentifier)
-launchApp()
-```
+| | object | interface |
+|---|---|---|
+| asking | `/modules/kdeconnect/devices/<id>/sms` | `org.kde.kdeconnect.device.sms` |
+| **everything else** | `/modules/kdeconnect/devices/<id>` | `org.kde.kdeconnect.device.conversations` |
 
-Note what is *not* there: no `markRead`. Read state is the panel's own and
-never travels back to the phone.
+The conversations interface does not exist until the phone first answers,
+which is why `busctl introspect` showed nothing while the Android app lacked
+the SMS permission. Granting it is what unblocked this.
 
-## Where the answers arrive
-
-Not on that interface. `org.kde.kdeconnect.device.conversations`, signals
-`conversationCreated`, `conversationUpdated`, `conversationRemoved`,
-`conversationLoaded` — the set `kdeconnect-sms` consumes through
-`OrgKdeKdeconnectDeviceConversationsInterface`.
-
-That interface does **not** appear under `busctl introspect` on the sms
-object. It is registered by the plugin when the phone first replies, so the
-only way to see its shape is to watch the bus while asking. That is what the
-probe does.
-
-## Current state of the round-trip
-
-Last run: 2026-10-26.
+## org.kde.kdeconnect.device.conversations
 
 ```
-device: Ogama phone (cde4f091ac3e4d658934b9a63d8e20f5)
-asking for all conversations, listening 15s...
-NOTHING CAME BACK.
+activeConversations()                     -> av    every thread's newest message
+requestAllConversationThreads()           -> -     ask the phone to (re)send them
+requestConversation(x threadId, i start, i end) -> -
+replyToConversation(x threadId, s message, av attachments) -> -
+sendWithoutConversation(av addresses, s message, av attachments) -> -
+requestAttachmentFile(x partId, s uniqueIdentifier) -> -
+
+conversationCreated(v)      a thread appeared        payload = one message
+conversationUpdated(v)      a thread changed         payload = one message
+conversationLoaded(x threadId, t count)   a requestConversation finished
+conversationRemoved(x threadId)
+attachmentReceived(s filePath, s fileName)
 ```
 
-The pairing is fine and both ends advertise the plugin — `kdeconnect_sms` is
-in the device's `loadedPlugins`, alongside `kdeconnect_telephony` and
-`kdeconnect_mmtelephony`. The request leaves the desktop; the phone says
-nothing.
+**`requestConversation` pages by INDEX, not timestamp.** `start` and `end` are
+positions in the thread, newest first. The `/sms` object's three-argument
+`requestConversation(xxx)` takes a timestamp; this one does not, and this one
+is the interface that answers.
 
-Remaining cause, in likelihood order:
+**`conversationLoaded` carries no content.** It is a completion notice: the
+thread id and how many messages arrived. The messages themselves come through
+`conversationCreated` / `conversationUpdated`, one message per signal.
 
-1. Android has not granted KDE Connect the SMS permission
-   (Settings > Apps > KDE Connect > Permissions > SMS).
-2. The SMS plugin is switched off for this desktop in the phone's KDE Connect
-   plugin list.
+**Replying does not need `sendSms`.** `replyToConversation(threadId, text,
+attachments)` is the path for an existing thread; `sendWithoutConversation`
+takes addresses instead, for a new one.
 
-## Field table
+## ConversationMessage
 
-Empty until the probe succeeds. One row per `ConversationMessage` field: name,
-DBus type, meaning. Specifically needed downstream:
+Signature `(isa(s)xiixixa(xsss))`, ten fields, in order:
 
-| Field | DBus type | Meaning | Used by |
+| # | Field | Type | Meaning |
 |---|---|---|---|
-| _conversation id_ | ? | groups messages into a thread | Task 4 schema, Task 5 |
-| _body_ | ? | the text | Task 4, Task 8 |
-| _timestamp_ | ? | ms or s since epoch — **check which** | Task 4 retention, Task 8 day separators |
-| _direction flag_ | ? | sent vs received | Task 8 bubble side |
-| _addresses_ | ? | list shape decides group reply addressing | Task 5, Task 9 |
-| _group flag_ | ? | one-to-one vs group | Task 6 avatar, Task 7 |
-| _attachment part ids_ | ? | argument to `getAttachment` | Task 8, Task 9 |
+| 0 | `eventField` | `i` | `1` plain text, `2` multimedia (MMS) |
+| 1 | `body` | `s` | the text; **empty for an attachment-only message** |
+| 2 | `addresses` | `a(s)` | list of one-field structs. More than one means a group |
+| 3 | `date` | `x` | **milliseconds** since epoch |
+| 4 | `type` | `i` | Android's SMS type: **`1` received, `2` sent** |
+| 5 | `read` | `i` | `1` read on the phone. Read-only — there is no way to set it |
+| 6 | `threadID` | `x` | the conversation id. This is what `requestConversation` takes |
+| 7 | `uID` | `i` | unique per message. The primary key for the cache |
+| 8 | `subID` | `x` | SIM subscription; `-1` when unknown |
+| 9 | `attachments` | `a(xsss)` | see below |
+
+### Attachment, `(xsss)`
+
+| # | Field | Type | Meaning |
+|---|---|---|---|
+| 0 | `partID` | `x` | first argument to `requestAttachmentFile` |
+| 1 | `mimeType` | `s` | e.g. `audio/amr`, `image/jpeg` |
+| 2 | `base64EncodedFile` | `s` | **empty until fetched** |
+| 3 | `uniqueIdentifier` | `s` | e.g. `PART_1792262330991_Audio%20Mes1.amr`; second argument to `requestAttachmentFile` |
+
+The fetched file arrives later on `attachmentReceived(filePath, fileName)`.
+
+## Two real messages
+
+A received text:
+
+```json
+[1, "[Uber] Votre code : 1358. Ne le divulguez jamais.",
+ [["Uber"]], 1790539013048, 1, 1, 30, 243, 1, []]
+```
+
+A sent MMS with a voice note, in a two-address thread — note `eventField` 2,
+an empty `body`, and the empty base64 field:
+
+```json
+[2, "", [["+33662843597"], ["+33616561744"]], 1792262331000, 1, 1, 6, 10, 1,
+ [[14, "audio/amr", "", "PART_1792262330991_Audio%20Mes1.amr"]]]
+```
+
+## What this machine actually holds
+
+50 threads from `activeConversations`: 42 whose newest message was received,
+8 sent, 1 with an attachment, 1 with more than one address. Addresses are a
+mix of real numbers (`+33766417775`), shortcodes (`38984`) and alphanumeric
+sender IDs (`Uber`, `SIGNAL`, `imagine R`) — the last of these have no digits
+at all, which any number-normalising code has to survive.

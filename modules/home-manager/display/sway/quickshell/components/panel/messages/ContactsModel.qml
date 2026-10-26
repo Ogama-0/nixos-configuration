@@ -57,10 +57,21 @@ Item {
     //
     // Shorter than nine digits is a shortcode (32665) and is already unique;
     // matching it on a suffix would fold unrelated ones together.
+    //
+    // And a sender can have no digits at all. Real traffic here arrives from
+    // "Uber", "SIGNAL", "imagine R", "LBPCF" - alphanumeric sender IDs, which
+    // are most of what a 2FA-heavy inbox contains. Stripping to digits maps
+    // every one of them to "", so they shared a key, a name and a colour
+    // until the first real payload showed up.
     function normalize(number: string): string {
         if (!number) return "";
         const digits = String(number).replace(/[^0-9]/g, "");
-        if (digits.length === 0) return "";
+        if (digits.length === 0) {
+            // Case- and space-folded, so "imagine R" and "Imagine R" are one
+            // sender. Prefixed so an all-letters id can never collide with a
+            // numeric key.
+            return "id:" + String(number).toLowerCase().replace(/\s+/g, "");
+        }
         return digits.length > 9 ? digits.slice(-9) : digits;
     }
 

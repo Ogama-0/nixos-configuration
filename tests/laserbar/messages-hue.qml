@@ -58,6 +58,14 @@ ShellRoot {
         for (const got of Object.keys(seen))
             if (pool.indexOf(got) < 0) bad.push("hue outside the pool: " + got);
 
+        // Alphanumeric sender IDs have no digits, and a digits-only key maps
+        // all of them to "" - one colour for Uber, SIGNAL, your bank and
+        // every 2FA code you will ever get.
+        const idHues = ["Uber", "SIGNAL", "imagine R", "LBPCF"]
+            .map(n => String(hue.hueFor(n)));
+        if (new Set(idHues).size < 3)
+            bad.push("sender IDs share hues: " + idHues.join(","));
+
         // Every hue must be visible on the sheet it is drawn on. This is the
         // assertion the light variant needed and did not have: Horizon
         // light's base0B (#94E1B0) and base0F (#E58C92) sit at about 1.3:1
