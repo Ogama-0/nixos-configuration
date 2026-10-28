@@ -55,6 +55,19 @@ ShellRoot {
     }
 
     MessageStore { id: lateStore; dbName: "qs-messages-model-late-test" }
+    MessageStore { id: arriveStore; dbName: "qs-messages-model-arrive-test" }
+
+    // Known phone, not yet reachable - the state mod+m opens into.
+    MessagesModel {
+        id: arrives
+        contacts: fakeContacts
+        palette: fakeHue
+        store: arriveStore
+        deviceId: "test-device"
+        reachable: false
+        transportEnabled: false
+    }
+
     MessageStore { id: batchStore; dbName: "qs-messages-model-batch-test" }
     MessageStore { id: oneStore; dbName: "qs-messages-model-one-test" }
 
@@ -123,6 +136,8 @@ ShellRoot {
         lateStore.wipe();
         batchStore.init();
         batchStore.wipe();
+        arriveStore.init();
+        arriveStore.wipe();
         oneStore.init();
         oneStore.wipe();
 
@@ -257,6 +272,31 @@ ShellRoot {
         check(lateModel.evictCount === 1,
               "eviction ran more than once: " + lateModel.evictCount);
         lateModel.active = false;
+
+        // --- the phone that arrives late ---
+        //
+        // MobileModel learns which phone is reachable by shelling out to
+        // kdeconnect-cli, which takes a few hundred milliseconds. mod+m
+        // activates the pane immediately, so `connected` is still false when
+        // onActiveChanged fires and refresh() returns early. Nothing used to
+        // retry, so opening Messages from a closed panel showed "No
+        // conversations yet." every single time while a perfectly reachable
+        // phone sat there.
+        const a0 = arrives.refreshCount;
+        arrives.active = true;
+        check(arrives.refreshCount === a0 + 1, "activating did not attempt a refresh");
+        // Still unreachable, so that attempt could not have asked anything.
+        check(arrives.connected === false, "fixture started out connected");
+
+        arrives.reachable = true;
+        check(arrives.refreshCount === a0 + 2,
+              "the phone becoming reachable did not re-attempt the refresh");
+
+        // And it must not re-ask on every unrelated change.
+        arrives.reachable = true;
+        check(arrives.refreshCount === a0 + 2,
+              "a no-op reachability change re-asked: " + arrives.refreshCount);
+        arrives.active = false;
 
         // --- names that arrive late ---
         // The 229 vCards are read asynchronously, and the first

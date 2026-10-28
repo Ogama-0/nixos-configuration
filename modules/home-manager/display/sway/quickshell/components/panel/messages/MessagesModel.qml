@@ -340,6 +340,10 @@ Item {
     // ---- transport ----
 
     function refresh(): void {
+        // Counted before the guard: "we tried" is the thing worth asserting,
+        // and an attempt that could not go out is exactly the case that used
+        // to be lost silently.
+        root.refreshCount += 1;
         if (!root.transportEnabled || !root.connected) return;
         listProc.command = ["busctl", "--user", "--json=short", "call",
             "org.kde.kdeconnect", root.devPath, root.convIface,
@@ -437,7 +441,16 @@ Item {
             root.evictCount += 1;
             if (root.store) root.store.evictStale();
         }
-        root.refreshCount += 1;
         root.refresh();
     }
+
+    // The phone usually turns up AFTER the pane does.
+    //
+    // MobileModel finds out which device is reachable by shelling out to
+    // kdeconnect-cli, a few hundred milliseconds behind the panel opening.
+    // mod+m activates this immediately, so the refresh fired by
+    // onActiveChanged hits `connected == false` and returns having asked
+    // nothing. With no retry, opening Messages from a closed panel showed an
+    // empty list next to a perfectly reachable phone.
+    onConnectedChanged: if (root.connected && root.active) root.refresh()
 }

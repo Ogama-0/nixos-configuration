@@ -884,7 +884,17 @@ Scope {
                             Rectangle {
                                 id: messagesBox
                                 clip: true
-                                color: "@sheetBg@"
+                                // Fully opaque, unlike @sheetBg@ (94%).
+                                // Messages is a takeover, not a layer: at 94%
+                                // the calendar and the notification list read
+                                // faintly through it, and mod+m from a closed
+                                // panel runs this expansion on top of the
+                                // panel's own reveal so both are moving at
+                                // once. Six percent of bleed is six percent
+                                // too much when the thing behind is text.
+                                color: Qt.rgba(sheetGround.r, sheetGround.g,
+                                               sheetGround.b, 1)
+                                readonly property color sheetGround: "@sheetBg@"
                                 radius: (1 - messagesLayer.t) * 14 * zones.s
 
                                 // t runs 0 (folded into the origin) to 1
