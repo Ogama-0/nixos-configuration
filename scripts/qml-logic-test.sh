@@ -47,6 +47,10 @@ variant="${QML_LOGIC_VARIANT:-dark}"
 [ -f "$fixture" ] || { echo "no such fixture: $fixture" >&2; exit 2; }
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The fixtures import QtMultimedia; the `quickshell` on PATH is whatever the
+# last switch installed, which is exactly the unwrapped binary this wrapper
+# exists to replace. QS_BIN skips the build for a tight loop once resolved.
+QS="${QS_BIN:-$(nix build --no-link --print-out-paths "$REPO#quickshell-multimedia")/bin/quickshell}"
 RT="$(mktemp -d)"
 cleanup() {
     [ -n "${QS_PID:-}" ] && kill "$QS_PID" 2>/dev/null
@@ -93,7 +97,7 @@ log="$RT/out.log"
 
 # Wayland is almost certainly running; without this quickshell picks it up and
 # the fixture waits for a compositor surface that nothing will ever show.
-QT_QPA_PLATFORM=offscreen timeout "$timeout_s" quickshell -p "$work/shell.qml" >"$log" 2>&1 &
+QT_QPA_PLATFORM=offscreen timeout "$timeout_s" "$QS" -p "$work/shell.qml" >"$log" 2>&1 &
 QS_PID=$!
 
 found=0

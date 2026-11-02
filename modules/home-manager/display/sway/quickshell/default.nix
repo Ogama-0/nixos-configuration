@@ -1,4 +1,4 @@
-{ cfg, pkgs, upkgs, config, lib, ... }:
+{ cfg, pkgs, upkgs, lpkgs, config, lib, ... }:
 
 let
   allColors = import ../../../../lib/theme-colors.nix;
@@ -137,7 +137,7 @@ let
 in
 {
   home.packages = [
-    upkgs.quickshell
+    lpkgs.quickshell-multimedia
     pkgs.curl
     pkgs.cava
     pkgs.imagemagick
@@ -285,7 +285,7 @@ in
       PartOf = [ "graphical-session.target" ];
     };
     Service = {
-      ExecStart = "${upkgs.quickshell}/bin/quickshell -c widgets";
+      ExecStart = "${lpkgs.quickshell-multimedia}/bin/quickshell -c widgets";
       Restart = "on-failure";
     };
     Install = {

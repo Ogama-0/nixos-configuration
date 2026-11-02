@@ -55,6 +55,7 @@
         orbitron-font = self.packages.${system}.orbitron-font;
         greetd-proxy = self.packages.${system}.greetd-proxy;
         calino = self.packages.${system}.calino;
+        quickshell-multimedia = self.packages.${system}.quickshell-multimedia;
       };
       upkgs = (
         {
@@ -79,6 +80,11 @@
         calino = pkgs.callPackage ./pkgs/calino.nix {
           siteUrl = "http://calino.tail.${cfg-server.domain}";
         };
+        # Unstable's callPackage, not the repo's default `pkgs`: `quickshell`
+        # and `qt6` have to come from the same nixpkgs that
+        # upkgs.quickshell actually resolves to, or the wrapped QtMultimedia
+        # is a version `import QtMultimedia` loads but QMediaPlayer refuses.
+        quickshell-multimedia = (import nixpkgs-unstable { inherit system; }).callPackage ./pkgs/quickshell-multimedia.nix { };
       };
 
       nixosConfigurations = {

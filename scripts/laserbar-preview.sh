@@ -35,6 +35,10 @@ VARIANT="${LASERBAR_VARIANT:-dark}"
 EXEC_AFTER="${LASERBAR_EXEC:-}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The real shell.qml imports QtMultimedia now; the `quickshell` on PATH is
+# whatever the last switch installed, which is exactly the unwrapped binary
+# this wrapper exists to replace. QS_BIN skips the build for a tight loop.
+QS="${QS_BIN:-$(nix build --no-link --print-out-paths "$REPO#quickshell-multimedia")/bin/quickshell}"
 
 RT="$(mktemp -d)"
 TREE="$RT/tree"
@@ -113,7 +117,7 @@ exec sleep infinity
 mode "panel" {
     # -p, not -c widgets: the nested shell is launched by path and has no
     # instance name, so the real config's IPC target finds nothing here.
-    bindsym Escape mode default; exec quickshell -p $TREE/shell.qml ipc call panel dismiss
+    bindsym Escape mode default; exec $QS -p $TREE/shell.qml ipc call panel dismiss
 }
 CONF
 
@@ -125,7 +129,7 @@ for _ in $(seq 60); do [ -S "$SWAYSOCK" ] && break; sleep 0.25; done
 WAYLAND_DISPLAY="$(ls "$RT" | grep -m1 '^wayland-[0-9]*$')"
 export WAYLAND_DISPLAY
 
-quickshell -p "$TREE/shell.qml" >"$RT/qs.log" 2>&1 &
+"$QS" -p "$TREE/shell.qml" >"$RT/qs.log" 2>&1 &
 QS_PID=$!
 # Wait for the shell to report itself loaded rather than guessing a sleep.
 for _ in $(seq 60); do grep -q "Configuration Loaded" "$RT/qs.log" && break; sleep 0.25; done
@@ -133,14 +137,14 @@ grep -q "Configuration Loaded" "$RT/qs.log" || {
     echo "quickshell did not load the fixture" >&2; tail -20 "$RT/qs.log" >&2; exit 1; }
 sleep 1
 
-quickshell -p "$TREE/shell.qml" ipc call laserbar reveal >>"$RT/qs.log" 2>&1 || true
+"$QS" -p "$TREE/shell.qml" ipc call laserbar reveal >>"$RT/qs.log" 2>&1 || true
 # The beams animate over 90ms; give them room to finish travelling.
 sleep 1
 
 # LASERBAR_RETRACT=1 captures the released state instead: the bar must go back
 # to nothing, with no module left painted.
 if [ "${LASERBAR_RETRACT:-}" = "1" ]; then
-    quickshell -p "$TREE/shell.qml" ipc call laserbar hide >>"$RT/qs.log" 2>&1 || true
+    "$QS" -p "$TREE/shell.qml" ipc call laserbar hide >>"$RT/qs.log" 2>&1 || true
     sleep 1
 fi
 
