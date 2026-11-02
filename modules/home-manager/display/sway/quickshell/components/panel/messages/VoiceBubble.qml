@@ -93,8 +93,16 @@ Item {
         const d = root.audio ? root.audio.duration : 0;
         return root.isActive ? d : root.knownDuration;
     }
-    readonly property real progress: root.audio
-        ? root.audio.progressAt(root.shownPosition, root.shownDuration) : 0
+    // Same fix as shownPosition/shownDuration above: read progressAt's
+    // inputs unconditionally so the binding keeps a live dependency on
+    // them. `root.audio` itself is lower-risk (it flips null->non-null
+    // once at mount, not repeatedly), but it is the identical shape and
+    // an audit turned it up, so it gets the identical treatment.
+    readonly property real progress: {
+        const pos = root.shownPosition;
+        const dur = root.shownDuration;
+        return root.audio ? root.audio.progressAt(pos, dur) : 0;
+    }
 
     readonly property string timeText: {
         if (!root.audio) return root.label;
@@ -112,8 +120,16 @@ Item {
                            root.attachment.partId || 0);
     }
 
+    // Gated to THIS bubble being the active one. `audio` is one player for
+    // the whole pane (see the file comment), so an ungated seek on an idle
+    // bubble would move whatever note some OTHER bubble has playing, using
+    // THIS bubble's bar geometry for the fraction - the press lands on the
+    // wrong track entirely, not just at the wrong offset on the right one.
+    // Starting playback from the press point instead is the nicer answer
+    // but needs a fetch-then-play-at-offset path nothing here has; the
+    // play button already exists for "start this one".
     function seekAt(x: real): void {
-        if (!root.audio || track.width <= 0) return;
+        if (!root.audio || !root.isActive || track.width <= 0) return;
         root.audio.seekTo(root.audio.duration * x / track.width);
     }
 

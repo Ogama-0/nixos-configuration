@@ -185,6 +185,23 @@ ShellRoot {
         check(audio.playingId === "" && audio.missing === true,
               "a vanished file left the bubble spinning");
 
+        // --- playable() re-stats, it does not cache its first answer -----------
+        //
+        // The path setter it probes through is a no-op on an unchanged value,
+        // which is exactly why playable() routes through "" before the real
+        // path on every call (see its own comment). Nothing above proves that
+        // actually works on a REPEAT query - each path above was asked about
+        // once. missing -> present -> missing, same nonexistent path asked
+        // twice with a real one in between, is the sequence a cached first
+        // answer would get wrong on the third call.
+        check(audio.playable("/c/also-not-here.amr") === false,
+              "a nonexistent path was reported playable (first ask)");
+        check(audio.playable(root.realFile) === true,
+              "a real path (" + root.realFile + ") was reported missing");
+        check(audio.playable("/c/also-not-here.amr") === false,
+              "playable() cached an earlier answer instead of re-statting "
+                  + "the same nonexistent path");
+
         // --- the fetch that never lands, closed by a Timer ---------------------
         audio.fetchTimeoutMs = 200;
         audio.toggle("f", "", "PART_never.amr", 7);

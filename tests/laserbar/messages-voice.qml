@@ -41,11 +41,36 @@ import "components/panel/messages"
 //     light: probe 140 252 --near '#201c1d' 14
 //            probe 220 252 --near '#b11237' 16
 //
-// Probe the PADDING of the fill, never a glyph - same rule as
-// messages-thread.qml. These are all drawn shapes (circle wash, bar, handle,
-// canvas glyph), so there is no font opinion anywhere in this fixture to
-// avoid, but the handle sits ON TOP of the fill near its leading edge, so
-// 140 is well behind it rather than astride it.
+//   the Canvas glyph actually painted something, and the two states a
+//   region average CAN tell apart at this size do read differently. Every
+//   button sits at (88, rowCenterY) - 32px right of the row, 32px down
+//   from its top (56/138/220/302 + 32). The idle triangle (rows 1-2) fills
+//   the glyph box across its own vertical centre - see the geometry note
+//   on `VoiceBubble.qml`'s Canvas.onPaint - so a region AT the button
+//   centre reads as ink there. The playing row's two bars (row 3) leave
+//   exactly that centre column as the gap between them - a Canvas that
+//   silently failed to paint would make rows 1-2 and row 3's centre
+//   indistinguishable from the plain wash circle underneath; a Canvas that
+//   painted bars instead of a triangle is what actually produces a
+//   DIFFERENT readout at the same (88, rowCenterY) spot between an idle
+//   row and the playing row. Row 3's bar-filled columns (x=80, x=92) read
+//   ink too, same as the idle centre - it is specifically the CENTRE that
+//   tells the two states apart.
+//     dark:  row 1 (idle, incoming)  probe 85 85  6 6 --near '#fdf8f1' 16
+//            row 2 (idle, outgoing)  probe 85 167 6 6 --near '#000102' 16
+//            row 3 centre (playing) probe 85 249 6 6 --near '#006cbf' 16
+//            row 3 left bar         probe 80 249 3 4 --near '#000000' 10
+//     light: row 1 (idle, incoming)  probe 85 85  6 6 --near '#413d3e' 16
+//            row 2 (idle, outgoing)  probe 85 167 6 6 --near '#211c1d' 16
+//            row 3 centre (playing) probe 85 249 6 6 --near '#af1237' 16
+//            row 3 left bar         probe 80 249 3 4 --near '#201c1d' 10
+//
+// Everything above except the glyph block probes the PADDING, never a
+// glyph - same rule as messages-thread.qml, and still the right default:
+// a region average over a font character is the font's opinion, not the
+// component's. The glyph block is the deliberate exception, because
+// "drawn, not a font glyph" was the point of this component and nothing
+// else in this file would catch a Canvas that quietly painted nothing.
 Scope {
     PanelWindow {
         anchors { top: true; bottom: true; left: true; right: true }
