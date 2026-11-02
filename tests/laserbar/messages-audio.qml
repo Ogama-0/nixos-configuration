@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import "components/panel/messages"
 
 // MessageAudio, the one player every voice-note bubble shares.
@@ -40,7 +41,25 @@ ShellRoot {
         player: stub
     }
 
+    // A real VoiceBubble, not a further stub - seekAt()'s guard (round 1)
+    // is proven both directions against it below: an ACTIVE bubble's press
+    // must still reach seekTo, not just an idle one being blocked.
+    VoiceBubble {
+        id: seekProbe
+        width: 224
+        height: 48
+        audio: audio
+        msgId: "seek-target"
+        attachment: ({ partId: 9, mime: "audio/amr", data: "",
+                       uid: "PART_seek.amr", path: "" })
+    }
+
     property var bad: []
+    // A scratch path under /tmp, created and removed by this fixture (see
+    // the playable() re-stat proof below) - distinct from realFile, which
+    // must stay present for the whole run.
+    property string restatPath: "/tmp/messages-audio-playable-"
+        + Date.now() + ".probe"
     // toggle() now stats the path before playing it (see MessageAudio's
     // playable() gate) - the state-machine assertions below need a path
     // that genuinely exists so that gate is not what they are testing.
@@ -185,27 +204,95 @@ ShellRoot {
         check(audio.playingId === "" && audio.missing === true,
               "a vanished file left the bubble spinning");
 
-        // --- playable() re-stats, it does not cache its first answer -----------
+        // --- VoiceBubble.seekAt: the active guard (round 1), both directions ---
         //
-        // The path setter it probes through is a no-op on an unchanged value,
-        // which is exactly why playable() routes through "" before the real
-        // path on every call (see its own comment). Nothing above proves that
-        // actually works on a REPEAT query - each path above was asked about
-        // once. missing -> present -> missing, same nonexistent path asked
-        // twice with a real one in between, is the sequence a cached first
-        // answer would get wrong on the third call.
-        check(audio.playable("/c/also-not-here.amr") === false,
-              "a nonexistent path was reported playable (first ask)");
-        check(audio.playable(root.realFile) === true,
-              "a real path (" + root.realFile + ") was reported missing");
-        check(audio.playable("/c/also-not-here.amr") === false,
-              "playable() cached an earlier answer instead of re-statting "
-                  + "the same nonexistent path");
+        // Round 1 added the isActive-only guard; nothing proved it lets the
+        // ACTIVE case through, only that it blocks the idle one - a guard
+        // keyed off the wrong property, or simply inverted, would have
+        // passed everything that existed then. seekAt(x) computes
+        // `audio.duration * x / track.width`; track.width is internal to
+        // VoiceBubble and not observable from here, so rather than compute
+        // an exact expected offset, a wildly oversized x is used - on any
+        // positive track.width that drives the ms argument past
+        // audio.duration, and seekTo() clamps to the max. That is a robust
+        // "did this reach the player at all" signal without reaching into
+        // VoiceBubble's internals.
+        audio.playingId = "seek-target";
+        audio.duration = 20000;
+        stub.position = 0;
+        seekProbe.seekAt(999999);
+        check(stub.position === stub.duration,
+              "an ACTIVE bubble's seek did not reach the player - "
+                  + "stub.position=" + stub.position
+                  + " stub.duration=" + stub.duration);
 
-        // --- the fetch that never lands, closed by a Timer ---------------------
-        audio.fetchTimeoutMs = 200;
-        audio.toggle("f", "", "PART_never.amr", 7);
-        settleWait.start();
+        audio.playingId = "someone-else";
+        stub.position = 777;
+        seekProbe.seekAt(999999);
+        check(stub.position === 777,
+              "an IDLE bubble's seek moved the player anyway - stub.position="
+                  + stub.position);
+
+        // --- playable() re-stats on a REPEAT query of the SAME path ------------
+        //
+        // The path setter it probes through is a no-op on an unchanged
+        // value, which is exactly why playable() routes through "" before
+        // the real path on every call (see its own comment). Proving that
+        // needs the SAME path asked twice in a row with its existence
+        // changing in between - two different paths (the first version of
+        // this check) never exercises the no-op-on-same-value case at all.
+        // That needs a real file on disk, so it is async: a Process
+        // creates it, playable() is asked, a Process removes it, playable()
+        // is asked again. Counterfactual checked by hand while writing
+        // this: delete the `existsProbe.path = ""` reset in
+        // MessageAudio.playable() and the "after-create" check below goes
+        // red (stays false, replaying the pre-create answer).
+        check(audio.playable(root.restatPath) === false,
+              "a path was reported playable before it was ever created");
+        restatCreate.running = true;
+    }
+
+    Process {
+        id: restatCreate
+        command: ["touch", root.restatPath]
+        onExited: restatAfterCreate.start()
+    }
+
+    Process {
+        id: restatRemove
+        command: ["rm", "-f", root.restatPath]
+        onExited: restatAfterRemove.start()
+    }
+
+    Timer {
+        id: restatAfterCreate
+        interval: 50
+        repeat: false
+        onTriggered: {
+            const check = (ok, why) => { if (!ok) root.bad.push(why); };
+            check(audio.playable(root.restatPath) === true,
+                  "playable() still said missing right after the SAME "
+                      + "path was created - a cached first answer, not a "
+                      + "re-stat");
+            restatRemove.running = true;
+        }
+    }
+
+    Timer {
+        id: restatAfterRemove
+        interval: 50
+        repeat: false
+        onTriggered: {
+            const check = (ok, why) => { if (!ok) root.bad.push(why); };
+            check(audio.playable(root.restatPath) === false,
+                  "playable() kept saying present after the SAME path was "
+                      + "deleted - a cached first answer, not a re-stat");
+
+            // --- the fetch that never lands, closed by a Timer -------------
+            audio.fetchTimeoutMs = 200;
+            audio.toggle("f", "", "PART_never.amr", 7);
+            settleWait.start();
+        }
     }
 
     Timer {
