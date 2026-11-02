@@ -137,7 +137,13 @@ Item {
         const fresh = root.seen[msg.id] === undefined;
         root.seen[msg.id] = true;
 
-        if (root.store) root.store.putMessages(msg.convId, [msg]);
+        if (root.store) {
+            root.store.putMessages(msg.convId, [msg]);
+            // This may BE the echo of something we sent. The pending copy
+            // goes once the real one is in, or the thread shows both.
+            if (msg.outgoing)
+                root.store.resolvePending(msg.convId, msg.body, msg.ts);
+        }
         root.fold(msg);
         if (msg.convId === root.activeId) root.refreshActive();
         root.rebuild();
@@ -157,7 +163,13 @@ Item {
         let parsed = [];
         for (const raw of rawList) parsed.push(root.parseMessage(raw));
 
-        if (root.store) root.store.putAll(parsed);
+        if (root.store) {
+            root.store.putAll(parsed);
+            // A refresh that runs just after a send brings the echo back in
+            // the batch rather than as a signal.
+            for (const m of parsed)
+                if (m.outgoing) root.store.resolvePending(m.convId, m.body, m.ts);
+        }
 
         for (const m of parsed) { root.seen[m.id] = true; root.fold(m); }
         root.refreshActive();

@@ -68,6 +68,17 @@ ShellRoot {
         transportEnabled: false
     }
 
+    MessageStore { id: echoStore; dbName: "qs-messages-model-echo-test" }
+    // Sending, and the echo that comes back with a real uID.
+    MessagesModel {
+        id: echoModel
+        contacts: fakeContacts
+        palette: fakeHue
+        store: echoStore
+        deviceId: "test-device"
+        transportEnabled: false
+    }
+
     MessageStore { id: batchStore; dbName: "qs-messages-model-batch-test" }
     MessageStore { id: oneStore; dbName: "qs-messages-model-one-test" }
 
@@ -140,6 +151,8 @@ ShellRoot {
         arriveStore.wipe();
         oneStore.init();
         oneStore.wipe();
+        echoStore.init();
+        echoStore.wipe();
 
         for (const m of root.captured) model.ingestMessage(m);
 
@@ -317,6 +330,31 @@ ShellRoot {
         check(lateModel.conversations[0].initials === "LA",
               "relabel did not update the initials");
 
+
+        // --- a sent message is one bubble, not two ----------------------------
+        //
+        // No delivery receipt: send() shows a pending-<ts> row at once and the
+        // phone echoes the same text back with its real uID about a second
+        // later. Nothing reconciled the two, so every message sent from this
+        // panel appeared twice.
+        echoModel.ingestMessage([1, "Caca", [["+33766417775"]],
+                                 1792758144978, 1, 1, 51, 602, -1, []], false);
+        echoModel.openConversation("51");
+        const sent = echoModel.send("bonjour a tous", []);
+        check(String(sent).indexOf("pending-") === 0,
+              "send did not report a pending id: " + sent);
+        check(echoModel.activeMessages.length === 2,
+              "the sent message did not appear at once: "
+              + echoModel.activeMessages.length);
+
+        echoModel.ingestMessage([1, "bonjour a tous", [["+33766417775"]],
+                                 Date.now(), 2, 1, 51, 660, -1, []], true);
+        check(echoModel.activeMessages.length === 2,
+              "the echo duplicated the sent message: "
+              + echoModel.activeMessages.map(m => m.id + ":" + m.body).join(","));
+        check(echoModel.activeMessages[0].id === "660",
+              "the pending copy outlived the echo: "
+              + echoModel.activeMessages.map(m => m.id).join(","));
         if (bad.length > 0) { console.log("MODEL_FAIL " + bad.join(" | ")); return; }
         console.log("MODEL_OK");
     }

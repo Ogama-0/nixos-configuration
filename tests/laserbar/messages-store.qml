@@ -123,6 +123,39 @@ ShellRoot {
         store.setUnread(B, false);
         check(store.unreadIds().indexOf(B) < 0, "read did not round-trip");
 
+        // --- pending rows are replaced by the echo, not joined by it ---------
+        //
+        // There is no delivery receipt: send() writes a pending-<ts> row so
+        // the bubble appears at once, and the phone echoes the same text back
+        // a second later carrying its real uID. Nothing used to remove the
+        // pending row, so every message this panel sent ended up on screen
+        // TWICE - 20 of the 99 rows in the real cache were orphaned pendings.
+        const C = "conv-c";
+        const sentAt = root.now - 5000;
+        store.putMessages(C, [root.msg("pending-" + sentAt, C, "bonjour a tous",
+                                       sentAt, true)]);
+        store.putMessages(C, [root.msg("660", C, "bonjour a tous",
+                                       sentAt + 1061, true)]);
+        store.resolvePending(C, "bonjour a tous", sentAt + 1061);
+        const after = store.messages(C, 30, 0);
+        check(after.length === 1,
+              "the echo did not replace the pending row: "
+              + after.map(m => m.id).join(","));
+        check(after.length === 1 && after[0].id === "660",
+              "the wrong row survived: " + after.map(m => m.id).join(","));
+        // ...and the search index must not keep the copy either, or one
+        // sent message is two hits.
+        check(store.search("bonjour a tous", 20).length === 1,
+              "the pending row stayed in the FTS index: "
+              + store.search("bonjour a tous", 20).length);
+
+        // A pending row nobody echoed is NOT swept. "Sent" forever is the
+        // honest state when the phone never confirmed - see docs.
+        store.putMessages(C, [root.msg("pending-" + root.now, C, "never echoed",
+                                       root.now, true)]);
+        store.resolvePending(C, "something else", root.now);
+        check(store.messages(C, 30, 0).length === 2,
+              "resolvePending swept an unconfirmed message");
         if (bad.length > 0) { console.log("STORE_FAIL " + bad.join(" | ")); return; }
         console.log("STORE_OK");
     }

@@ -64,6 +64,7 @@ Item {
             tx.executeSql('INSERT OR IGNORE INTO meta VALUES (?, ?)',
                           ['schemaVersion', String(root.schemaVersion)]);
         });
+        root.sweepEchoedPending();
         root.ready = true;
     }
 
@@ -131,6 +132,64 @@ Item {
             for (const c in convs)
                 tx.executeSql('INSERT OR IGNORE INTO conversations (convId) VALUES (?)', [c]);
         });
+    }
+
+    // The echo arrived, so the local copy is not news - it is a duplicate.
+    //
+    // There is no delivery receipt: send() writes a pending-<ts> row so the
+    // bubble appears the moment you hit Enter, and the phone echoes the same
+    // text back about a second later carrying its real uID. Both are real
+    // rows, and nothing used to remove the first - so every message sent
+    // from this panel ended up on screen TWICE. Twenty of the ninety-nine
+    // rows in the real cache were orphaned pendings.
+    //
+    // Matched on the body inside a time window, because replyToConversation
+    // returns nothing at all: there is no id to correlate against. The window
+    // is symmetric - the timestamp on the echo is the PHONE's clock and the
+    // pending row's is this machine's, and they do not agree to the second.
+    //
+    // A pending row nobody echoed is left alone. "Sent" forever is the honest
+    // state when the phone never confirmed, which is what
+    // docs/messages-panel.md promises.
+    readonly property int pendingWindow: 120000
+
+    function resolvePending(convId: string, body: string, ts: real): void {
+        root.db().transaction(tx => {
+            const r = tx.executeSql(
+                "SELECT id FROM messages WHERE convId = ? AND outgoing = 1 "
+                + "AND id LIKE 'pending-%' AND body = ? AND ts > ? AND ts < ?",
+                [convId, body || "", ts - root.pendingWindow,
+                 ts + root.pendingWindow]);
+            for (let i = 0; i < r.rows.length; i++) {
+                const id = r.rows.item(i).id;
+                tx.executeSql('DELETE FROM messages WHERE id = ?', [id]);
+                tx.executeSql('DELETE FROM messages_fts WHERE id = ?', [id]);
+            }
+        });
+    }
+
+    // The same thing for a cache written before any of the above existed:
+    // every pending row whose echo is already sitting next to it. Runs once,
+    // from init(), because a duplicate already on disk is not fixed by
+    // reconciling the next one.
+    function sweepEchoedPending(): int {
+        let n = 0;
+        root.db().transaction(tx => {
+            const r = tx.executeSql(
+                "SELECT p.id AS id FROM messages p JOIN messages m "
+                + "ON m.convId = p.convId AND m.body = p.body "
+                + "WHERE p.id LIKE 'pending-%' AND m.id NOT LIKE 'pending-%' "
+                + "AND m.outgoing = 1 AND p.outgoing = 1 "
+                + "AND m.ts > p.ts - ? AND m.ts < p.ts + ?",
+                [root.pendingWindow, root.pendingWindow]);
+            for (let i = 0; i < r.rows.length; i++) {
+                const id = r.rows.item(i).id;
+                tx.executeSql('DELETE FROM messages WHERE id = ?', [id]);
+                tx.executeSql('DELETE FROM messages_fts WHERE id = ?', [id]);
+                n++;
+            }
+        });
+        return n;
     }
 
     // Newest first. beforeTs of 0 means "from the newest"; anything else means

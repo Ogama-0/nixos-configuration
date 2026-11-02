@@ -74,6 +74,14 @@ waiting for reachability would miss the first message every time.
   phone echoes it back with a proper `uID`. It is never promoted on a timer —
   if you see "Sent" rather than "Delivered" forever, that is the truth being
   reported, not a bug.
+
+  The echo is a **new row**, so something has to remove the pending one or
+  every message you send appears twice — which it did, for twenty of the
+  ninety-nine rows in the real cache. `MessageStore.resolvePending` does it
+  on the body inside a ±2 minute window, because with nothing returned from
+  the call there is no id to correlate against and the two timestamps come
+  from two different clocks. `sweepEchoedPending()` runs once from `init()`
+  for duplicates already on disk. An unechoed pending row is left alone.
 - **No contact photos.** All 229 vCards carry `FN` and `TEL` and not one
   `PHOTO`. That is why avatars are two letters and a colour.
 
@@ -179,6 +187,7 @@ bubble reads `#131312` across its padding and `#565451` across its words.
 | No conversations, phone connected | SMS permission on Android. Run the probe. |
 | Mobile zone empty, `--list-devices` finds the phone | Paired but not **reachable**. The zone runs `kdeconnect-cli -a`, which lists reachable devices only; `--list-devices` lists paired ones. Check `isReachable` on the device object. Messages still opens and shows the cache. |
 | Every thread named by its number | The vCard read failed, or `relabel()` did not fire. |
+| A message you sent appears twice | A pending row the echo did not replace. Reconciliation is on the body — if you sent the same text twice inside two minutes, the second is not a duplicate and is kept. |
 | All shortcode senders one colour | A normaliser regression — alphanumeric ids have no digits and must fold to an `id:` key. |
 | A message stuck on "Sent" | Honest. The phone never echoed it back. |
 | A thread opens blank and stays blank | Evicted cache plus a phone that is not answering. `oldestTimestamp` returning 0 is what should trigger the refetch. |
