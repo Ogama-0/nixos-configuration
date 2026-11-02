@@ -102,7 +102,12 @@ Item {
         x: 0
         y: headRule.y + 1
         width: parent.width
-        height: parent.height - y - compose.height
+        // No room reserved for the compose row here. It was, once, when the
+        // compose row did not exist yet and this view was the whole right
+        // half - and the reservation stayed after MessagesPane started
+        // sizing this view as `parent.height - compose.height`. Both, so a
+        // bubble's worth of thread was being hidden behind empty air.
+        height: parent.height - y
         clip: true
         model: root.messages
         // Newest at the bottom while the model is newest-first. The
@@ -308,12 +313,4 @@ Item {
         }
     }
 
-    // The compose row is the next task's; this reserves its height so the
-    // river does not lay out behind it and jump when it arrives.
-    Item {
-        id: compose
-        y: parent.height - height
-        width: parent.width
-        height: 56 * root.uiScale
-    }
 }
