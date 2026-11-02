@@ -1,7 +1,9 @@
 { cfg, config, ... }:
 
-let host = "status.tail.${cfg.server.domain}";
-in {
+let
+  host = "status.tail.${cfg.server.domain}";
+in
+{
   # Gatus actively probes each service and exposes the result as plain,
   # unauthenticated JSON at /api/v1/endpoints/statuses. This is what the
   # Quickshell desktop widget reads: a boolean "is it answering" costs one
@@ -57,14 +59,20 @@ in {
           # [STATUS] == 200 even on a perfectly healthy Jellyfin.
           url = "http://jellyfin.tail.${cfg.server.domain}/health";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           name = "Immich";
           group = "media";
           url = "http://immich.tail.${cfg.server.domain}";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           # services.immich.machine-learning exposes no port option; 3003
@@ -74,7 +82,10 @@ in {
           group = "media";
           url = "http://127.0.0.1:3003/ping";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           name = "Samba";
@@ -83,14 +94,20 @@ in {
           interval = "15s";
           # A TCP probe has no status code, so [CONNECTED] takes the first
           # slot the widget expects the status condition in.
-          conditions = [ "[CONNECTED] == true" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[CONNECTED] == true"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           name = "qBittorrent";
           group = "files";
           url = "http://qbittorrent.tail.${cfg.server.domain}";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           # Caddy's own admin API, which also serves the metrics Prometheus
@@ -100,14 +117,20 @@ in {
           group = "web";
           url = "http://127.0.0.1:2019/metrics";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           name = "Grafana";
           group = "web";
           url = "http://grafana.tail.${cfg.server.domain}/api/health";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           # Joplin Server runs in docker (see joplin-server.nix). /api/ping
@@ -117,14 +140,20 @@ in {
           group = "dev";
           url = "http://joplin.tail.${cfg.server.domain}/api/ping";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           name = "Wakapi";
           group = "dev";
           url = "http://wakapi.tail.${cfg.server.domain}";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           # Rustical answers 200 "Pong!" on /ping with no auth. "/" is the web
@@ -140,7 +169,10 @@ in {
           group = "calendar";
           url = "http://rustical.tail.${cfg.server.domain}/ping";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           # 401 is the *healthy* answer here: calendar-syncer puts HTTP basic
@@ -152,7 +184,10 @@ in {
           group = "calendar";
           url = "http://calsync.tail.${cfg.server.domain}";
           interval = "15s";
-          conditions = [ "[STATUS] == 401" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 401"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
         {
           # Probes the CORS proxy, not the static site: Caddy serves the site
@@ -163,7 +198,10 @@ in {
           group = "calendar";
           url = "http://calino.tail.${cfg.server.domain}/proxy/health";
           interval = "15s";
-          conditions = [ "[STATUS] == 200" "[RESPONSE_TIME] < 300" ];
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
         }
       ];
 
@@ -180,9 +218,7 @@ in {
 
   services.caddy.virtualHosts."http://${host}" = {
     extraConfig = ''
-      reverse_proxy http://127.0.0.1:${
-        toString config.services.gatus.settings.web.port
-      }
+      reverse_proxy http://127.0.0.1:${toString config.services.gatus.settings.web.port}
     '';
   };
 }

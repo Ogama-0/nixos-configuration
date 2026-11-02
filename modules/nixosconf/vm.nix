@@ -8,8 +8,7 @@
     qemu.vhostUserPackages = with pkgs; [ virtiofsd ];
   };
   services.qemuGuest.enable = true;
-  services.spice-vdagentd.enable =
-    true; # enable copy and paste between host and guest
+  services.spice-vdagentd.enable = true; # enable copy and paste between host and guest
 
   users.users.${cfg.user}.extraGroups = [ "libvirtd" ];
 }
