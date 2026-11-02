@@ -24,11 +24,12 @@ FocusScope {
     property real uiScale: 1
     property var conversations: []
     property string activeId: ""
-    // Set by the pane so the list's own Right/Left handlers below know to
-    // let a voice note being played claim the arrows instead - see
-    // MessagesPane.arrowsBorrowed, which makes the actual call. null (no
-    // audio wired up, e.g. a fixture) behaves the same as nothing playing.
-    property var audio: null
+    // The pane binds this to MessagesPane.arrowsBorrowed(...) - the single
+    // source of truth for the decision - so the Right/Left handlers below
+    // only ever read it, never recompute it. Defaults to false so a fixture
+    // that never sets it (no audio, no pane) behaves as if nothing is
+    // playing.
+    property bool arrowsBorrowed: false
     // Set by the owner when a search has run and found nothing in the cache,
     // so the empty line can say which kind of nothing it is.
     property bool searchedBodies: true
@@ -301,13 +302,13 @@ FocusScope {
 
         Keys.onUpPressed: event => { event.accepted = true; root.step(-1); }
         Keys.onDownPressed: event => { event.accepted = true; root.step(1); }
-        // Rightwards is into the thread you have selected - UNLESS a voice
-        // note is playing, in which case the arrow is a skip instead and the
-        // list is not the one that owns it. Leaving the event unaccepted
-        // lets it bubble to MessagesPane, which holds `arrowsBorrowed` and
-        // the player; the list itself only needs to know not to swallow it.
+        // Rightwards is into the thread you have selected - UNLESS the pane
+        // has told us (via `root.arrowsBorrowed`) that the arrow is a skip
+        // instead. Leaving the event unaccepted here lets it bubble to
+        // MessagesPane, which performs the skip and owns the player; the
+        // list itself only ever reads the decision, never recomputes it.
         Keys.onRightPressed: event => {
-            if (root.audio && root.audio.playingId !== "") { event.accepted = false; return; }
+            if (root.arrowsBorrowed) { event.accepted = false; return; }
             event.accepted = true; root.focusComposeAsked();
         }
         Keys.onReturnPressed: event => { event.accepted = true; root.focusComposeAsked(); }
@@ -316,7 +317,7 @@ FocusScope {
         // ...and leftwards is back out to the search box, which is the only
         // thing to the left of a conversation row - same exception as above.
         Keys.onLeftPressed: event => {
-            if (root.audio && root.audio.playingId !== "") { event.accepted = false; return; }
+            if (root.arrowsBorrowed) { event.accepted = false; return; }
             event.accepted = true; root.focusSearch();
         }
         Keys.onBacktabPressed: event => { event.accepted = true; root.focusSearch(); }

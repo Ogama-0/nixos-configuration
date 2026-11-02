@@ -43,21 +43,27 @@ Item {
         return playingId !== "" && !composeFocused;
     }
 
+    // The one live evaluation of the decision above, bound down into
+    // ThreadList (`list.arrowsBorrowed` below) so its Right/Left handlers
+    // only ever read it rather than recomputing their own half of it - one
+    // source of truth instead of two that happen to agree today.
+    readonly property bool arrowsBorrowedNow:
+        root.arrowsBorrowed(root.core && root.core.audio ? root.core.audio.playingId : "",
+                             compose.fieldFocused)
+
     // ThreadList's own Right/Left (see its Keys handlers) leave the event
-    // unaccepted exactly when it should be a skip instead of a focus move,
-    // so it bubbles up here. The compose field's Left handler never does
-    // that - it either moves the cursor or goes back to the list on its
-    // own - which is how this never fires while compose holds the keyboard
-    // without this file having to ask it.
+    // unaccepted exactly when `arrowsBorrowedNow` is true, so it bubbles up
+    // here. The compose field's Left handler never does that - it either
+    // moves the cursor or goes back to the list on its own - which is how
+    // this never fires while compose holds the keyboard without this file
+    // having to ask it.
     Keys.onLeftPressed: event => {
-        const playingId = root.core && root.core.audio ? root.core.audio.playingId : "";
-        if (!root.arrowsBorrowed(playingId, compose.fieldFocused)) return;
+        if (!root.arrowsBorrowedNow) return;
         root.core.audio.skip(-5000);
         event.accepted = true;
     }
     Keys.onRightPressed: event => {
-        const playingId = root.core && root.core.audio ? root.core.audio.playingId : "";
-        if (!root.arrowsBorrowed(playingId, compose.fieldFocused)) return;
+        if (!root.arrowsBorrowedNow) return;
         root.core.audio.skip(5000);
         event.accepted = true;
     }
@@ -100,9 +106,10 @@ Item {
         searchedBodies: false
         bodyMatches: root.core && query.length >= 2
             ? root.core.searchBodies(query) : []
-        // So the list's own Right/Left handlers know to step aside for the
-        // skip below instead of swallowing the arrow themselves.
-        audio: root.core ? root.core.audio : null
+        // The single source of truth (`arrowsBorrowedNow` above) bound down,
+        // so the list's own Right/Left handlers only read the decision
+        // instead of recomputing their own half of it.
+        arrowsBorrowed: root.arrowsBorrowedNow
 
         onConversationPicked: convId => { if (root.core) root.core.openConversation(convId) }
         onPinToggled: convId => { if (root.core) root.core.togglePin(convId) }
