@@ -69,16 +69,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1793565228,
-        "narHash": "sha256-SeLDnIcbHJxkVH4xd88WHgPVVaHF62djeRaTufXvJqA=",
-        "ref": "paquet-nix",
-        "rev": "0b111ee62b707e14bad959e8dfa906dc2f495bfa",
-        "revCount": 85,
+        "lastModified": 1793627505,
+        "narHash": "sha256-4ajt4I+CUkA1cjyzM91Fb+adArwTJZ1lbOu+msZ+pg4=",
+        "ref": "refs/heads/main",
+        "rev": "950890cac3d351ef28ed23becc9b325f2bced138",
+        "revCount": 117,
         "type": "git",
         "url": "ssh://git@github.com/Ogama-0/lsi-web-interface"
       },
       "original": {
-        "ref": "paquet-nix",
         "type": "git",
         "url": "ssh://git@github.com/Ogama-0/lsi-web-interface"
       }
