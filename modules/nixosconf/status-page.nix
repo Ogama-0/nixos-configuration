@@ -57,7 +57,7 @@ in
           group = "media";
           # "/" answers 302 (redirect to /web/), which would fail
           # [STATUS] == 200 even on a perfectly healthy Jellyfin.
-          url = "http://jellyfin.tail.${cfg.server.domain}/health";
+          url = "http://jellyfin.${cfg.server.domain}/health";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -67,7 +67,7 @@ in
         {
           name = "Immich";
           group = "media";
-          url = "http://immich.tail.${cfg.server.domain}";
+          url = "http://immich.${cfg.server.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -102,7 +102,7 @@ in
         {
           name = "qBittorrent";
           group = "files";
-          url = "http://qbittorrent.tail.${cfg.server.domain}";
+          url = "http://qbittorrent.${cfg.server.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
