@@ -24,6 +24,13 @@ Item {
     // Paths staged by the picker or a paste, sent with the next message.
     property var attachments: []
 
+    // Whether the text field itself - not this Item - holds the keyboard.
+    // `root.activeFocus` would stay false even while `field` has focus,
+    // because activeFocus only reports on the exact item that owns it; the
+    // pane needs this to decide whether the left/right arrows are still the
+    // text cursor (see MessagesPane.arrowsBorrowed).
+    readonly property bool fieldFocused: field.activeFocus
+
     signal sendRequested(string text, var attachments)
     // Back out of the field without leaving the pane. The sidebar is the
     // only other keyboard stop, so there is nowhere else this can mean.

@@ -27,6 +27,41 @@ Item {
     // docs/messages-panel.md - so there is nothing here to steal focus from.
     function focusList(): void { list.focusList(); }
 
+    // While a voice note plays, the left/right arrows become a ±5s skip
+    // everywhere EXCEPT the compose field. In a draft the left arrow is the
+    // text cursor (ComposeRow already protects that - see its own Left
+    // handler), and listening to a note while typing a reply is ordinary;
+    // taking the caret keys away mid-draft to serve a shortcut would be
+    // worse than not having the shortcut. So the borrow only applies when
+    // the compose field does NOT hold the keyboard - the thread list, or
+    // nothing focused at all.
+    //
+    // Pure on purpose: the nav fixture calls this directly (it cannot
+    // synthesise a key press - see its header), so the decision has to be
+    // a function rather than buried in a Keys handler.
+    function arrowsBorrowed(playingId: string, composeFocused: bool): bool {
+        return playingId !== "" && !composeFocused;
+    }
+
+    // ThreadList's own Right/Left (see its Keys handlers) leave the event
+    // unaccepted exactly when it should be a skip instead of a focus move,
+    // so it bubbles up here. The compose field's Left handler never does
+    // that - it either moves the cursor or goes back to the list on its
+    // own - which is how this never fires while compose holds the keyboard
+    // without this file having to ask it.
+    Keys.onLeftPressed: event => {
+        const playingId = root.core && root.core.audio ? root.core.audio.playingId : "";
+        if (!root.arrowsBorrowed(playingId, compose.fieldFocused)) return;
+        root.core.audio.skip(-5000);
+        event.accepted = true;
+    }
+    Keys.onRightPressed: event => {
+        const playingId = root.core && root.core.audio ? root.core.audio.playingId : "";
+        if (!root.arrowsBorrowed(playingId, compose.fieldFocused)) return;
+        root.core.audio.skip(5000);
+        event.accepted = true;
+    }
+
     // The draft survives a collapse. Escape is how you leave this pane, and
     // losing half a typed message to it would make Escape frightening.
     property string keptDraft: ""
@@ -65,6 +100,9 @@ Item {
         searchedBodies: false
         bodyMatches: root.core && query.length >= 2
             ? root.core.searchBodies(query) : []
+        // So the list's own Right/Left handlers know to step aside for the
+        // skip below instead of swallowing the arrow themselves.
+        audio: root.core ? root.core.audio : null
 
         onConversationPicked: convId => { if (root.core) root.core.openConversation(convId) }
         onPinToggled: convId => { if (root.core) root.core.togglePin(convId) }

@@ -285,6 +285,7 @@ search box — the arrows have to do something on the first press.
 | `←` `Shift+Tab` | out to the search box |
 | in search: `↓` `Tab` `Enter` | back to the list (`Enter` selects the top hit first) |
 | in compose: `Shift+Tab` | back to the list. `←` does it too, but **only on an empty field** — in a draft the left arrow is the cursor. `Tab` carries round to the search box. |
+| `←` `→` while a voice note plays | skip ±5s instead, **except with the compose field focused** — there the arrow stays the text cursor (or, on an empty field, the `←` above), because listening to a note while typing a reply is ordinary and the shortcut should not cost you the caret. `MessagesPane.arrowsBorrowed(playingId, composeFocused)` is the decision, called from ThreadList's own Right/Left handlers before they move focus. |
 | `Escape` | collapses the pane, from anywhere |
 
 `Escape` is the trap: a `TextInput` or `TextEdit` swallows it by default, so

@@ -46,6 +46,12 @@ ShellRoot {
         }
     }
 
+    // arrowsBorrowed() is pure - no core, no audio, no thread needed to call
+    // it - so an unconfigured pane is enough.
+    MessagesPane {
+        id: pane
+    }
+
     Component.onCompleted: {
         let bad = [];
         const check = (ok, why) => { if (!ok) bad.push(why); };
@@ -100,6 +106,22 @@ ShellRoot {
         list.step(-1);
         check(root.picked.length === before,
               "stepping an empty list opened something");
+
+        if (bad.length > 0) { console.log("NAV_FAIL " + bad.join(" | ")); return; }
+
+        // arrowsBorrowed() is the pure decision behind the left/right skip:
+        // whether a voice note is playing, and whether the compose field -
+        // where the left arrow is the text cursor, not a shortcut - has the
+        // keyboard. No key press is synthesised; the fixture calls the
+        // function directly, same as it calls list.step() above.
+        check(pane.arrowsBorrowed("a", false) === true,
+              "playing, hands off the compose field: the arrows are the skips");
+        check(pane.arrowsBorrowed("a", true) === false,
+              "the caret key would have moved the playhead mid-draft");
+        check(pane.arrowsBorrowed("", false) === false,
+              "nothing is playing and the arrows did not come back");
+        check(pane.arrowsBorrowed("", true) === false,
+              "nothing is playing and the compose field should not matter either");
 
         if (bad.length > 0) { console.log("NAV_FAIL " + bad.join(" | ")); return; }
         console.log("NAV_OK");
