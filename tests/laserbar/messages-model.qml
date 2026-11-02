@@ -397,6 +397,15 @@ ShellRoot {
         check(echoModel.activeMessages[0].id === "660",
               "the pending copy outlived the echo: "
               + echoModel.activeMessages.map(m => m.id).join(","));
+
+        // A payload that is not the ten-field struct is not a message. One of
+        // these reached the real cache and sat there as id "undefined".
+        const junk = echoModel.conversations.length;
+        echoModel.ingestMessage([], true);
+        echoModel.ingestMessage(null, true);
+        check(echoModel.conversations.length === junk,
+              "a malformed payload became a conversation");
+
         if (bad.length > 0) { console.log("MODEL_FAIL " + bad.join(" | ")); return; }
         console.log("MODEL_OK");
     }

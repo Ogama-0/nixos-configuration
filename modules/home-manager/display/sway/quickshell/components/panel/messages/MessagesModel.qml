@@ -140,6 +140,10 @@ Item {
     // toasting them was the panel shouting your whole inbox at you on every
     // single open.
     function ingestMessage(raw: var, fromSignal: bool): void {
+        // Not everything on that bus is a ConversationMessage. One payload
+        // of some other shape reached the real cache and sat in it as a row
+        // with id "undefined", which is a message in no thread at all.
+        if (!root.usable(raw)) return;
         const msg = root.parseMessage(raw);
         // Seen before? Then whatever this is, it is not news. The daemon
         // re-emits conversationCreated for threads it already told us about
@@ -161,6 +165,14 @@ Item {
         if (fromSignal && fresh) root.messageArrived(msg);
     }
 
+    // The ten-field struct, or something else entirely. Checked before
+    // parsing rather than after, because a null payload throws on field 2.
+    function usable(raw: var): bool {
+        if (!raw || raw.length === undefined || raw.length < 8) return false;
+        return raw[6] !== undefined && raw[6] !== null
+            && raw[7] !== undefined && raw[7] !== null;
+    }
+
     // One store transaction and one rebuild for the whole lot.
     //
     // The single-message path does a DB write, a full re-sort and a
@@ -172,7 +184,9 @@ Item {
     function ingestBatch(rawList: var): void {
         if (!rawList || rawList.length === 0) return;
         let parsed = [];
-        for (const raw of rawList) parsed.push(root.parseMessage(raw));
+        for (const raw of rawList)
+            if (root.usable(raw)) parsed.push(root.parseMessage(raw));
+        if (parsed.length === 0) return;
 
         if (root.store) {
             root.store.putAll(parsed);
