@@ -54,13 +54,11 @@ Item {
 
     readonly property bool awaiting: root.pendingUid !== ""
 
-    // partId is NOT threaded through toggle() - none of this component's
-    // three callers (a bubble with a file, a bubble with none, the panel
-    // closing) have more than a uid at the point they call it. Whatever
-    // connects this to KDE Connect's requestAttachmentFile has the
-    // attachment struct in hand (partId, mime, "", uid) and can resolve the
-    // uid back to a partId there; 0 is a placeholder, not a real part
-    // number.
+    // The real attachment part id (MessagesModel.parseMessage's a[0]), NOT
+    // derived from anything here - it is unrelated to the message id and a
+    // wrong value asks kdeconnectd for the wrong part, or one that does not
+    // exist. toggle() carries it through from whoever holds the attachment
+    // struct (the voice bubble, which has {partId, mime, data, uid, path}).
     signal fetchAsked(int partId, string uid)
 
     MediaPlayer {
@@ -126,6 +124,7 @@ Item {
         root.playingId = "";
         root.paused = false;
         root.position = 0;
+        root.duration = 0;
         root.pendingUid = "";
         root.pendingMsgId = "";
         root.missing = false;
@@ -134,8 +133,10 @@ Item {
 
     // Three ways in: the bubble that is already playing (pause/resume in
     // place), a bubble with a file ready to go, and a bubble whose
-    // attachment has never been fetched.
-    function toggle(msgId: string, path: string, uid: string): void {
+    // attachment has never been fetched. `partId` is only used on the third
+    // path (raising fetchAsked); callers that already have a path can pass
+    // anything there (0, say), since it is never read in that branch.
+    function toggle(msgId: string, path: string, uid: string, partId: int): void {
         if (msgId === root.playingId && root.playingId !== "") {
             if (root.paused) { root.player.play(); root.paused = false; }
             else { root.player.pause(); root.paused = true; }
@@ -149,6 +150,7 @@ Item {
         root.playingId = "";
         root.paused = false;
         root.position = 0;
+        root.duration = 0;
         root.pendingUid = "";
         root.pendingMsgId = "";
         root.missing = false;
@@ -158,21 +160,17 @@ Item {
             root.pendingUid = uid;
             root.pendingMsgId = msgId;
             fetchTimer.restart();
-            root.fetchAsked(0, uid);
+            root.fetchAsked(partId, uid);
             return;
         }
 
         root.startPlaying(msgId, path);
     }
 
-    // The real MediaPlayer needs `source` set before play(); the fixture's
-    // stub declares no such property, and QML raises on an assignment to a
-    // property that does not exist on a QtObject. The try/catch is for that
-    // stub alone - a real player with a bad path fails later, asynchronously,
-    // through MediaPlayer.errorChanged, not here.
+    // The real MediaPlayer needs `source` set before play().
     function startPlaying(msgId: string, path: string): void {
         root.playingId = msgId;
-        try { root.player.source = root.fileUrl(path); } catch (e) { /* stub */ }
+        root.player.source = root.fileUrl(path);
         root.player.play();
     }
 

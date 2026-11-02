@@ -126,10 +126,13 @@ A voice note with no local file yet raises `fetchAsked(partId, uid)` instead
 of playing, and `awaiting` is true until either `fileArrived(uid, path)`
 names that same uid (it plays) or `fetchTimeoutMs` runs out with nothing
 arriving (`missing` becomes true, and the bubble should say so rather than
-spin forever). `fetchAsked`'s `partId` is always `0` here — `toggle()` is
-only ever given a uid, not the attachment struct's `partId` — wired through
-unchanged into `MessagesModel.fetchAttachment` so a real value plumbed in
-later needs no new wiring.
+spin forever). `partId` is carried all the way through from
+`toggle(msgId, path, uid, partId)` — the voice bubble holds the full
+attachment struct (`{partId, mime, data, uid, path}`) and passes the real
+value, which matters: `requestAttachmentFile` on the bus takes the
+attachment's own part id (`MessagesModel.parseMessage`'s `a[0]`), unrelated
+to the message id, and the wrong one asks kdeconnectd for the wrong part or
+one that does not exist.
 
 ## Paired is not reachable
 

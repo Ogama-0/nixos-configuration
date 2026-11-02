@@ -23,6 +23,10 @@ ShellRoot {
         property real position: 0
         property real duration: 0
         property int playbackState: 0
+        // The real MediaPlayer needs `source` set before play(); declared
+        // here so the production code can assign it unconditionally instead
+        // of guarding against a stub that doesn't have the property.
+        property string source: ""
         property int plays: 0
         property int pauses: 0
         property int stops: 0
@@ -83,16 +87,21 @@ ShellRoot {
               "skip overran past duration: " + stub.position);
 
         // --- one at a time ---------------------------------------------------
-        audio.toggle("a", "/c/a.amr", "a.amr");
+        //
+        // partId only matters on the no-path (fetchAsked) branch, exercised
+        // below - these calls already have a path, so the value here is
+        // never read. Still non-zero so a bug that started reading it on
+        // this branch would be visible rather than accidentally correct.
+        audio.toggle("a", "/c/a.amr", "a.amr", 1);
         check(audio.playingId === "a",
               "toggle did not start playing a: " + audio.playingId);
-        audio.toggle("b", "/c/b.amr", "b.amr");
+        audio.toggle("b", "/c/b.amr", "b.amr", 2);
         check(audio.playingId === "b",
               "starting a second note did not take over");
         check(stub.stops === 1, "the first note was not stopped: " + stub.stops);
 
         // --- same id toggles rather than restarts -----------------------------
-        audio.toggle("b", "/c/b.amr", "b.amr");
+        audio.toggle("b", "/c/b.amr", "b.amr", 2);
         check(audio.paused === true && audio.playingId === "b",
               "toggling the same id did not pause it in place");
 
@@ -102,32 +111,62 @@ ShellRoot {
               "stop() did not stop the player and clear playingId");
 
         // --- REVIEW FOCUS 4: the open thread changes while a note is playing --
-        audio.toggle("c", "/c/c.amr", "c.amr");
+        //
+        // What actually happens on a thread switch is
+        // MessagesCore.openConversation() calling audio.stop() before
+        // model.openConversation() - a two-line wrapper this fixture cannot
+        // drive directly, because MessagesCore hardcodes its MessageStore to
+        // @msgDbName@ (the real device's cache path, not overridable), and
+        // instantiating one here would mean a test touching production data.
+        // The honest thing to assert at this level is what that wrapper's
+        // stop() call depends on: that it silences a note that is genuinely
+        // mid-playback (position/duration non-zero, actually sounding) and
+        // not merely a relabelling of playingId, which would pass even with
+        // a stop() that forgot to touch the player at all.
+        audio.toggle("c", "/c/c.amr", "c.amr", 3);
+        audio.position = 4500;
+        audio.duration = 9000;
+        const stopsBeforeFocus4 = stub.stops;
         audio.stop();
-        check(audio.playingId === "", "a dead bubble stayed the playing one");
+        check(audio.playingId === "" && audio.position === 0 && audio.duration === 0
+                  && stub.stops === stopsBeforeFocus4 + 1,
+              "stop() left a mid-playback note's state behind, or never told "
+                  + "the player to stop");
 
         // --- no file yet: ask, do not play, and play when it lands ------------
         let asked = [];
         audio.fetchAsked.connect((p, u) => asked.push(u));
         const playsBefore = stub.plays;
-        audio.toggle("d", "", "PART_d.amr");
-        check(asked.length === 1 && audio.awaiting === true,
+        audio.toggle("d", "", "PART_d.amr", 46);
+        check(asked.length === 1 && asked[0] === "PART_d.amr" && audio.awaiting === true,
               "toggling a note with no file did not raise fetchAsked / set awaiting");
         check(stub.plays === playsBefore,
               "it tried to play a file it does not have");
+
+        // A fetch for a DIFFERENT uid, arriving while "d" is still the one
+        // outstanding, must be recognised as someone else's and ignored -
+        // this is the uid !== pendingUid branch, not the "nothing pending"
+        // one below.
+        audio.fileArrived("PART_other.amr", "/c/other.amr");
+        check(audio.playingId === "" && audio.awaiting === true,
+              "an unrelated attachment in flight was mistaken for the one "
+                  + "being waited on");
+
+        // The right one, arriving after, plays.
         audio.fileArrived("PART_d.amr", "/c/d.amr");
         check(audio.playingId === "d" && audio.awaiting === false,
               "the fetched note did not start on arrival");
 
-        // A fetch for a note we are no longer waiting on must not start it.
+        // And with nothing outstanding at all - the pendingUid === "" branch -
+        // an attachment landing is a no-op.
         audio.stop();
         audio.fileArrived("PART_other.amr", "/c/other.amr");
         check(audio.playingId === "",
-              "an unrelated attachment started playing");
+              "an attachment arrived with nothing pending and started playing");
 
         // --- the fetch that never lands, closed by a Timer ---------------------
         audio.fetchTimeoutMs = 200;
-        audio.toggle("f", "", "PART_never.amr");
+        audio.toggle("f", "", "PART_never.amr", 7);
         settleWait.start();
     }
 

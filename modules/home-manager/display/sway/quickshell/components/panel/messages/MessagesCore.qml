@@ -105,10 +105,9 @@ Item {
 
     // Owned here for the same reason contacts/hues/store are: one per shell,
     // not one per screen's pane, or two monitors would fight over the same
-    // sound-card handle (spec, Design). `fetchAsked`'s partId is a
-    // placeholder (see MessageAudio's comment on it) - this routes it
-    // through anyway so a real partId plumbed in later needs no new wiring
-    // here.
+    // sound-card handle (spec, Design). fetchAsked's partId is the real
+    // attachment part id by the time it reaches here - toggle()'s caller
+    // (the voice bubble) holds the attachment struct and passes it through.
     MessageAudio {
         id: audio
         store: store
