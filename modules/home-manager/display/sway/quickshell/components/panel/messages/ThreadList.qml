@@ -14,7 +14,11 @@ import "../" as Panel
 //
 // A view. It holds no model, fetches nothing, and persists nothing: it is
 // handed a list and raises signals when the user does something to it.
-Item {
+//
+// A FocusScope rather than an Item: the search field and the conversation
+// list are both keyboard stops, and arrowing between them has to work
+// without the pane above having to know which one is live.
+FocusScope {
     id: root
 
     property real uiScale: 1
@@ -32,6 +36,34 @@ Item {
     signal conversationPicked(string convId)
     signal pinToggled(string convId)
     signal composeAsked()
+    // Right arrow or Tab on a conversation: the thread is already open, now
+    // put the cursor where you type. The pane owns the compose row, so this
+    // is a request rather than a call.
+    signal focusComposeAsked()
+
+    function focusSearch(): void { queryField.forceActiveFocus(); }
+    function focusList(): void { list.forceActiveFocus(); }
+
+    // Where the selection is, derived rather than stored: the arrow keys
+    // OPEN the thread they land on, so `activeId` already is the selection
+    // and a second copy of it could only disagree.
+    readonly property int selectedIndex: {
+        for (let i = 0; i < root.listed.length; i++)
+            if (root.listed[i].convId === root.activeId) return i;
+        return -1;
+    }
+
+    // One row up or down, clamped. Nothing selected yet lands on the first
+    // row whichever way you pressed - the alternative is a first keypress
+    // that does nothing at all.
+    function step(delta: int): void {
+        if (root.listed.length === 0) return;
+        const next = Math.max(0, Math.min(root.listed.length - 1,
+                                          root.selectedIndex + delta));
+        if (next === root.selectedIndex) return;
+        list.positionViewAtIndex(next, ListView.Contain);
+        root.conversationPicked(root.listed[next].convId);
+    }
 
     property string query: ""
 
@@ -100,6 +132,21 @@ Item {
                 font.pixelSize: Math.round(13 * root.uiScale)
                 clip: true
                 onTextChanged: root.query = text
+
+                // Down or Tab leaves the box for the list. Enter does too,
+                // and selects the top hit if nothing is selected - having
+                // typed a name, the next thing you want is that thread.
+                Keys.onDownPressed: event => { event.accepted = true; root.focusList(); }
+                Keys.onTabPressed: event => { event.accepted = true; root.focusList(); }
+                Keys.onReturnPressed: event => {
+                    event.accepted = true;
+                    if (root.selectedIndex < 0) root.step(1);
+                    root.focusList();
+                }
+                // Escape belongs to whoever collapses the pane. A TextInput
+                // swallows it by default, which left Escape dead whenever
+                // the cursor was in the search box.
+                Keys.onEscapePressed: event => event.accepted = false
 
                 Text {
                     visible: queryField.text.length === 0
@@ -239,6 +286,26 @@ Item {
         cacheBuffer: 200 * root.uiScale
         boundsBehavior: Flickable.StopAtBounds
 
+        // The keyboard stop this pane opens on, so the arrows work before
+        // anything has been clicked.
+        focus: true
+        // ListView's own key handling moves a currentIndex this list does
+        // not use - the selection is activeId - and would also claim Home,
+        // End and the page keys on the way past.
+        keyNavigationEnabled: false
+
+        Keys.onUpPressed: event => { event.accepted = true; root.step(-1); }
+        Keys.onDownPressed: event => { event.accepted = true; root.step(1); }
+        // Rightwards is into the thread you have selected.
+        Keys.onRightPressed: event => { event.accepted = true; root.focusComposeAsked(); }
+        Keys.onReturnPressed: event => { event.accepted = true; root.focusComposeAsked(); }
+        Keys.onEnterPressed: event => { event.accepted = true; root.focusComposeAsked(); }
+        Keys.onTabPressed: event => { event.accepted = true; root.focusComposeAsked(); }
+        // ...and leftwards is back out to the search box, which is the only
+        // thing to the left of a conversation row.
+        Keys.onLeftPressed: event => { event.accepted = true; root.focusSearch(); }
+        Keys.onBacktabPressed: event => { event.accepted = true; root.focusSearch(); }
+
         delegate: Item {
             id: row
             required property var modelData
@@ -329,10 +396,14 @@ Item {
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onClicked: mouse => {
-                    if (mouse.button === Qt.RightButton)
+                    if (mouse.button === Qt.RightButton) {
                         root.pinToggled(row.modelData.convId);
-                    else
-                        root.conversationPicked(row.modelData.convId);
+                        return;
+                    }
+                    // So the arrows carry on from where you clicked rather
+                    // than from wherever the keyboard happened to be.
+                    root.focusList();
+                    root.conversationPicked(row.modelData.convId);
                 }
             }
         }

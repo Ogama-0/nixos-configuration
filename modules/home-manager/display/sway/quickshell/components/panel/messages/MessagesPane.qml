@@ -21,6 +21,12 @@ Item {
 
     function focusCompose(): void { compose.focusField(); }
 
+    // The pane opens with the conversation list live, so the arrow keys work
+    // before anything has been clicked. It is the only surface up and it
+    // already holds the keyboard exclusively - see the focus section of
+    // docs/messages-panel.md - so there is nothing here to steal focus from.
+    function focusList(): void { list.focusList(); }
+
     // The draft survives a collapse. Escape is how you leave this pane, and
     // losing half a typed message to it would make Escape frightening.
     property string keptDraft: ""
@@ -29,6 +35,7 @@ Item {
         if (root.active) {
             compose.draft = root.keptDraft;
             root.consumePending();
+            root.focusList();
         } else {
             root.keptDraft = compose.draft;
         }
@@ -61,6 +68,9 @@ Item {
 
         onConversationPicked: convId => { if (root.core) root.core.openConversation(convId) }
         onPinToggled: convId => { if (root.core) root.core.togglePin(convId) }
+        // Right arrow or Tab on a row. Nothing to focus if no thread is
+        // open, and the field is not even visible then.
+        onFocusComposeAsked: if (root.hasThread) compose.focusField()
     }
 
     Rectangle {
@@ -106,6 +116,8 @@ Item {
         onSendRequested: (text, attachments) => {
             if (root.core) root.core.send(text, attachments);
         }
+        onBackFocusAsked: list.focusList()
+        onSearchFocusAsked: list.focusSearch()
     }
 
     // Nothing open yet. An invitation, not a blank half-screen.

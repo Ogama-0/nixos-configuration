@@ -305,7 +305,18 @@ Item {
         // Cache first, always. The phone is allowed to be slow; the pane is
         // not allowed to be blank while it thinks.
         root.refreshActive();
-        root.requestPage(0, root.store ? root.store.pageSize : 30);
+        // The phone second, and not yet. The arrow keys walk the sidebar and
+        // every step opens a thread, so a request fired from here is a
+        // request per keypress at a phone that answers in its own time. The
+        // thread you stopped on is the only one you meant.
+        openSettle.restart();
+    }
+
+    Timer {
+        id: openSettle
+        interval: 180
+        repeat: false
+        onTriggered: root.requestPage(0, root.store ? root.store.pageSize : 30)
     }
 
     // start/end are INDEXES into the thread, newest first. The /sms object's

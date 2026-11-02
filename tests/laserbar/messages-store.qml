@@ -168,6 +168,7 @@ ShellRoot {
               "fetchedCount counted pending rows: " + store.fetchedCount(C));
         check(store.fetchedCount("conv-never-seen") === 0,
               "fetchedCount invented messages for an unknown thread");
+
         if (bad.length > 0) { console.log("STORE_FAIL " + bad.join(" | ")); return; }
         console.log("STORE_OK");
     }

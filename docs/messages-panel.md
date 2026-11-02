@@ -162,6 +162,25 @@ Messages cannot work that way — a compose field needs the keyboard. So:
 - the draft is kept in `MessagesPane.keptDraft` across a collapse, so Escape
   is not frightening.
 
+## The keyboard
+
+Messages already holds the keyboard exclusively (above), so it may as well be
+drivable from it. The pane opens with the **conversation list** live, not the
+search box — the arrows have to do something on the first press.
+
+| | |
+|---|---|
+| `↑` `↓` | previous/next conversation. Moving the selection **opens** the thread: the selection *is* `activeId`, there is no second highlight to disagree with it. The cache is served at once and the phone is asked 180ms later (`openSettle`), so walking past a dozen threads is one request, not twelve. |
+| `→` `Tab` `Enter` | into the compose field of the selected thread |
+| `←` `Shift+Tab` | out to the search box |
+| in search: `↓` `Tab` `Enter` | back to the list (`Enter` selects the top hit first) |
+| in compose: `Shift+Tab` | back to the list. `←` does it too, but **only on an empty field** — in a draft the left arrow is the cursor. `Tab` carries round to the search box. |
+| `Escape` | collapses the pane, from anywhere |
+
+`Escape` is the trap: a `TextInput` or `TextEdit` swallows it by default, so
+both of them have to say `event.accepted = false` explicitly or Escape is
+dead whenever the cursor is in a field.
+
 ## Ways in
 
 | | |
@@ -183,7 +202,7 @@ scripts/laserbar-probe.sh /tmp/out.png <x> <y> <w> <h> --near '#rrggbb'
 ```
 
 Logic: `messages-contacts`, `messages-hue`, `messages-store`,
-`messages-model`, `messages-compose`.
+`messages-model`, `messages-compose`, `messages-nav`.
 Render: `messages-avatar`, `messages-sidebar`, `messages-thread`,
 `messages-pane`, `messages-toast`.
 

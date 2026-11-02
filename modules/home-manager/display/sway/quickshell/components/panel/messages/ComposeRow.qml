@@ -25,6 +25,10 @@ Item {
     property var attachments: []
 
     signal sendRequested(string text, var attachments)
+    // Back out of the field without leaving the pane. The sidebar is the
+    // only other keyboard stop, so there is nowhere else this can mean.
+    signal backFocusAsked()
+    signal searchFocusAsked()
 
     readonly property int maxHeight: 92
 
@@ -169,6 +173,29 @@ Item {
                     }
                     event.accepted = true;
                     root.submit();
+                }
+
+                // Shift+Tab is back to the conversation list; Tab carries on
+                // round to the search box. Two stops and a field, so the
+                // cycle is short enough to be worth closing.
+                Keys.onBacktabPressed: event => {
+                    event.accepted = true;
+                    root.backFocusAsked();
+                }
+                Keys.onTabPressed: event => {
+                    event.accepted = true;
+                    root.searchFocusAsked();
+                }
+                // Left arrow, but ONLY on an empty field: in a draft the
+                // left arrow is the cursor, and stealing it would make the
+                // compose box unusable for the sake of a shortcut.
+                Keys.onLeftPressed: event => {
+                    if (field.text.length > 0 || field.cursorPosition > 0) {
+                        event.accepted = false;
+                        return;
+                    }
+                    event.accepted = true;
+                    root.backFocusAsked();
                 }
 
                 // Paste an image and it becomes an attachment rather than a
