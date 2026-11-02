@@ -14,7 +14,8 @@ MessagesCore          one per shell: contacts, hues, store, the DBus model
 ├── ContactsModel     number -> name, out of the synced vCards
 ├── MessageHue        number -> one palette colour, forever
 ├── MessageStore      SQLite cache: pages, retention, FTS5 search
-└── MessagesModel     the KDE Connect bridge
+├── MessagesModel     the KDE Connect bridge
+└── MessageAudio      the one voice-note player
 
 MessagesPane          one per screen: a view, holds no state
 ├── ThreadList        search, pinned grid, conversation list
@@ -94,6 +95,41 @@ page already held and never reached the older ones. The matching half is
 because when it always re-read the newest page it threw away the page
 `fetchOlder()` had just written and a thread was stuck at @msgPageSize@
 messages however far you scrolled.
+
+## One player, not one per bubble
+
+`MessageAudio` is instantiated once on `MessagesCore`, for the same reason
+`ContactsModel`/`MessageStore` are: a bubble per voice note owning its own
+`MediaPlayer` would mean two screens fighting over the same sound-card
+handle, and a second bubble's play would not stop the first's. One player
+means `playingId` is unambiguous — it is either this bubble's id or it is
+not — and starting a different note always stops whatever was sounding
+first.
+
+`player` is injectable (`property var player: internalPlayer`, overridden by
+a fixture's stub carrying `position`/`duration`/`playbackState` and counting
+`play()`/`pause()`/`stop()`), the same pattern `contacts`/`palette`/`store`
+already use on `MessagesModel`: the state machine — one id, one outstanding
+fetch, a seek clamp, a fetch timeout — is tested without a sound card or an
+ffmpeg plugin. The real `MediaPlayer` + `AudioOutput` is trusted; nothing in
+CI plays an actual sound.
+
+**The panel stops it on the way out, not the bubble.** Every path that puts
+Messages away — Escape, `mod+m`, the pane's close button, dismissing the
+whole control panel while it is open — routes through
+`ControlPanel.closeMessages()`, and that is the one place `messages.audio.stop()`
+is called. `MessagesCore.openConversation()` stops it too, for the narrower
+case of switching threads while a note from the old one is still playing —
+a dead bubble must not go on sounding under the thread that replaced it.
+
+A voice note with no local file yet raises `fetchAsked(partId, uid)` instead
+of playing, and `awaiting` is true until either `fileArrived(uid, path)`
+names that same uid (it plays) or `fetchTimeoutMs` runs out with nothing
+arriving (`missing` becomes true, and the bubble should say so rather than
+spin forever). `fetchAsked`'s `partId` is always `0` here — `toggle()` is
+only ever given a uid, not the attachment struct's `partId` — wired through
+unchanged into `MessagesModel.fetchAttachment` so a real value plumbed in
+later needs no new wiring.
 
 ## Paired is not reachable
 
@@ -273,7 +309,11 @@ scripts/laserbar-probe.sh /tmp/out.png <x> <y> <w> <h> --near '#rrggbb'
 ```
 
 Logic: `messages-contacts`, `messages-hue`, `messages-store`,
-`messages-model`, `messages-compose`, `messages-compose-size`, `messages-nav`.
+`messages-model`, `messages-compose`, `messages-compose-size`, `messages-nav`,
+`messages-audio`. `messages-audio-backend` is separate: it only asserts that
+`QtMultimedia` can actually construct a `MediaPlayer` under the wrapped
+`quickshell` binary (ffmpeg plugin present) — `messages-audio` never touches
+a real player at all.
 Render: `messages-avatar`, `messages-sidebar`, `messages-thread`,
 `messages-pane`, `messages-toast`.
 

@@ -83,6 +83,11 @@ Scope {
     }
 
     function closeMessages(): void {
+        // Every path that puts Messages away - Escape, mod+m, the X on the
+        // pane, dismissing the whole panel while it is open - routes
+        // through here, which is why stopping the one audio player belongs
+        // here and not at each call site.
+        messages.audio.stop();
         root.messagesOpen = false;
         root.messagesPending = "";
     }

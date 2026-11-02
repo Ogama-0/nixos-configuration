@@ -34,7 +34,15 @@ Item {
     // cache, as opposed to whether anything can be sent.
     readonly property bool known: root.deviceId !== ""
 
-    function openConversation(convId: string): void { model.openConversation(convId) }
+    readonly property alias audio: audio
+
+    function openConversation(convId: string): void {
+        // A voice note from the PREVIOUS thread playing under the new one is
+        // the one audio player's whole failure mode without this - see
+        // MessageAudio's REVIEW FOCUS 4.
+        audio.stop();
+        model.openConversation(convId);
+    }
     function fetchOlder(): void { model.fetchOlder() }
     function fetchAttachment(partId: int, uid: string): void {
         model.fetchAttachment(partId, uid);
@@ -92,6 +100,19 @@ Item {
         active: root.active
         listening: root.listening
         onMessageArrived: msg => root.messageArrived(msg)
+        onAttachmentReady: (uid, path) => audio.fileArrived(uid, path)
+    }
+
+    // Owned here for the same reason contacts/hues/store are: one per shell,
+    // not one per screen's pane, or two monitors would fight over the same
+    // sound-card handle (spec, Design). `fetchAsked`'s partId is a
+    // placeholder (see MessageAudio's comment on it) - this routes it
+    // through anyway so a real partId plumbed in later needs no new wiring
+    // here.
+    MessageAudio {
+        id: audio
+        store: store
+        onFetchAsked: (partId, uid) => model.fetchAttachment(partId, uid)
     }
 
     // Read even with every pane shut, or a toast names the sender by their

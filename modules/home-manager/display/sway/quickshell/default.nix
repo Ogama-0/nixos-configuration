@@ -242,6 +242,7 @@ in
           "${d}/components/panel/MobileAction.qml" = themedQmlFile variant ./components/panel/MobileAction.qml;
           "${d}/components/panel/messages/ContactsModel.qml" = themedQmlFile variant ./components/panel/messages/ContactsModel.qml;
           "${d}/components/panel/messages/MessageHue.qml" = themedQmlFile variant ./components/panel/messages/MessageHue.qml;
+          "${d}/components/panel/messages/MessageAudio.qml" = themedQmlFile variant ./components/panel/messages/MessageAudio.qml;
           "${d}/components/panel/messages/MessageStore.qml" = themedQmlFile variant ./components/panel/messages/MessageStore.qml;
           "${d}/components/panel/messages/MessageAvatar.qml" = themedQmlFile variant ./components/panel/messages/MessageAvatar.qml;
           "${d}/components/panel/messages/MessageTokens.qml" = themedQmlFile variant ./components/panel/messages/MessageTokens.qml;

@@ -78,6 +78,10 @@ Item {
     property int pageLimit: 0
 
     signal messageArrived(var record)
+    // Raised alongside the store write below, so whatever is waiting on a
+    // voice note (MessageAudio.fileArrived, via MessagesCore) hears about it
+    // without reaching into the store itself or re-parsing the bus payload.
+    signal attachmentReady(string uid, string path)
 
     readonly property string convIface: "org.kde.kdeconnect.device.conversations"
 
@@ -591,8 +595,10 @@ Item {
             // attachment carries - the only thing tying the file on disk back
             // to the message that wants it.
             const d = root.structOf(ev.payload);
-            if (root.store && d && d.length >= 2)
+            if (root.store && d && d.length >= 2) {
                 root.store.putAttachmentFile(String(d[1]), String(d[0]));
+                root.attachmentReady(String(d[1]), String(d[0]));
+            }
             root.refreshActive();
         }
     }
