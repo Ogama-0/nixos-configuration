@@ -68,7 +68,19 @@ ShellRoot {
         transportEnabled: false
     }
 
+    MessageStore { id: pageStore; dbName: "qs-messages-model-page-test" }
     MessageStore { id: echoStore; dbName: "qs-messages-model-echo-test" }
+
+    // Scrollback, and the page index it asks the phone for.
+    MessagesModel {
+        id: pageModel
+        contacts: fakeContacts
+        palette: fakeHue
+        store: pageStore
+        deviceId: "test-device"
+        transportEnabled: false
+    }
+
     // Sending, and the echo that comes back with a real uID.
     MessagesModel {
         id: echoModel
@@ -151,6 +163,8 @@ ShellRoot {
         arriveStore.wipe();
         oneStore.init();
         oneStore.wipe();
+        pageStore.init();
+        pageStore.wipe();
         echoStore.init();
         echoStore.wipe();
 
@@ -330,6 +344,34 @@ ShellRoot {
         check(lateModel.conversations[0].initials === "LA",
               "relabel did not update the initials");
 
+        // --- scrollback actually grows ---------------------------------------
+        //
+        // fetchOlder() wrote the older page into SQLite and then refreshActive()
+        // re-read the newest page and threw it away: the thread was capped at
+        // 30 messages forever, however far you scrolled, and the pages the
+        // phone had already sent were invisible.
+        const page = pageStore.pageSize;
+        let seeded = [];
+        for (let i = 0; i < page + 15; i++)
+            seeded.push({ id: "s" + i, convId: "7", body: "msg " + i,
+                          ts: 1700000000000 + i * 1000, outgoing: false,
+                          address: "+33600000002", attachments: [] });
+        pageStore.putAll(seeded);
+
+        pageModel.openConversation("7");
+        check(pageModel.activeMessages.length === page,
+              "a thread did not open on one page: " + pageModel.activeMessages.length);
+        pageModel.fetchOlder();
+        check(pageModel.activeMessages.length === page + 15,
+              "scrollback did not grow past the first page: "
+              + pageModel.activeMessages.length);
+
+        // And the index asked of the phone is how many it has GIVEN us, not
+        // the length of what is on screen - which is capped at a page and
+        // padded with local pending rows.
+        check(pageModel.lastStart === page + 15,
+              "the next page was requested from the wrong index: "
+              + pageModel.lastStart);
 
         // --- a sent message is one bubble, not two ----------------------------
         //

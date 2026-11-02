@@ -63,6 +63,17 @@ Item {
     // Bumped on every page request. The fixture asserts on it because
     // "did not ask twice" is the actual contract, not "did not crash".
     property int fetchCount: 0
+    // The index the last page was asked for, which is the thing that was
+    // wrong rather than the number of requests.
+    property int lastStart: -1
+
+    // How many messages of the open thread to show.
+    //
+    // NOT a constant page. refreshActive() used to re-read the newest page
+    // and assign it over the top of everything, so the page fetchOlder() had
+    // just written into SQLite was thrown away on arrival and a thread was
+    // capped at @msgPageSize@ messages however far you scrolled.
+    property int pageLimit: 0
 
     signal messageArrived(var record)
 
@@ -260,12 +271,15 @@ Item {
 
     function refreshActive(): void {
         if (!root.store || !root.activeId) { root.activeMessages = []; return; }
-        root.activeMessages = root.store.messages(root.activeId,
-                                                  root.store.pageSize, 0);
+        root.activeMessages = root.store.messages(
+            root.activeId, Math.max(root.pageLimit, root.store.pageSize), 0);
     }
 
     function openConversation(convId: string): void {
         root.activeId = convId;
+        // Back to one page. A thread you had scrolled a long way into must
+        // not reopen with four hundred bubbles in it.
+        root.pageLimit = root.store ? root.store.pageSize : 30;
         if (root.store) {
             root.store.touch(convId, 0);
             root.store.setUnread(convId, false);
@@ -285,6 +299,7 @@ Item {
     // this is the interface that answers.
     function requestPage(start: int, count: int): void {
         root.fetchCount += 1;
+        root.lastStart = start;
         if (!root.transportEnabled || !root.connected || !root.activeId) return;
         root.loadingOlder = true;
         pageProc.command = ["busctl", "--user", "call", "org.kde.kdeconnect",
@@ -295,8 +310,19 @@ Item {
 
     function fetchOlder(): void {
         if (root.loadingOlder) return;
-        const have = root.activeMessages.length;
-        root.requestPage(have, root.store ? root.store.pageSize : 30);
+        const page = root.store ? root.store.pageSize : 30;
+        // Show what is already cached below the current window first - the
+        // phone may well have sent these pages already - and grow from what
+        // is really there, so the window stays within one page of the thread
+        // rather than climbing every time the top is touched.
+        root.pageLimit = Math.max(root.pageLimit,
+                                  root.activeMessages.length) + page;
+        root.refreshActive();
+        // From how many the PHONE has given us. The length of what is on
+        // screen is the wrong index twice over: capped at a page, and padded
+        // with pending rows that do not exist on the phone at all.
+        root.requestPage(root.store ? root.store.fetchedCount(root.activeId)
+                                    : root.activeMessages.length, page);
     }
 
     // ---- sending ----

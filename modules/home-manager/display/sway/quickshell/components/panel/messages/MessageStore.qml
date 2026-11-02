@@ -192,6 +192,23 @@ Item {
         return n;
     }
 
+    // How many of the newest messages the PHONE has given us for a thread.
+    //
+    // This is the index requestConversation() pages from, and it has to be
+    // counted here rather than taken from the length of what is on screen:
+    // that is capped at one page and padded with local pending rows, so
+    // "give me the next 30 after what I have" asked for a page we already
+    // held and the older ones were never reached.
+    function fetchedCount(convId: string): int {
+        let n = 0;
+        root.db().readTransaction(tx => {
+            const r = tx.executeSql("SELECT COUNT(*) AS n FROM messages "
+                + "WHERE convId = ? AND id NOT LIKE 'pending-%'", [convId]);
+            if (r.rows.length > 0) n = r.rows.item(0).n;
+        });
+        return n;
+    }
+
     // Newest first. beforeTs of 0 means "from the newest"; anything else means
     // strictly older than that, which is what paging backwards needs.
     function messages(convId: string, limit: int, beforeTs: real): var {

@@ -156,6 +156,18 @@ ShellRoot {
         store.resolvePending(C, "something else", root.now);
         check(store.messages(C, 30, 0).length === 2,
               "resolvePending swept an unconfirmed message");
+
+        // --- how many of the newest the phone has given us -------------------
+        //
+        // The index requestConversation() pages from. It cannot be the length
+        // of what is on screen: that is capped at one page and inflated by
+        // local pending rows, so asking for "the next 30 after what I have"
+        // re-requested a page we already held and never reached the older
+        // ones.
+        check(store.fetchedCount(C) === 1,
+              "fetchedCount counted pending rows: " + store.fetchedCount(C));
+        check(store.fetchedCount("conv-never-seen") === 0,
+              "fetchedCount invented messages for an unknown thread");
         if (bad.length > 0) { console.log("STORE_FAIL " + bad.join(" | ")); return; }
         console.log("STORE_OK");
     }

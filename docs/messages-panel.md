@@ -46,6 +46,16 @@ Paging is by **index** (`requestConversation(threadId, start, end)`), not by
 timestamp. The `/sms` object has a timestamp form; it is on the other
 interface and is not the one that answers.
 
+That index is `MessageStore.fetchedCount(convId)` — how many non-pending
+messages the cache holds for the thread — and not the length of what is on
+screen. On screen is capped at one page and padded with local `pending-`
+rows that do not exist on the phone at all, so paging from it asked for a
+page already held and never reached the older ones. The matching half is
+`MessagesModel.pageLimit`: `refreshActive()` reads *that many* rows back out,
+because when it always re-read the newest page it threw away the page
+`fetchOlder()` had just written and a thread was stuck at @msgPageSize@
+messages however far you scrolled.
+
 ## Paired is not reachable
 
 Two different questions, and conflating them cost a whole cache.
@@ -188,6 +198,7 @@ bubble reads `#131312` across its padding and `#565451` across its words.
 | Mobile zone empty, `--list-devices` finds the phone | Paired but not **reachable**. The zone runs `kdeconnect-cli -a`, which lists reachable devices only; `--list-devices` lists paired ones. Check `isReachable` on the device object. Messages still opens and shows the cache. |
 | Every thread named by its number | The vCard read failed, or `relabel()` did not fire. |
 | A message you sent appears twice | A pending row the echo did not replace. Reconciliation is on the body — if you sent the same text twice inside two minutes, the second is not a duplicate and is kept. |
+| A thread stops at thirty messages | `pageLimit` is not growing, or `fetchedCount` is being skipped for the on-screen length again. |
 | All shortcode senders one colour | A normaliser regression — alphanumeric ids have no digits and must fold to an `id:` key. |
 | A message stuck on "Sent" | Honest. The phone never echoed it back. |
 | A thread opens blank and stays blank | Evicted cache plus a phone that is not answering. `oldestTimestamp` returning 0 is what should trigger the refetch. |
