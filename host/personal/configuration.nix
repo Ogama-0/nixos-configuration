@@ -25,6 +25,7 @@
     ../../modules/nixosconf/vm.nix
     ../../modules/nixosconf/localsend.nix
     ../../modules/nixosconf/earlyoom.nix
+    ../../modules/nixosconf/gns3-root.nix
 
     ./nixosconf/backup-laptop.nix
     ./nixosconf/volumes.nix
