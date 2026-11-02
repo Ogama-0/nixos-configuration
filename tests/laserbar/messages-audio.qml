@@ -41,6 +41,12 @@ ShellRoot {
     }
 
     property var bad: []
+    // toggle() now stats the path before playing it (see MessageAudio's
+    // playable() gate) - the state-machine assertions below need a path
+    // that genuinely exists so that gate is not what they are testing.
+    // /etc/os-release is present on every Linux this fixture runs on; its
+    // content is never read.
+    property string realFile: "/etc/os-release"
 
     function finish(): void {
         if (root.bad.length > 0) {
@@ -92,16 +98,16 @@ ShellRoot {
         // below - these calls already have a path, so the value here is
         // never read. Still non-zero so a bug that started reading it on
         // this branch would be visible rather than accidentally correct.
-        audio.toggle("a", "/c/a.amr", "a.amr", 1);
+        audio.toggle("a", root.realFile, "a.amr", 1);
         check(audio.playingId === "a",
               "toggle did not start playing a: " + audio.playingId);
-        audio.toggle("b", "/c/b.amr", "b.amr", 2);
+        audio.toggle("b", root.realFile, "b.amr", 2);
         check(audio.playingId === "b",
               "starting a second note did not take over");
         check(stub.stops === 1, "the first note was not stopped: " + stub.stops);
 
         // --- same id toggles rather than restarts -----------------------------
-        audio.toggle("b", "/c/b.amr", "b.amr", 2);
+        audio.toggle("b", root.realFile, "b.amr", 2);
         check(audio.paused === true && audio.playingId === "b",
               "toggling the same id did not pause it in place");
 
@@ -123,7 +129,7 @@ ShellRoot {
         // mid-playback (position/duration non-zero, actually sounding) and
         // not merely a relabelling of playingId, which would pass even with
         // a stop() that forgot to touch the player at all.
-        audio.toggle("c", "/c/c.amr", "c.amr", 3);
+        audio.toggle("c", root.realFile, "c.amr", 3);
         audio.position = 4500;
         audio.duration = 9000;
         const stopsBeforeFocus4 = stub.stops;
@@ -163,6 +169,21 @@ ShellRoot {
         audio.fileArrived("PART_other.amr", "/c/other.amr");
         check(audio.playingId === "",
               "an attachment arrived with nothing pending and started playing");
+
+        // --- REVIEW FOCUS 2: duration 0 while it loads must not make a NaN width
+        check(audio.progressAt(0, 0) === 0,
+              "a zero duration produced " + audio.progressAt(0, 0));
+        check(audio.progressAt(5000, 0) === 0,
+              "a zero duration produced " + audio.progressAt(5000, 0));
+        check(audio.progressAt(5000, 10000) === 0.5,
+              "progressAt(5000, 10000) was " + audio.progressAt(5000, 10000));
+
+        // --- REVIEW FOCUS 1: the row says we have it, the disk says otherwise --
+        check(audio.playable("/c/definitely-not-here.amr") === false,
+              "a nonexistent path was reported playable");
+        audio.toggle("e", "/c/definitely-not-here.amr", "PART_e.amr");
+        check(audio.playingId === "" && audio.missing === true,
+              "a vanished file left the bubble spinning");
 
         // --- the fetch that never lands, closed by a Timer ---------------------
         audio.fetchTimeoutMs = 200;

@@ -30,6 +30,11 @@ Item {
     // Newest first.
     property var messages: []
     property bool loadingOlder: false
+    // The one shared MessageAudio, forwarded from MessagesPane/MessagesCore
+    // - see docs/messages-panel.md, "One player, not one per bubble". Every
+    // VoiceBubble in the Repeater below is handed the SAME object, which is
+    // the whole point: starting one note stops whatever was sounding.
+    property var audio: null
 
     signal olderWanted()
     signal infoAsked()
@@ -159,12 +164,18 @@ Item {
             readonly property bool outgoing: modelData.outgoing === true
             readonly property var atts: modelData.attachments || []
 
+            // A voice note is a row (button, bar, time), not a thumbnail -
+            // it wants more width and a lot less height than a photo does.
+            readonly property bool hasAudio:
+                atts.some(a => String(a.mime || "").startsWith("audio/"))
+
             // A fixed intrinsic width, NOT one derived from the bubble. The
             // first version sized the attachment from its parent while the
             // bubble sized itself from the attachment, and QML resolved that
             // circle by collapsing both to nothing - a photo rendered as a
             // 20px sliver.
-            readonly property real attWidth: atts.length > 0 ? 188 * root.uiScale : 0
+            readonly property real attWidth: atts.length === 0 ? 0
+                : entry.hasAudio ? 224 * root.uiScale : 188 * root.uiScale
 
             // The model is newest-first, so the message BEFORE this one in
             // time is the next index up. A separator belongs above a message
@@ -247,10 +258,16 @@ Item {
                                     id: attItem
                                     required property var modelData
                                     width: entry.attWidth
-                                    height: 126 * root.uiScale
+                                    // A voice note is a thin control row, not
+                                    // a thumbnail - 126px of height for it
+                                    // would be mostly empty bubble.
+                                    height: attItem.isAudio ? 48 * root.uiScale
+                                        : 126 * root.uiScale
 
                                     readonly property bool isImage:
                                         String(modelData.mime || "").startsWith("image/")
+                                    readonly property bool isAudio:
+                                        String(modelData.mime || "").startsWith("audio/")
 
                                     // Three ways an attachment can have its
                                     // bytes, and the first one is the common
@@ -306,13 +323,29 @@ Item {
                                         layer.enabled: true
                                     }
 
+                                    // The voice note's own control row -
+                                    // button, bar, time. It drives `audio`
+                                    // directly and raises nothing, so there
+                                    // is no handler to wire here beyond the
+                                    // two properties it needs.
+                                    VoiceBubble {
+                                        anchors.fill: parent
+                                        visible: attItem.isAudio
+                                        uiScale: root.uiScale
+                                        outgoing: entry.outgoing
+                                        audio: root.audio
+                                        msgId: entry.modelData.id
+                                        attachment: attItem.modelData
+                                        label: attItem.label
+                                    }
+
                                     // Not a broken-image glyph and not a blank
                                     // box: the file lives on the phone until
                                     // it is asked for, and that is a state
                                     // worth naming.
                                     Rectangle {
                                         anchors.fill: parent
-                                        visible: !att.visible
+                                        visible: !att.visible && !attItem.isAudio
                                         radius: 11 * root.uiScale
                                         // Reads as a recess in the bubble.
                                         // See root.bubbleRecess for why this

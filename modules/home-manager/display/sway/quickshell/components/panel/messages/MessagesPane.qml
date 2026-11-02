@@ -100,6 +100,7 @@ Item {
         hue: conv ? conv.hue : "@mutedColor@"
         messages: root.core ? root.core.activeMessages : []
         loadingOlder: root.core ? root.core.loadingOlder : false
+        audio: root.core ? root.core.audio : null
 
         onOlderWanted: if (root.core) root.core.fetchOlder()
         onAttachmentAsked: (partId, uid) => {

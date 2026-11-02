@@ -248,6 +248,7 @@ in
           "${d}/components/panel/messages/MessageTokens.qml" = themedQmlFile variant ./components/panel/messages/MessageTokens.qml;
           "${d}/components/panel/messages/ThreadList.qml" = themedQmlFile variant ./components/panel/messages/ThreadList.qml;
           "${d}/components/panel/messages/ConversationView.qml" = themedQmlFile variant ./components/panel/messages/ConversationView.qml;
+          "${d}/components/panel/messages/VoiceBubble.qml" = themedQmlFile variant ./components/panel/messages/VoiceBubble.qml;
           "${d}/components/panel/messages/MessagesModel.qml" = themedQmlFile variant ./components/panel/messages/MessagesModel.qml;
           "${d}/components/panel/messages/ComposeRow.qml" = themedQmlFile variant ./components/panel/messages/ComposeRow.qml;
           "${d}/components/panel/messages/MessagesCore.qml" = themedQmlFile variant ./components/panel/messages/MessagesCore.qml;

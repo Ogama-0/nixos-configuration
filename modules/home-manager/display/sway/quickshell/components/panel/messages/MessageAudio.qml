@@ -1,5 +1,6 @@
 import QtQuick
 import QtMultimedia
+import Quickshell.Io
 
 // The one audio player for the whole Messages panel - every voice-note
 // bubble asks THIS to play, rather than owning a MediaPlayer each. Two
@@ -66,6 +67,22 @@ Item {
         audioOutput: AudioOutput {}
     }
 
+    // A pure existence probe, not a reader - `blockLoading` is what makes
+    // `text()` below a synchronous stat rather than kicking off an async
+    // load the caller would need a signal to find out about. Nothing reads
+    // the content back; `onLoaded`/`onLoadFailed` only flip `_probeOk`,
+    // which `playable()` reads the instant `text()` returns.
+    FileView {
+        id: existsProbe
+        blockLoading: true
+        printErrors: false
+        watchChanges: false
+        onLoaded: root._probeOk = true
+        onLoadFailed: error => root._probeOk = false
+    }
+
+    property bool _probeOk: false
+
     // Polls the player rather than reacting to every positionChanged, so the
     // update rate is this component's to decide (see `position` above).
     Timer {
@@ -106,6 +123,36 @@ Item {
     // on a file:// URL has to land back on "%20Mes1.amr", not " Mes1.amr".
     function fileUrl(path: string): string {
         return "file://" + encodeURI(path);
+    }
+
+    // A fraction, not a pixel width - the bar decides its own geometry.
+    // Guards duration<=0 explicitly rather than trusting division to do it:
+    // 0/0 is NaN, and a NaN width on a Rectangle does not clip, it paints
+    // the full bar, which looks exactly like 100% progress on a note that
+    // has not even told us how long it is yet.
+    function progressAt(position: real, duration: real): real {
+        if (duration <= 0) return 0;
+        return position / duration;
+    }
+
+    // An existence check, not a content read - whether the row's cached
+    // path still points at a real file, e.g. because kdeconnectd's own
+    // cache GC or an unpaired-and-repaired phone took it out from under a
+    // conversation that still has the old path recorded.
+    function playable(path: string): bool {
+        if (!path) return false;
+        root._probeOk = false;
+        // FileView's `path` setter is a no-op when the new value equals the
+        // old one - fine for a file that is only ever read once, wrong
+        // here: the same voice note can be checked twice (once by a bubble
+        // deciding whether to play it, once inside toggle()'s own gate),
+        // and the second check must re-stat rather than replay whatever
+        // `_probeOk` the first one left behind. Routing through "" first
+        // forces a real transition both times.
+        existsProbe.path = "";
+        existsProbe.path = path;
+        existsProbe.text();
+        return root._probeOk;
     }
 
     function seekTo(ms: real): void {
@@ -161,6 +208,17 @@ Item {
             root.pendingMsgId = msgId;
             fetchTimer.restart();
             root.fetchAsked(partId, uid);
+            return;
+        }
+
+        // The row can hold a path left over from a fetch that already
+        // succeeded once - and the file that answer pointed at can be gone
+        // by the time the bubble is tapped again. Handing a dangling
+        // file:// URL to QtMultimedia is not the failure mode to court;
+        // "missing" is the honest answer, and re-asking kdeconnectd would
+        // be lying about why (the row never said it lacked a path).
+        if (!root.playable(path)) {
+            root.missing = true;
             return;
         }
 
