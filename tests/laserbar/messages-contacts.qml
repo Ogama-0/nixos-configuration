@@ -35,7 +35,18 @@ ShellRoot {
         // empty key: one contact, one colour, for the whole of your 2FA.
         { number: "Uber",         name: "Uber",              initials: "",   known: false },
         { number: "SIGNAL",       name: "SIGNAL",            initials: "",   known: false },
-        { number: "imagine R",    name: "imagine R",         initials: "",   known: false }
+        { number: "imagine R",    name: "imagine R",         initials: "",   known: false },
+        // The 2.1 cards the phone actually exports. Thirty of the 229 here
+        // spell the name as FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE and
+        // write it as =XX bytes - which is every contact whose name carries
+        // an accent or an emoji. A parser that only knows "FN:" drops all
+        // thirty, and those are precisely the threads that showed a bare
+        // number next to a KDE notification that had the name.
+        { number: "+522291085974", name: "Samüel Marines", initials: "SM", known: true },
+        // ...and a value long enough that the exporter broke it with a QP
+        // soft line break: a trailing "=" means "continued on the next
+        // line", not "an equals sign".
+        { number: "0611112222",   name: "Léonie❤️",         initials: "L",  known: true }
     ]
 
     ContactsModel {
@@ -99,7 +110,22 @@ ShellRoot {
             + root.dir + "/benjamin.vcf; "
             + "printf 'BEGIN:VCARD\\nVERSION:2.1\\nN:;Zoe;;;\\nFN:Zoe\\n"
             + "TEL;CELL:+33 7 60 00 00 01\\nEND:VCARD\\n' > "
-            + root.dir + "/zoe.vcf"]
+            + root.dir + "/zoe.vcf; "
+            // Verbatim shape of a real quoted-printable card, including the
+            // structured N: line that is also encoded and must not be
+            // mistaken for the display name.
+            + "printf 'BEGIN:VCARD\\nVERSION:2.1\\n"
+            + "N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=4D=61=72=69=6E=65=73;=53=61=6D=C3=BC=65=6C;;;\\n"
+            + "FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=53=61=6D=C3=BC=65=6C=20=4D=61=72=69=6E=65=73\\n"
+            + "TEL;CELL:+522291085974\\nEND:VCARD\\n' > "
+            + root.dir + "/samuel.vcf; "
+            // No trailing newline on this one either - the real files have
+            // none, so `cat` over the glob joins END:VCARD to the next
+            // BEGIN:VCARD on one line.
+            + "printf 'BEGIN:VCARD\\nVERSION:2.1\\n"
+            + "FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=4C=C3=A9=6F=6E=\\n"
+            + "=69=65=E2=9D=A4=EF=B8=8F\\nTEL;PREF:0611112222\\nEND:VCARD' > "
+            + root.dir + "/leonie.vcf"]
         onExited: exitCode => {
             if (exitCode !== 0) { console.log("CONTACTS_FAIL could not seed vcards"); return; }
             contacts.loadFrom(root.dir);

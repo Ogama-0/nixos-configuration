@@ -95,6 +95,16 @@ waiting for reachability would miss the first message every time.
 - **No contact photos.** All 229 vCards carry `FN` and `TEL` and not one
   `PHOTO`. That is why avatars are two letters and a colour.
 
+Those cards are vCard **2.1**, and thirty of them write the name as
+`FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=53=61=6D=C3=BC...` — which is
+every contact whose name carries an accent or an emoji, i.e. most of the
+people you actually text. Match on the property *name*, never on the literal
+`"FN:"`. Two continuations exist and the cards use both: RFC 2425 folding (a
+leading space) and the quoted-printable soft break (a trailing `=`).
+`ContactsModel.unfold` joins them; `decodeQP` goes through
+`decodeURIComponent` because that is the only UTF-8 decoder in QML's
+JavaScript and `ü` is two bytes, not one.
+
 ## Refreshes are not news
 
 Opening the pane re-reads every conversation off the phone, and the daemon
@@ -197,6 +207,7 @@ bubble reads `#131312` across its padding and `#565451` across its words.
 | No conversations, phone connected | SMS permission on Android. Run the probe. |
 | Mobile zone empty, `--list-devices` finds the phone | Paired but not **reachable**. The zone runs `kdeconnect-cli -a`, which lists reachable devices only; `--list-devices` lists paired ones. Check `isReachable` on the device object. Messages still opens and shows the cache. |
 | Every thread named by its number | The vCard read failed, or `relabel()` did not fire. |
+| *Some* threads named by their number, and the KDE notification has the name | Those cards are quoted-printable. The phone resolves the name itself for notifications; the panel parses the vCards. See the FN note above. |
 | A message you sent appears twice | A pending row the echo did not replace. Reconciliation is on the body — if you sent the same text twice inside two minutes, the second is not a duplicate and is kept. |
 | A thread stops at thirty messages | `pageLimit` is not growing, or `fetchedCount` is being skipped for the on-screen length again. |
 | All shortcode senders one colour | A normaliser regression — alphanumeric ids have no digits and must fold to an `id:` key. |

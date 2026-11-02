@@ -90,6 +90,75 @@ Item {
                  known: true };
     }
 
+    // vCard puts one property on one line, except when it does not - and the
+    // cards this phone exports use both ways out of that.
+    //
+    // RFC 2425 FOLDING breaks a long line and resumes it with a leading space
+    // or tab. QUOTED-PRINTABLE has a second, different continuation: a value
+    // ending in "=" carries on at the start of the next line, which is how
+    // any name long enough to hold an emoji arrives. Join neither and you
+    // parse half a name; join the wrong one and you parse none.
+    function unfold(text: string): var {
+        let out = [];
+        for (const raw of String(text).split("\n")) {
+            const line = raw.replace(/\r$/, "");
+            const last = out.length - 1;
+            if (last >= 0 && (line.charAt(0) === " " || line.charAt(0) === "\t")) {
+                out[last] += line.slice(1);
+                continue;
+            }
+            // Only inside a quoted-printable value. A base64 PHOTO line also
+            // ends in "=" and means nothing of the kind.
+            if (last >= 0 && out[last].charAt(out[last].length - 1) === "="
+                && out[last].toUpperCase().indexOf("QUOTED-PRINTABLE") >= 0) {
+                out[last] = out[last].slice(0, -1) + line.trim();
+                continue;
+            }
+            out.push(line.trim());
+        }
+        return out;
+    }
+
+    // "FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=53=61=6D..." is a name, a
+    // parameter list and a value. Null for a line that is not a property at
+    // all - the N: continuation lines in these cards are bare ";;;".
+    function property(line: string): var {
+        const colon = line.indexOf(":");
+        if (colon < 0) return null;
+        const head = line.slice(0, colon);
+        const semi = head.indexOf(";");
+        const name = (semi >= 0 ? head.slice(0, semi) : head).toUpperCase();
+        if (!name) return null;
+        return {
+            name: name,
+            params: (semi >= 0 ? head.slice(semi + 1) : "").toUpperCase(),
+            value: line.slice(colon + 1).trim()
+        };
+    }
+
+    // =XX bytes back into text.
+    //
+    // Routed through decodeURIComponent because it is the only UTF-8 decoder
+    // in QML's JavaScript, and these really are UTF-8 byte sequences: "ü" is
+    // =C3=BC, two bytes. Decoding them one at a time gives mojibake for every
+    // accented name in the address book.
+    function decodeQP(value: string): string {
+        try {
+            return decodeURIComponent(String(value)
+                .replace(/%/g, "%25")
+                .replace(/=([0-9A-Fa-f]{2})/g, "%$1"));
+        } catch (e) {
+            // Not valid UTF-8 after all. The raw value is a worse name than
+            // the real one and a better one than nothing.
+            return value;
+        }
+    }
+
+    function decoded(prop: var): string {
+        return prop.params.indexOf("QUOTED-PRINTABLE") >= 0
+            ? root.decodeQP(prop.value) : prop.value;
+    }
+
     // First letter of the first and last words. One word gives one letter -
     // a surname that is not there is not an empty string to reach for.
     function initialsFor(name: string): string {
@@ -124,20 +193,26 @@ Item {
                     tels = [];
                 };
 
-                for (let line of this.text.split("\n")) {
-                    line = line.trim();
+                for (const line of root.unfold(this.text)) {
                     if (line.startsWith("BEGIN:VCARD")) { fn = ""; tels = []; continue; }
                     if (line.startsWith("END:VCARD")) { commit(); continue; }
-                    // FN: is the display name. N: is the structured one and is
+                    const prop = root.property(line);
+                    if (!prop) continue;
+                    // FN is the display name. N is the structured one and is
                     // not used - it is semicolon-separated and the cards here
                     // fill it inconsistently.
-                    if (line.startsWith("FN:")) { fn = line.slice(3).trim(); continue; }
-                    // TEL;CELL:, TEL;HOME:, TEL;TYPE=CELL: - the parameters
-                    // vary by exporter and none of them change the number.
-                    if (line.startsWith("TEL")) {
-                        const colon = line.indexOf(":");
-                        if (colon >= 0) tels.push(line.slice(colon + 1).trim());
-                    }
+                    //
+                    // Matched on the property NAME, not on the literal "FN:":
+                    // 30 of the 229 cards here spell it
+                    // FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE, which is
+                    // every contact whose name carries an accent or an emoji.
+                    // Those were exactly the threads showing a bare phone
+                    // number beside a KDE notification that had the name.
+                    if (prop.name === "FN") { fn = root.decoded(prop); continue; }
+                    // TEL;CELL:, TEL;HOME:, TEL;TYPE=CELL:, and one card with
+                    // a bare "TEL;:" - the parameters vary by exporter and
+                    // none of them change the number.
+                    if (prop.name === "TEL") { tels.push(root.decoded(prop)); continue; }
                 }
                 // A card the file ended mid-way through, without END:VCARD.
                 commit();
