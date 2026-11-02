@@ -66,6 +66,8 @@ Item {
     // The index the last page was asked for, which is the thing that was
     // wrong rather than the number of requests.
     property int lastStart: -1
+    // And where it stopped, which is exclusive.
+    property int lastEnd: -1
 
     // How many messages of the open thread to show.
     //
@@ -77,8 +79,32 @@ Item {
 
     signal messageArrived(var record)
 
-    readonly property string devPath: "/modules/kdeconnect/devices/" + deviceId
     readonly property string convIface: "org.kde.kdeconnect.device.conversations"
+
+    // Built when the command is built, NOT held as a binding.
+    //
+    // It was `readonly property string devPath: ".../devices/" + deviceId`,
+    // and `connected` is a second binding on that same deviceId.
+    // onConnectedChanged runs as soon as `connected` settles, which is not
+    // after every other binding on deviceId has caught up - so the retry that
+    // exists precisely for a phone arriving late (MobileModel takes a couple
+    // of seconds to shell out to kdeconnect-cli) read the path built while
+    // deviceId was still "" and went out as
+    //
+    //   busctl call ... /modules/kdeconnect/devices/   -> Invalid object path
+    //
+    // exit 1, nothing on stdout, JSON.parse threw into a catch that is
+    // deliberately silent. The pane said "No conversations yet." next to a
+    // reachable phone holding fifty-one conversations. Deriving it from the
+    // id at call time removes the ordering question rather than answering it.
+    function devPathFor(id: string): string {
+        root.lastPath = "/modules/kdeconnect/devices/" + id;
+        return root.lastPath;
+    }
+
+    // The path the last command was built with. Exists so a fixture can see
+    // the thing that was wrong; nothing reads it at runtime.
+    property string lastPath: ""
 
     // Message ids we already hold, so a re-announced message does not toast
     // a second time. Bounded by the retention window in practice - the store
@@ -149,7 +175,14 @@ Item {
         // re-emits conversationCreated for threads it already told us about
         // while a refresh is in flight, so "arrived as a signal" is not
         // enough on its own.
-        const fresh = root.seen[msg.id] === undefined;
+        //
+        // Asked of the STORE as well as of this session, because a session
+        // starts on every reboot and every rebuild while the cache does not.
+        // primeThreads() answers as a burst of fifty conversationCreated -
+        // the newest message of every thread - and against an empty `seen`
+        // all of them read as fresh and toasted texts read days ago.
+        const fresh = root.seen[msg.id] === undefined
+            && !(root.store && root.store.has(msg.id));
         root.seen[msg.id] = true;
 
         if (root.store) {
@@ -160,7 +193,11 @@ Item {
                 root.store.resolvePending(msg.convId, msg.body, msg.ts);
         }
         root.fold(msg);
-        if (msg.convId === root.activeId) root.refreshActive();
+        if (msg.convId === root.activeId) {
+            root.refreshActive();
+            // Still arriving, so the page is not finished. See pageSettleMs.
+            if (root.loadingOlder) pageSettle.restart();
+        }
         root.rebuild();
         if (fromSignal && fresh) root.messageArrived(msg);
     }
@@ -325,11 +362,20 @@ Item {
     function requestPage(start: int, count: int): void {
         root.fetchCount += 1;
         root.lastStart = start;
-        if (!root.transportEnabled || !root.connected || !root.activeId) return;
+        // Half-open: (6, 0, 0) returns nothing and (6, 0, 2) returns two, so
+        // `end` is EXCLUSIVE. start + count - 1 was one message short of a
+        // page, every page.
+        root.lastEnd = start + count;
+        const path = root.devPathFor(root.deviceId);
+        // Armed before the guard, like the counters above: a request that
+        // could not go out must not leave the guard stuck either, and a phone
+        // that answers nothing at all is the case that wedged it shut.
         root.loadingOlder = true;
+        pageSettle.restart();
+        if (!root.transportEnabled || !root.connected || !root.activeId) return;
         pageProc.command = ["busctl", "--user", "call", "org.kde.kdeconnect",
-            root.devPath, root.convIface, "requestConversation", "xii",
-            root.activeId, String(start), String(start + count - 1)];
+            path, root.convIface, "requestConversation", "xii",
+            root.activeId, String(start), String(root.lastEnd)];
         pageProc.running = true;
     }
 
@@ -360,6 +406,7 @@ Item {
     // conversationUpdated. Until then the bubble says so.
     function send(text: string, attachments: var): string {
         const pendingId = "pending-" + Date.now();
+        const path = root.devPathFor(root.deviceId);
         if (!root.activeId) return pendingId;
         // An empty field is not a message. Enter on an empty compose box is
         // the commonest way to hit this, and a blank bubble that can never
@@ -369,7 +416,7 @@ Item {
 
         const atts = (attachments || []).map(a => String(a));
         let cmd = ["busctl", "--user", "call", "org.kde.kdeconnect",
-                   root.devPath, root.convIface, "replyToConversation",
+                   path, root.convIface, "replyToConversation",
                    "xsav", root.activeId, text, String(atts.length)];
         for (const a of atts) cmd = cmd.concat(["s", a]);
 
@@ -393,9 +440,10 @@ Item {
     }
 
     function fetchAttachment(partId: int, uid: string): void {
+        const path = root.devPathFor(root.deviceId);
         if (!root.transportEnabled || !root.connected) return;
         attProc.command = ["busctl", "--user", "call", "org.kde.kdeconnect",
-            root.devPath, root.convIface, "requestAttachmentFile",
+            path, root.convIface, "requestAttachmentFile",
             "xs", String(partId), uid];
         attProc.running = true;
     }
@@ -407,11 +455,78 @@ Item {
         // and an attempt that could not go out is exactly the case that used
         // to be lost silently.
         root.refreshCount += 1;
+        const path = root.devPathFor(root.deviceId);
         if (!root.transportEnabled || !root.connected) return;
         listProc.command = ["busctl", "--user", "--json=short", "call",
-            "org.kde.kdeconnect", root.devPath, root.convIface,
+            "org.kde.kdeconnect", path, root.convIface,
             "activeConversations"];
         listProc.running = true;
+    }
+
+    // The daemon's conversation list starts EMPTY, and nothing used to fill it.
+    //
+    // activeConversations() reads kdeconnectd's own cache; only a request to
+    // the phone puts anything in it. kdeconnectd restarts on a reboot and on a
+    // rebuild, so every first open after one read back `[[]]` and the pane
+    // said "No conversations yet." next to a perfectly reachable phone - until
+    // the Android SMS app was opened, which makes this exact call on its own
+    // behalf and is why opening it "fixed" the panel.
+    //
+    // Nothing is returned. The threads arrive as conversationCreated signals,
+    // which the monitor is already listening for, and are in the daemon's
+    // cache for the next refresh. Only fired when the list came back empty:
+    // the answer is one store write and one re-sort per thread, which is not
+    // something to do on every open for a daemon that already has them.
+    function primeThreads(): void {
+        root.primeCount += 1;
+        const path = root.devPathFor(root.deviceId);
+        if (!root.transportEnabled || !root.connected) return;
+        primeProc.command = ["busctl", "--user", "call", "org.kde.kdeconnect",
+            path, root.convIface, "requestAllConversationThreads"];
+        primeProc.running = true;
+    }
+
+    // What activeConversations() came back with. Split out of the Process so
+    // the empty case - the whole bug above - is testable without a bus.
+    function ingestList(rawList: var): void {
+        if (!rawList || rawList.length === 0) { root.primeThreads(); return; }
+        root.ingestBatch(rawList);
+    }
+
+    // When a page is considered finished, with no completion notice coming.
+    //
+    // conversationLoaded is NOT one. Measured on the bus, no shell involved:
+    //
+    //   requestConversation(6, 0, 29)  -> 29 updates, NO conversationLoaded
+    //   requestConversation(6, 0, 199) -> 58 updates + conversationLoaded(6,58)
+    //
+    // The daemon raises it when the range EXHAUSTS the thread, not when the
+    // request completes - so a page-sized request into a long thread never
+    // completed as far as this model was concerned. `loadingOlder`, set by the
+    // request that openConversation fires, was never cleared, and fetchOlder()
+    // returned at its first line for the rest of the session: scrollback was
+    // dead on precisely the threads long enough to need it.
+    //
+    // So the end of a page is inferred from it going quiet. Every message that
+    // belongs to the open thread restarts this, which makes the window a gap
+    // between messages rather than a deadline for the whole page - a
+    // fifty-message answer over a slow link still counts as one.
+    property int pageSettleMs: 1200
+
+    // Whether a page is still being waited on. Read by fixtures; the view uses
+    // loadingOlder.
+    readonly property bool pageInFlight: pageSettle.running
+
+    Timer {
+        id: pageSettle
+        interval: root.pageSettleMs
+        repeat: false
+        onTriggered: root.pageSettled()
+    }
+
+    function pageSettled(): void {
+        root.loadingOlder = false;
+        root.refreshActive();
     }
 
     // Coalesces a burst of conversationLoaded into one re-read.
@@ -423,6 +538,7 @@ Item {
     }
 
     Process { id: pageProc }
+    Process { id: primeProc }
     Process { id: sendProc }
     Process { id: attProc }
 
@@ -432,7 +548,7 @@ Item {
             onStreamFinished: {
                 try {
                     const payload = JSON.parse(this.text).data[0];
-                    root.ingestBatch(payload.map(e => e.data));
+                    root.ingestList(payload.map(e => e.data));
                 } catch (e) {
                     // No SMS plugin, no permission, a phone that wandered
                     // off: the pane shows what it has cached and says the
@@ -445,6 +561,65 @@ Item {
     // The signal side. One long-lived monitor for as long as the pane is
     // open, filtered down to the conversations interface - the session bus
     // carries a lot of traffic that is none of our business.
+    // One bus signal, as `busctl --json=short monitor` prints it.
+    //
+    // Split out of the Process because the unwrap below is where the entire
+    // signal side of this interface was being lost, and a SplitParser cannot
+    // be fed a fixture.
+    function handleSignal(ev: var): void {
+        if (!ev || ev.type !== "signal" || ev.interface !== root.convIface) return;
+
+        if (ev.member === "conversationCreated"
+            || ev.member === "conversationUpdated") {
+            const msg = root.structOf(ev.payload);
+            if (msg) root.ingestMessage(msg, true);
+        } else if (ev.member === "conversationLoaded") {
+            // A completion notice carrying no content. A refresh produces one
+            // of these PER THREAD - fifty in a burst - and re-reading the open
+            // conversation out of SQLite fifty times is a visible stall.
+            // Coalesced. It is also the only thing that clears the in-flight
+            // guard, so missing it wedges fetchOlder() shut.
+            root.loadingOlder = false;
+            pageSettle.stop();
+            settle.restart();
+        } else if (ev.member === "conversationRemoved") {
+            const id = String(root.structOf(ev.payload)[0]);
+            delete root.threads[id];
+            root.rebuild();
+        } else if (ev.member === "attachmentReceived") {
+            // (filePath, fileName), and fileName is the uniqueIdentifier the
+            // attachment carries - the only thing tying the file on disk back
+            // to the message that wants it.
+            const d = root.structOf(ev.payload);
+            if (root.store && d && d.length >= 2)
+                root.store.putAttachmentFile(String(d[1]), String(d[0]));
+            root.refreshActive();
+        }
+    }
+
+    // The ten fields out of a monitored payload.
+    //
+    // conversationCreated/Updated are `v`, and busctl prints a variant as
+    // { type: "v", data: [ { type: "(isa(s)xiixixa(xsss))", data: [...] } ] }
+    // - the struct is wrapped TWICE, once in the variant's one-element array
+    // and once in its own {type,data}. The old code tested `v.data` on that
+    // array, which is undefined on an Array, and fell through to the wrapper
+    // itself: one field long, rejected by usable(), dropped in silence. No
+    // toast ever fired and every page requested by fetchOlder() answered into
+    // the void. Signals with a plain signature (conversationLoaded, xt) are
+    // already the bare array at the first level.
+    function structOf(payload: var): var {
+        let v = payload ? payload.data : null;
+        if (!v) return null;
+        if (Array.isArray(v)) {
+            if (v.length === 1 && v[0] && !Array.isArray(v[0])
+                && v[0].data !== undefined)
+                return v[0].data;
+            return v;
+        }
+        return v.data !== undefined ? v.data : v;
+    }
+
     Process {
         id: monitorProc
         // Gated on KNOWING the device, not on it being reachable. An idle
@@ -459,29 +634,7 @@ Item {
             onRead: line => {
                 let ev;
                 try { ev = JSON.parse(line); } catch (e) { return; }
-                if (ev.type !== "signal" || ev.interface !== root.convIface) return;
-
-                if (ev.member === "conversationCreated"
-                    || ev.member === "conversationUpdated") {
-                    // The variant wraps the struct; the struct's data is the
-                    // ten-field array.
-                    const v = ev.payload && ev.payload.data;
-                    const msg = v && v.data ? v.data : v;
-                    if (msg) root.ingestMessage(msg, true);
-                } else if (ev.member === "conversationLoaded") {
-                    // A completion notice carrying no content. A refresh
-                    // produces one of these PER THREAD - fifty in a burst -
-                    // and re-reading the open conversation out of SQLite
-                    // fifty times is a visible stall. Coalesced.
-                    root.loadingOlder = false;
-                    settle.restart();
-                } else if (ev.member === "conversationRemoved") {
-                    const id = String(ev.payload.data[0]);
-                    delete root.threads[id];
-                    root.rebuild();
-                } else if (ev.member === "attachmentReceived") {
-                    root.refreshActive();
-                }
+                root.handleSignal(ev);
             }
         }
     }
@@ -496,6 +649,7 @@ Item {
     property bool evicted: false
     property int refreshCount: 0
     property int evictCount: 0
+    property int primeCount: 0
 
     onActiveChanged: {
         if (!active) return;

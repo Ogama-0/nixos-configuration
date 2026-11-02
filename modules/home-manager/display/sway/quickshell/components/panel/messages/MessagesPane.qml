@@ -102,6 +102,9 @@ Item {
         loadingOlder: root.core ? root.core.loadingOlder : false
 
         onOlderWanted: if (root.core) root.core.fetchOlder()
+        onAttachmentAsked: (partId, uid) => {
+            if (root.core) root.core.fetchAttachment(partId, uid);
+        }
     }
 
     ComposeRow {

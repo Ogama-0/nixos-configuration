@@ -32,7 +32,7 @@ Item {
 
     property bool ready: false
 
-    readonly property int schemaVersion: 1
+    readonly property int schemaVersion: 2
 
     function db() {
         // 5MB. A text is ~100 bytes and the retention window keeps this to a
@@ -60,6 +60,13 @@ Item {
             // bodies and is one less thing to get subtly wrong.
             tx.executeSql('CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts '
                 + 'USING fts5(id UNINDEXED, convId UNINDEXED, body)');
+            // Fetched attachment files, keyed by the uniqueIdentifier the
+            // attachment carries and attachmentReceived names it with. A
+            // separate table rather than a column on the message, because
+            // one message can hold several and the signal that announces the
+            // file knows nothing about which message asked.
+            tx.executeSql('CREATE TABLE IF NOT EXISTS attachment_files ('
+                + 'uid TEXT PRIMARY KEY, path TEXT NOT NULL)');
             tx.executeSql('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)');
             tx.executeSql('INSERT OR IGNORE INTO meta VALUES (?, ?)',
                           ['schemaVersion', String(root.schemaVersion)]);
@@ -209,10 +216,52 @@ Item {
         return n;
     }
 
+    // The file attachmentReceived handed over, against the attachment it
+    // belongs to. Outlives the message row deliberately: eviction drops
+    // bodies, and the file on disk is still the file on disk.
+    function putAttachmentFile(uid: string, path: string): void {
+        if (!uid || !path) return;
+        root.db().transaction(tx => {
+            tx.executeSql('INSERT OR REPLACE INTO attachment_files (uid, path) '
+                + 'VALUES (?, ?)', [String(uid), String(path)]);
+        });
+    }
+
+    function attachmentFiles(): var {
+        let out = {};
+        root.db().readTransaction(tx => {
+            const r = tx.executeSql('SELECT uid, path FROM attachment_files');
+            for (let i = 0; i < r.rows.length; i++)
+                out[r.rows.item(i).uid] = r.rows.item(i).path;
+        });
+        return out;
+    }
+
+    // Do we already hold this message?
+    //
+    // `seen` in MessagesModel answers the same question for the current
+    // session only, and a session starts on every reboot and every rebuild.
+    // The disk is what remembers across those, and it has to: priming the
+    // daemon re-announces the newest message of all fifty threads as
+    // conversationCreated signals, and forty-two of those would otherwise
+    // toast texts read days ago.
+    function has(id: string): bool {
+        let found = false;
+        root.db().readTransaction(tx => {
+            const r = tx.executeSql('SELECT 1 AS n FROM messages WHERE id = ?',
+                                    [String(id)]);
+            found = r.rows.length > 0;
+        });
+        return found;
+    }
+
     // Newest first. beforeTs of 0 means "from the newest"; anything else means
     // strictly older than that, which is what paging backwards needs.
     function messages(convId: string, limit: int, beforeTs: real): var {
         let out = [];
+        // One read for the whole page: a lookup per attachment would be a
+        // transaction per bubble.
+        const files = root.attachmentFiles();
         root.db().readTransaction(tx => {
             const r = beforeTs > 0
                 ? tx.executeSql('SELECT * FROM messages WHERE convId = ? AND ts < ? '
@@ -224,8 +273,15 @@ Item {
                 out.push({ id: row.id, convId: row.convId, body: row.body,
                            ts: row.ts, outgoing: row.outgoing === 1,
                            address: row.address,
-                           attachments: row.attachments
-                               ? JSON.parse(row.attachments) : [] });
+                           attachments: (row.attachments
+                               ? JSON.parse(row.attachments) : []).map(a => {
+                                   // The stored path, if that attachment has
+                                   // since been fetched. Written by
+                                   // attachmentReceived, which arrives long
+                                   // after the message it belongs to.
+                                   const f = files[a.uid];
+                                   return f ? Object.assign({}, a, { path: f }) : a;
+                               }) });
             }
         });
         return out;

@@ -42,9 +42,48 @@ exactly how this started, with `requestAllConversations` going out and
 nothing at all coming back. `scripts/kdeconnect-sms-probe.sh` is the
 one-command check and says so in those words.
 
+**And the daemon's own list starts empty.** `activeConversations()` reads
+kdeconnectd's cache, not the phone; only `requestAllConversationThreads()`
+fills it. kdeconnectd restarts with a reboot *and* with a rebuild, so reading
+without asking meant the first open after either showed "No conversations
+yet." next to a reachable phone — and opening the Android SMS app "fixed" it
+because that app makes the same call for itself. `MessagesModel.ingestList`
+fires `primeThreads()` when the list comes back empty, and only then: the
+answer is a store write and a re-sort per thread, which is not worth doing on
+every open.
+
+That burst is also why freshness is asked of the **store** and not only of
+`MessagesModel.seen`. `seen` is session memory and a session begins at every
+reboot, so against an empty one all fifty re-announced threads read as news
+and toasted texts read days ago.
+
+**Everything the phone sends back is a signal, so the unwrap has to be right.**
+`requestConversation` returns nothing and answers as a burst of
+`conversationUpdated`; `busctl monitor` wraps those twice, and the ten fields
+are `payload.data[0].data` (the shapes are in the payload reference). The
+first version tested `.data` on the variant's array — undefined, because
+arrays have no such property — and fell through to the wrapper itself, a
+one-field "message" that `usable()` then rejected. Every signal was dropped
+without a word, so the conversation list only ever filled from
+`activeConversations`, **no toast had ever fired**, and every page
+`fetchOlder()` asked for answered into the void. `handleSignal` is split out
+of the Process for exactly this reason: a `SplitParser` cannot be handed a
+fixture, and this is the seam that broke.
+
 Paging is by **index** (`requestConversation(threadId, start, end)`), not by
 timestamp. The `/sms` object has a timestamp form; it is on the other
 interface and is not the one that answers.
+
+**Nothing announces that a page has arrived.** `conversationLoaded` fires only
+when the range exhausts the thread (the payload reference has the measurement),
+so the in-flight guard cannot be hung off it: `loadingOlder`, set by the
+request `openConversation` fires, was never cleared on any thread longer than
+a page, and `fetchOlder()` returned at its first line for the rest of the
+session. Scrollback was dead on exactly the threads long enough to need it.
+The end of a page is inferred from the thread going quiet instead —
+`pageSettleMs`, restarted by every message belonging to the open thread, so
+the window is a gap between messages and not a deadline for the whole page.
+`conversationLoaded` still clears it at once when it does come.
 
 That index is `MessageStore.fetchedCount(convId)` — how many non-pending
 messages the cache holds for the thread — and not the length of what is on
@@ -92,6 +131,15 @@ waiting for reachability would miss the first message every time.
   the call there is no id to correlate against and the two timestamps come
   from two different clocks. `sweepEchoedPending()` runs once from `init()`
   for duplicates already on disk. An unechoed pending row is left alone.
+- **Attachments are three states, not two.** `base64EncodedFile` is populated
+  inline for images on the first announcement, so a photo is usually
+  renderable the moment it lands — as a `data:` URI, with no fetch at all.
+  What is *not* inline (voice notes, video) needs
+  `requestAttachmentFile(partID, uniqueIdentifier)`, and the file comes back
+  on `attachmentReceived`, whose `fileName` **is** that `uniqueIdentifier`.
+  `MessageStore.attachment_files` keys on it and `messages()` fills the path
+  in on the way out, because the signal arrives long after the message it
+  belongs to and knows nothing about which bubble asked.
 - **No contact photos.** All 229 vCards carry `FN` and `TEL` and not one
   `PHOTO`. That is why avatars are two letters and a colour.
 
@@ -146,6 +194,29 @@ Watch for the polarity trap, which bit three times here: `@glassBg@` and
 anything else built from `base00` **inverts** between variants, because
 light's `base00` is the cream ground. For a wash that darkens in both, use
 `@msgAccentInk@` at low alpha.
+
+## The compose box's height
+
+Two numbers that have to agree and once did not. `ComposeRow.implicitHeight`
+reserves `field.implicitHeight + chrome`, and `chrome` is the real sum of what
+sits around the text — 10 above the box, 13 below it, 7+7 inside the
+Flickable, plus 20 when an attachment is staged. It was a hardcoded 26 against
+an actual 37, so the visible area was eleven pixels short: one line fitted
+because the 56px floor covered the gap, the second was hidden behind the
+conversation, and the box looked like it only began growing at the third line.
+Derive the reservation from the same properties the layout uses, never from a
+re-counted constant.
+
+The ceiling is counted in **lines**, not pixels (`maxLines`), because a pixel
+ceiling cuts the last line in half — the same artifact one level up. Past it
+the Flickable scrolls, and `followCursor()` has to keep up: a Flickable does
+not track the cursor of a TextEdit inside it, so without that you type the
+fourth line into a region you cannot see. `maxHeight` spent a long time
+declared and never read, which is why a long message used to push the
+conversation off the top of the pane.
+
+`tests/laserbar/messages-compose-size.qml` asserts the content fits the
+visible area at one, two and many lines, and that the ceiling holds.
 
 ## Focus, which is unlike the rest of the panel
 
@@ -202,7 +273,7 @@ scripts/laserbar-probe.sh /tmp/out.png <x> <y> <w> <h> --near '#rrggbb'
 ```
 
 Logic: `messages-contacts`, `messages-hue`, `messages-store`,
-`messages-model`, `messages-compose`, `messages-nav`.
+`messages-model`, `messages-compose`, `messages-compose-size`, `messages-nav`.
 Render: `messages-avatar`, `messages-sidebar`, `messages-thread`,
 `messages-pane`, `messages-toast`.
 
@@ -223,13 +294,17 @@ bubble reads `#131312` across its padding and `#565451` across its words.
 
 | What you see | What it is |
 |---|---|
-| No conversations, phone connected | SMS permission on Android. Run the probe. |
+| No conversations, phone connected | SMS permission on Android. Run the probe. If the probe is happy, check `activeConversations` on the bus: an empty `[[]]` is a daemon nobody primed. |
+| No conversations after a reboot or a rebuild, and opening the Android SMS app fills them in | `primeThreads()` did not fire. The daemon's cache is empty and the SMS app is asking on its own behalf. |
 | Mobile zone empty, `--list-devices` finds the phone | Paired but not **reachable**. The zone runs `kdeconnect-cli -a`, which lists reachable devices only; `--list-devices` lists paired ones. Check `isReachable` on the device object. Messages still opens and shows the cache. |
 | Every thread named by its number | The vCard read failed, or `relabel()` did not fire. |
 | *Some* threads named by their number, and the KDE notification has the name | Those cards are quoted-printable. The phone resolves the name itself for notifications; the panel parses the vCards. See the FN note above. |
 | A message you sent appears twice | A pending row the echo did not replace. Reconciliation is on the body — if you sent the same text twice inside two minutes, the second is not a duplicate and is kept. |
-| A thread stops at thirty messages | `pageLimit` is not growing, or `fetchedCount` is being skipped for the on-screen length again. |
+| A thread stops at thirty messages | In order: is `loadingOlder` stuck true (then `pageSettle` is not firing and `fetchOlder()` is returning at its guard), does `handleSignal` still unwrap `conversationUpdated` (the pages arrive as nothing else), is `pageLimit` growing, is `fetchedCount` being skipped for the on-screen length again. |
+| Nothing at all, and `busctl` from a terminal works fine | Check the object path the command was built with. Anything derived from `deviceId` as a *binding* can still be the empty-device version inside `onConnectedChanged` — `devPathFor()` exists because of that. The symptom is `Invalid object path: /modules/kdeconnect/devices/` on stderr, which nothing reads. |
+| An attachment sits on "click to fetch" forever | Either the inline bytes are being ignored (images carry them), or `attachmentReceived` is not reaching `putAttachmentFile`, or the click has nothing behind it — it had no `MouseArea` at all for a while. |
 | All shortcode senders one colour | A normaliser regression — alphanumeric ids have no digits and must fold to an `id:` key. |
 | A message stuck on "Sent" | Honest. The phone never echoed it back. |
 | A thread opens blank and stays blank | Evicted cache plus a phone that is not answering. `oldestTimestamp` returning 0 is what should trigger the refetch. |
+| A line of the draft is hidden behind the conversation | `chrome` and the layout have drifted apart again — the row must reserve exactly what the box below it takes. |
 | `wl-paste`/`zenity` not found | Both are declared in the quickshell module's `home.packages`. Check you switched. |

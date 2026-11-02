@@ -91,6 +91,67 @@ ShellRoot {
         transportEnabled: false
     }
 
+    MessageStore { id: pathStore; dbName: "qs-messages-model-path-test" }
+
+    // The real binding graph, because the bug this catches IS the binding
+    // graph: ControlPanel binds MessagesCore.deviceId to MobileModel.pairedId,
+    // which arrives seconds after the shell starts.
+    QtObject {
+        id: fakeMobile
+        property string pairedId: ""
+        property bool up: false
+    }
+
+    MessagesModel {
+        id: pathModel
+        contacts: fakeContacts
+        palette: fakeHue
+        store: pathStore
+        deviceId: fakeMobile.pairedId
+        reachable: fakeMobile.up
+        transportEnabled: false
+    }
+
+    MessageStore { id: wireStore; dbName: "qs-messages-model-wire-test" }
+
+    // Fed the monitor's own JSON rather than a parsed struct, because the
+    // unwrap between the two is where every signal was being lost.
+    MessagesModel {
+        id: wireModel
+        contacts: fakeContacts
+        palette: fakeHue
+        store: wireStore
+        deviceId: "test-device"
+        reachable: true
+        transportEnabled: false
+    }
+
+    MessageStore { id: primeStore; dbName: "qs-messages-model-prime-test" }
+    MessageStore { id: coldStore; dbName: "qs-messages-model-cold-test" }
+
+    // A phone we know and can reach, so refresh() and primeThreads() get past
+    // their guards and only transportEnabled stops the busctl call.
+    MessagesModel {
+        id: primeModel
+        contacts: fakeContacts
+        palette: fakeHue
+        store: primeStore
+        deviceId: "test-device"
+        reachable: true
+        transportEnabled: false
+    }
+
+    // A shell that just started next to a cache that is already full.
+    MessagesModel {
+        id: coldModel
+        contacts: fakeContacts
+        palette: fakeHue
+        store: coldStore
+        deviceId: "test-device"
+        reachable: true
+        transportEnabled: false
+    }
+
     MessageStore { id: batchStore; dbName: "qs-messages-model-batch-test" }
     MessageStore { id: oneStore; dbName: "qs-messages-model-one-test" }
 
@@ -150,8 +211,7 @@ ShellRoot {
     }
 
     Component.onCompleted: {
-        let bad = [];
-        const check = (ok, why) => { if (!ok) bad.push(why); };
+        const check = (ok, why) => { if (!ok) root.bad.push(why); };
 
         store.init();
         store.wipe();
@@ -167,6 +227,14 @@ ShellRoot {
         pageStore.wipe();
         echoStore.init();
         echoStore.wipe();
+        primeStore.init();
+        primeStore.wipe();
+        wireStore.init();
+        wireStore.wipe();
+        pathStore.init();
+        pathStore.wipe();
+        coldStore.init();
+        coldStore.wipe();
 
         for (const m of root.captured) model.ingestMessage(m);
 
@@ -406,7 +474,247 @@ ShellRoot {
         check(echoModel.conversations.length === junk,
               "a malformed payload became a conversation");
 
-        if (bad.length > 0) { console.log("MODEL_FAIL " + bad.join(" | ")); return; }
+        // --- an empty daemon has to be ASKED, not just read -------------------
+        //
+        // activeConversations() reads the DAEMON's cache, and that cache is
+        // empty until something asks the phone to fill it. Nothing here did,
+        // so after every reboot and every rebuild - kdeconnectd restarts with
+        // them - the pane read back an empty list and said "No conversations
+        // yet." next to a reachable phone, until the Android SMS app was
+        // opened and made the request for itself. Checked on the real bus:
+        // activeConversations was `[[]]`, and 51 threads three seconds after
+        // one requestAllConversationThreads.
+        const p0 = primeModel.primeCount;
+        primeModel.ingestList([]);
+        check(primeModel.primeCount === p0 + 1,
+              "an empty conversation list did not ask the phone for its threads");
+
+        // And a list that came back full must not: the answer is fifty
+        // conversationCreated signals, each one a store write and a re-sort.
+        primeModel.ingestList(root.captured);
+        check(primeModel.primeCount === p0 + 1,
+              "a full conversation list asked the phone all over again");
+        check(primeModel.conversations.length === 4,
+              "ingestList did not fold the batch in: "
+              + primeModel.conversations.length);
+
+        // --- what is already on disk is not news ------------------------------
+        //
+        // The priming above answers as a BURST of conversationCreated - the
+        // newest message of every thread, forty-two of them received - and
+        // `seen` is empty in a session that just started, so every one of
+        // them read as fresh and toasted a text read days ago. The store is
+        // what remembers across a restart.
+        let heardCold = 0;
+        coldModel.messageArrived.connect(() => heardCold += 1);
+        coldStore.putAll([{ id: "243", convId: "30",
+                            body: "[Uber] Votre code : 1358. Ne le divulguez jamais.",
+                            ts: 1790539013048, outgoing: false,
+                            address: "Uber", attachments: [] }]);
+        coldModel.ingestMessage(root.captured[0], true);
+        check(heardCold === 0,
+              "a message already in the cache toasted after a restart: " + heardCold);
+
+        // A text that actually arrives still is news.
+        coldModel.ingestMessage([1, "nouveau", [["+33700000000"]],
+                                 Date.now(), 1, 0, 98, 998, -1, []], true);
+        check(heardCold === 1,
+              "a genuinely new message did not raise an arrival: " + heardCold);
+
+        // --- the monitor's own payload, unwrapped -----------------------------
+        //
+        // Verbatim `busctl --user --json=short monitor` output. Everything
+        // the phone sends in answer to requestConversation comes back as
+        // these and NOTHING else, so an unwrap that is one layer out loses
+        // the entire signal side of the interface in silence: no toasts
+        // ever, and scrollback that writes nothing however far you scroll.
+        //
+        // The variant wraps the struct in a one-element ARRAY of
+        // {type, data}. `v.data` is undefined on an array, so the old guard
+        // fell through to the wrapper itself, which usable() then rejected
+        // for being one field long instead of ten.
+        const wireUpdated = {
+            type: "signal",
+            interface: "org.kde.kdeconnect.device.conversations",
+            member: "conversationUpdated",
+            payload: { type: "v", data: [{
+                type: "(isa(s)xiixixa(xsss))",
+                data: [1, "page deux", [["+33766417775"]],
+                       1792742800000, 1, 1, 29, 581, -1, []]
+            }] }
+        };
+        wireModel.handleSignal(wireUpdated);
+        check(wireModel.conversations.length === 1,
+              "a conversationUpdated off the monitor built no thread: "
+              + wireModel.conversations.length);
+        check(wireStore.has("581"),
+              "a signalled message never reached the store - this is the one "
+              + "that makes requestConversation answer into the void");
+
+        // conversationLoaded is a bare array at the same depth, and it is
+        // what clears the in-flight guard. Miss it and fetchOlder() returns
+        // at its first line forever.
+        wireModel.loadingOlder = true;
+        wireModel.handleSignal({
+            type: "signal",
+            interface: "org.kde.kdeconnect.device.conversations",
+            member: "conversationLoaded",
+            payload: { type: "(xt)", data: [29, 15] }
+        });
+        check(wireModel.loadingOlder === false,
+              "conversationLoaded did not clear loadingOlder");
+
+        // Traffic that is none of our business must not be parsed at all.
+        const quiet = wireModel.conversations.length;
+        wireModel.handleSignal({ type: "signal", interface: "org.freedesktop.DBus",
+                                 member: "NameAcquired", payload: { data: [":1.4"] } });
+        wireModel.handleSignal({ type: "method_call",
+                                 interface: "org.kde.kdeconnect.device.conversations",
+                                 member: "conversationUpdated", payload: { data: [] } });
+        check(wireModel.conversations.length === quiet,
+              "unrelated bus traffic became a conversation");
+
+        // --- an attachment that arrived with its bytes ------------------------
+        //
+        // The payload reference says base64EncodedFile is empty until
+        // fetched. For images it is NOT: they come inline on the first
+        // announcement, which is why a photo you sent yourself sat behind
+        // "on the phone - click to fetch" while its bytes were already in
+        // the cache. parseMessage has to keep them.
+        const withPng = wireModel.parseMessage(
+            [2, "", [["+33699743707"], ["+33616561744"]], 1793285193000, 1, 1,
+             51, 30, 1, [[46, "image/png", "iVBORw0KGgo=",
+                          "PART_1793285193054_5430c1de711.png"]]]);
+        check(withPng.attachments.length === 1, "the attachment was dropped");
+        check(withPng.attachments[0].data === "iVBORw0KGgo=",
+              "the inline bytes were lost: " + withPng.attachments[0].data);
+        check(withPng.attachments[0].uid === "PART_1793285193054_5430c1de711.png",
+              "the uniqueIdentifier was lost - requestAttachmentFile needs it");
+        check(withPng.attachments[0].partId === 46, "the partID was lost");
+
+        // And a fetched file has to come back ON the attachment, keyed by the
+        // uniqueIdentifier attachmentReceived names it with. Without this the
+        // path was never written anywhere and a successful fetch changed
+        // nothing on screen.
+        wireStore.putMessages("51", [{ id: "30", convId: "51", body: "",
+            ts: 1793285193000, outgoing: true, address: "",
+            attachments: [{ partId: 46, mime: "image/jpeg", data: "",
+                            uid: "PART_fetch_me.jpg", path: "" }] }]);
+        wireStore.putAttachmentFile("PART_fetch_me.jpg", "/tmp/kdeconnect/x.jpg");
+        const back = wireStore.messages("51", 5, 0)
+            .filter(m => m.id === "30")[0];
+        check(back && back.attachments[0].path === "/tmp/kdeconnect/x.jpg",
+              "a fetched attachment did not come back with its path: "
+              + (back ? back.attachments[0].path : "no row"));
+
+        // --- the object path is built from the id, not from a binding ---------
+        //
+        // `connected` and the device path are both derived from deviceId, and
+        // onConnectedChanged runs the moment `connected` settles - which is
+        // NOT after every other binding on deviceId has caught up. The path
+        // was still the one built while deviceId was "", so the retry that
+        // exists specifically for a phone arriving late went out as
+        //
+        //   busctl call ... /modules/kdeconnect/devices/ ...
+        //   Invalid object path: /modules/kdeconnect/devices/
+        //
+        // exit 1, no stdout, parse threw, caught and swallowed. The pane said
+        // "No conversations yet." next to a reachable phone with fifty-one
+        // conversations sitting in the daemon.
+        pathModel.active = true;
+        fakeMobile.up = true;
+        fakeMobile.pairedId = "late-device";
+        check(pathModel.connected === true,
+              "the fixture's phone never came up");
+        check(pathModel.lastPath === "/modules/kdeconnect/devices/late-device",
+              "the device path went out stale: " + pathModel.lastPath);
+
+        // Every call that names the device, not just the refresh.
+        pathModel.openConversation("12");
+        pathModel.requestPage(0, 30);
+        check(pathModel.lastPath === "/modules/kdeconnect/devices/late-device",
+              "requestPage built a stale path: " + pathModel.lastPath);
+        pathModel.send("hi", []);
+        check(pathModel.lastPath === "/modules/kdeconnect/devices/late-device",
+              "send built a stale path: " + pathModel.lastPath);
+        pathModel.fetchAttachment(1, "PART_x");
+        check(pathModel.lastPath === "/modules/kdeconnect/devices/late-device",
+              "fetchAttachment built a stale path: " + pathModel.lastPath);
+        pathModel.primeThreads();
+        check(pathModel.lastPath === "/modules/kdeconnect/devices/late-device",
+              "primeThreads built a stale path: " + pathModel.lastPath);
+        pathModel.active = false;
+
+        // --- the in-flight guard must not depend on conversationLoaded --------
+        //
+        // Measured on the bus, no shell involved:
+        //
+        //   requestConversation(6, 0, 29)  -> 29 updates, NO conversationLoaded
+        //   requestConversation(6, 0, 199) -> 58 updates + conversationLoaded
+        //
+        // The daemon raises it when the range EXHAUSTS the thread, not when a
+        // request finishes. A page-sized request into a long thread therefore
+        // never completes as far as this model is concerned: loadingOlder was
+        // set true by the open and nothing ever cleared it, so fetchOlder()
+        // returned at its first line for the rest of the session. Scrollback
+        // was dead on exactly the threads long enough to need it.
+        pageModel.openConversation("7");
+        pageModel.requestPage(0, 30);
+        check(pageModel.loadingOlder === true,
+              "a page request did not mark itself in flight");
+        check(pageModel.pageInFlight === true,
+              "nothing is watching for the page to go quiet");
+
+        // conversationLoaded, when it does come, still clears it at once.
+        pageModel.handleSignal({
+            type: "signal",
+            interface: "org.kde.kdeconnect.device.conversations",
+            member: "conversationLoaded",
+            payload: { type: "(xt)", data: [7, 58] }
+        });
+        check(pageModel.loadingOlder === false,
+              "conversationLoaded did not clear the guard");
+        check(pageModel.pageInFlight === false,
+              "conversationLoaded left the settle timer armed");
+
+        // --- the range is half-open -------------------------------------------
+        //
+        // (6, 0, 0) returns nothing and (6, 0, 2) returns two, so `end` is
+        // EXCLUSIVE. Asking start..start+count-1 was asking for one message
+        // fewer than a page, every page.
+        pageModel.requestPage(60, 30);
+        check(pageModel.lastEnd === 90,
+              "the page end is not exclusive: asked 60.." + pageModel.lastEnd);
+
+        // Then the asynchronous half, which is the whole point: with no
+        // conversationLoaded coming, the guard has to clear itself once the
+        // messages stop arriving.
+        pageModel.pageSettleMs = 200;
+        pageModel.requestPage(0, 30);
+        check(pageModel.loadingOlder === true, "the second request did not arm");
+        settleWait.start();
+    }
+
+    function finish(): void {
+        if (root.bad.length > 0) {
+            console.log("MODEL_FAIL " + root.bad.join(" | ")); return;
+        }
         console.log("MODEL_OK");
+    }
+
+    property var bad: []
+
+    Timer {
+        id: settleWait
+        interval: 700
+        repeat: false
+        onTriggered: {
+            if (pageModel.loadingOlder !== false)
+                root.bad.push("the guard never cleared itself with no "
+                    + "conversationLoaded coming - fetchOlder() is wedged shut");
+            if (pageModel.pageInFlight !== false)
+                root.bad.push("the settle timer is still armed after firing");
+            root.finish();
+        }
     }
 }

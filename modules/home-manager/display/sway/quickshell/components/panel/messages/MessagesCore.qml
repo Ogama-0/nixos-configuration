@@ -36,6 +36,9 @@ Item {
 
     function openConversation(convId: string): void { model.openConversation(convId) }
     function fetchOlder(): void { model.fetchOlder() }
+    function fetchAttachment(partId: int, uid: string): void {
+        model.fetchAttachment(partId, uid);
+    }
     function send(text: string, attachments: var): string {
         return model.send(text, attachments);
     }

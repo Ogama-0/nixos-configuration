@@ -64,7 +64,16 @@ Scope {
                     { id: "m5", body: "",
                       ts: new Date(2026, 9, 26, 8, 32).getTime(),
                       outgoing: true, delivered: true,
-                      attachments: [{ partId: 7, name: "entrance.jpg", path: "" }] },
+                      // Inline bytes, which is how an image really arrives -
+                      // base64EncodedFile populated on the first
+                      // announcement, no path and nothing fetched. A flat
+                      // magenta square so the probe can tell "the photo
+                      // rendered" from "the recess rendered"; it stood in
+                      // for a stale `name`/empty `path` pair that could only
+                      // ever draw the placeholder.
+                      attachments: [{ partId: 7, mime: "image/png",
+                                      uid: "PART_entrance.png", path: "",
+                                      data: "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAATElEQVR42u3PMQkAAAwDsPo33UnoPQjEQNL0tQgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgILAdBp+HSRtACMAAAAABJRU5ErkJggg==" }] },
                     { id: "m4", body: "Perfect. Here's the entrance, it's the side door.",
                       ts: new Date(2026, 9, 26, 8, 31).getTime(),
                       outgoing: true, attachments: [] },

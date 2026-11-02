@@ -33,6 +33,9 @@ Item {
 
     signal olderWanted()
     signal infoAsked()
+    // (partID, uniqueIdentifier) - the two arguments requestAttachmentFile
+    // takes. Raised by tapping an attachment that is still on the phone.
+    signal attachmentAsked(int partId, string uid)
 
     // A wash that darkens in BOTH variants.
     //
@@ -241,16 +244,60 @@ Item {
                             Repeater {
                                 model: entry.atts
                                 delegate: Item {
+                                    id: attItem
                                     required property var modelData
                                     width: entry.attWidth
                                     height: 126 * root.uiScale
 
+                                    readonly property bool isImage:
+                                        String(modelData.mime || "").startsWith("image/")
+
+                                    // Three ways an attachment can have its
+                                    // bytes, and the first one is the common
+                                    // one: docs/kdeconnect-sms-payload.md
+                                    // says base64EncodedFile is empty until
+                                    // fetched, and for IMAGES it is not -
+                                    // they arrive inline on the first
+                                    // announcement. Rendering only the
+                                    // fetched path left every photo, including
+                                    // the ones sent from this machine, sitting
+                                    // behind "click to fetch" with its bytes
+                                    // already in the cache.
+                                    // Images only, both ways. A fetched voice
+                                    // note has a path like any other
+                                    // attachment, and handing an .amr to an
+                                    // Image is a "Cannot open" in the log and
+                                    // an empty box on screen - it was there,
+                                    // in the first run of this.
+                                    readonly property string src: !attItem.isImage ? ""
+                                        : modelData.path ? "file://" + modelData.path
+                                        : modelData.data
+                                           ? "data:" + modelData.mime + ";base64,"
+                                             + modelData.data
+                                           : ""
+
+                                    // What it is, for the cases there is
+                                    // nothing to show: a voice note has no
+                                    // thumbnail however many times it is
+                                    // fetched. `name` was read here once and
+                                    // parseMessage never produced one, so
+                                    // every attachment read "Attachment".
+                                    readonly property string label: {
+                                        const m = String(modelData.mime || "");
+                                        if (m.startsWith("image/")) return "Photo";
+                                        if (m.startsWith("audio/")) return "Voice message";
+                                        if (m.startsWith("video/")) return "Video";
+                                        return "Attachment";
+                                    }
+
+                                    property bool asked: false
+
                                     Image {
                                         id: att
                                         anchors.fill: parent
-                                        visible: parent.modelData.path !== ""
-                                        source: parent.modelData.path !== ""
-                                            ? "file://" + parent.modelData.path : ""
+                                        visible: attItem.src !== ""
+                                                 && status !== Image.Error
+                                        source: attItem.src
                                         fillMode: Image.PreserveAspectCrop
                                         asynchronous: true
                                         // The bubble already clips to its
@@ -280,11 +327,29 @@ Item {
                                             width: parent.width - 20 * root.uiScale
                                             horizontalAlignment: Text.AlignHCenter
                                             wrapMode: Text.WordWrap
-                                            text: (parent.parent.modelData.name || "Attachment")
-                                                + "\non the phone — click to fetch"
+                                            text: attItem.label + "\n"
+                                                + (attItem.asked ? "fetching…"
+                                                   : "on the phone — click to fetch")
                                             color: entry.outgoing
                                                 ? "@msgAccentInk@" : "@mutedColor@"
                                             font.pixelSize: Math.round(11 * root.uiScale)
+                                        }
+
+                                        // It said "click to fetch" and
+                                        // nothing was listening. The file
+                                        // arrives later as attachmentReceived
+                                        // and reaches the bubble through the
+                                        // store, so there is nothing to wait
+                                        // on here beyond saying we asked.
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                attItem.asked = true;
+                                                root.attachmentAsked(
+                                                    attItem.modelData.partId,
+                                                    String(attItem.modelData.uid || ""));
+                                            }
                                         }
                                     }
                                 }

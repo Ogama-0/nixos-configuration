@@ -35,12 +35,24 @@ attachmentReceived(s filePath, s fileName)
 ```
 
 **`requestConversation` pages by INDEX, not timestamp.** `start` and `end` are
-positions in the thread, newest first. The `/sms` object's three-argument
+positions in the thread, newest first, and the range is **half-open** —
+measured on thread 6: `(6, 0, 0)` returns nothing, `(6, 0, 2)` returns two.
+Asking `start .. start + count - 1` is one message short of a page. The `/sms` object's three-argument
 `requestConversation(xxx)` takes a timestamp; this one does not, and this one
 is the interface that answers.
 
-**`conversationLoaded` carries no content.** It is a completion notice: the
-thread id and how many messages arrived. The messages themselves come through
+**`conversationLoaded` is not a completion notice.** It carries no content —
+the thread id and a count — and, more importantly, it only fires when the
+requested range **exhausts the thread**. Measured, with no shell involved:
+
+```
+requestConversation(6, 0, 29)   -> 29 conversationUpdated, NO conversationLoaded
+requestConversation(6, 0, 199)  -> 58 conversationUpdated + conversationLoaded(6, 58)
+```
+
+So nothing tells you that a page-sized request into a long thread has
+finished. Anything waiting for one waits forever; see the in-flight guard in
+`docs/messages-panel.md`. The messages themselves come through
 `conversationCreated` / `conversationUpdated`, one message per signal.
 
 **Replying does not need `sendSms`.** `replyToConversation(threadId, text,
@@ -70,10 +82,35 @@ Signature `(isa(s)xiixixa(xsss))`, ten fields, in order:
 |---|---|---|---|
 | 0 | `partID` | `x` | first argument to `requestAttachmentFile` |
 | 1 | `mimeType` | `s` | e.g. `audio/amr`, `image/jpeg` |
-| 2 | `base64EncodedFile` | `s` | **empty until fetched** |
+| 2 | `base64EncodedFile` | `s` | **not always empty.** Images arrive with their bytes inline on the first announcement; the voice note below did not. Render this before asking for anything |
 | 3 | `uniqueIdentifier` | `s` | e.g. `PART_1792262330991_Audio%20Mes1.amr`; second argument to `requestAttachmentFile` |
 
-The fetched file arrives later on `attachmentReceived(filePath, fileName)`.
+The fetched file arrives later on `attachmentReceived(filePath, fileName)`, and
+`fileName` is the **`uniqueIdentifier`**, not a display name — it is the only
+thing tying the file on disk back to the message that wanted it. Measured:
+
+```
+["/home/ogama/.cache/kdeconnect.daemon/Ogama phone/PART_1793285193054_5430c1de711.png",
+ "PART_1793285193054_5430c1de711.png"]
+```
+
+## How a monitored signal is wrapped
+
+`busctl --json=short monitor` wraps a `v` payload **twice** — once in the
+variant's one-element array, once in the struct's own `{type, data}`:
+
+```json
+{"member": "conversationUpdated",
+ "payload": {"type": "v", "data": [{"type": "(isa(s)xiixixa(xsss))",
+                                    "data": [2, "", ...]}]}}
+```
+
+So the ten fields are `payload.data[0].data`. A signal with a plain signature
+is already bare at the first level — `conversationLoaded` is
+`payload.data == [29, 15]`. Testing `.data` on the array (undefined, because
+arrays have no such property) and falling through to the wrapper yields a
+one-field "message" that every sanity check rejects in silence, which cost
+this panel its entire signal side: see `docs/messages-panel.md`.
 
 ## Two real messages
 

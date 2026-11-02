@@ -30,9 +30,48 @@ Item {
     signal backFocusAsked()
     signal searchFocusAsked()
 
-    readonly property int maxHeight: 92
+    // The chrome around the text, named rather than summed into a constant,
+    // because the constant was WRONG and that is the entire bug: the row
+    // reserved `field.implicitHeight + 26` while the box below it actually
+    // takes 10 above, 13 below and 7+7 inside the Flickable - 37. The visible
+    // area was eleven pixels, most of a line, short of the content. One line
+    // fitted only because the 56px floor covered the gap; the second was
+    // hidden behind the conversation above, and the box looked like it only
+    // started growing at the third line.
+    readonly property real fieldTopGap: 10
+    readonly property real fieldBottomGap: 13
+    readonly property real fieldInnerPad: 7
+    // A staged attachment pushes the field down by this much, and it has to be
+    // reserved too or it eats the same line over again.
+    readonly property real stagedGap: staged.visible ? 20 : 0
+    readonly property real chrome: fieldTopGap + fieldBottomGap
+                                   + 2 * fieldInnerPad + stagedGap
 
-    implicitHeight: Math.max(56, field.implicitHeight + 26) * uiScale
+    // One line of this font, measured rather than assumed.
+    readonly property real lineHeight: field.lineCount > 0
+        ? field.implicitHeight / field.lineCount
+        : field.font.pixelSize * 1.45
+
+    // Three lines, then it scrolls - what the header above has always claimed
+    // and nothing implemented: `maxHeight` was declared and never read, so a
+    // long message grew the box until it pushed the conversation off the top
+    // of the pane. Counted in LINES, not pixels: a pixel ceiling cuts the last
+    // line in half, which is the artifact this whole block is about.
+    readonly property int maxLines: 3
+    readonly property real maxHeight: root.lineHeight * root.maxLines
+                                      + root.chrome * root.uiScale
+
+    // The text, and how much of it can be seen. Read by
+    // tests/laserbar/messages-compose-size.qml; nothing uses them at runtime.
+    readonly property real textHeight: field.implicitHeight
+    readonly property real visibleTextHeight: flick.height
+
+    // uiScale multiplies the CHROME only. field.implicitHeight is already in
+    // scaled pixels because the font size is, so the old
+    // `(field.implicitHeight + 26) * uiScale` scaled the text twice.
+    implicitHeight: Math.min(root.maxHeight,
+                             Math.max(56 * uiScale,
+                                      field.implicitHeight + chrome * uiScale))
     height: implicitHeight
 
     function focusField(): void { field.forceActiveFocus(); }
@@ -135,9 +174,9 @@ Item {
     Rectangle {
         id: fieldBox
         x: plus.x + plus.width + 10 * root.uiScale
-        y: 10 * root.uiScale + (staged.visible ? 20 * root.uiScale : 0)
+        y: (root.fieldTopGap + root.stagedGap) * root.uiScale
         width: parent.width - x - 58 * root.uiScale
-        height: parent.height - y - 13 * root.uiScale
+        height: parent.height - y - root.fieldBottomGap * root.uiScale
         radius: 16 * root.uiScale
         color: "transparent"
         border.width: 1
@@ -145,14 +184,26 @@ Item {
         opacity: root.enabled ? 1 : 0.5
 
         Flickable {
+            id: flick
             anchors.fill: parent
             anchors.leftMargin: 14 * root.uiScale
             anchors.rightMargin: 10 * root.uiScale
-            anchors.topMargin: 7 * root.uiScale
-            anchors.bottomMargin: 7 * root.uiScale
+            anchors.topMargin: root.fieldInnerPad * root.uiScale
+            anchors.bottomMargin: root.fieldInnerPad * root.uiScale
             contentHeight: field.implicitHeight
             clip: true
             boundsBehavior: Flickable.StopAtBounds
+
+            // Past the ceiling the box stops growing, so typing has to follow
+            // the cursor - a Flickable does not do that for a TextEdit inside
+            // it, and without it the fourth line is typed into a region you
+            // cannot see.
+            function followCursor(): void {
+                const r = field.cursorRectangle;
+                if (r.y < flick.contentY) flick.contentY = r.y;
+                else if (r.y + r.height > flick.contentY + flick.height)
+                    flick.contentY = r.y + r.height - flick.height;
+            }
 
             TextEdit {
                 id: field
@@ -162,6 +213,10 @@ Item {
                 wrapMode: TextEdit.Wrap
                 selectByMouse: true
                 enabled: root.enabled
+                onCursorRectangleChanged: flick.followCursor()
+                // Deleting back down to one line leaves contentY past the
+                // end, which reads as a blank field with the text above it.
+                onImplicitHeightChanged: flick.returnToBounds()
                 // The pane's own Escape handler needs the key; a TextEdit
                 // would otherwise swallow it along with everything else.
                 Keys.onEscapePressed: event => event.accepted = false
