@@ -205,13 +205,26 @@ Item {
         onClicked: root.tapped()
     }
 
+    // Measures the WIDEST thing the time slot ever shows - "Voice message",
+    // before a duration is known - rather than reading `timeLabel.width`
+    // live. That text shrinks to "0:03" the instant playback starts, and
+    // every clock face after it is shorter still, so sizing the bar off
+    // the live label moved its right edge by about 60px on the very first
+    // tap. Invisible, never laid out: just a width to subtract.
+    Text {
+        id: labelMetrics
+        visible: false
+        text: root.label
+        font.pixelSize: Math.round(11 * root.uiScale)
+    }
+
     // ---- the bar ----
 
     Item {
         id: barArea
         anchors.verticalCenter: parent.verticalCenter
         x: playButton.width + 10 * root.uiScale
-        width: parent.width - x - timeLabel.width - 8 * root.uiScale
+        width: parent.width - x - labelMetrics.width - 8 * root.uiScale
         height: 14 * root.uiScale
 
         Rectangle {
