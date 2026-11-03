@@ -41,13 +41,19 @@ ShellRoot {
         check(compose.visibleTextHeight >= compose.textHeight,
               "one line does not fit: visible " + compose.visibleTextHeight
               + " < text " + compose.textHeight);
+        const oneLineHeight = compose.textHeight;
 
         // Two lines: the case in the screenshot. The second line was behind
-        // the conversation above it.
+        // the conversation above it. The three checks below only mean
+        // anything if `twoLines` genuinely wraps past one line at 420px -
+        // the old guard here was `a > b || b >= a`, true no matter what
+        // either side held, so a fixture that stopped wrapping (a narrower
+        // field, a shorter string) would have sailed through along with
+        // the real assertions it was meant to gate.
         compose.draft = root.twoLines;
-        check(compose.textHeight > compose.visibleTextHeight
-              || compose.visibleTextHeight >= compose.textHeight,
-              "fixture did not wrap - widen it");
+        check(compose.textHeight > oneLineHeight * 1.5,
+              "fixture did not wrap to more than one line - textHeight "
+              + compose.textHeight + " vs one line " + oneLineHeight);
         check(compose.visibleTextHeight >= compose.textHeight,
               "the second line is clipped: visible " + compose.visibleTextHeight
               + " < text " + compose.textHeight);
@@ -57,7 +63,11 @@ ShellRoot {
         // declared and never read, so a long message pushed the conversation
         // off the top of the pane.
         compose.draft = root.manyLines;
-        check(compose.height <= compose.maxHeight * compose.uiScale,
+        // `maxHeight` already folds `uiScale` in (lineHeight is measured off
+        // field.implicitHeight, which is already scaled through
+        // font.pixelSize, plus `chrome * uiScale`) - multiplying by it again
+        // here would only be caught by a fixture that used uiScale !== 1.
+        check(compose.height <= compose.maxHeight,
               "the box grew past its ceiling: " + compose.height
               + " > " + compose.maxHeight);
         check(compose.textHeight > compose.visibleTextHeight,
