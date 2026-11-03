@@ -105,7 +105,6 @@ Scope {
     property string pictureSource: ""
     property string pictureWho: ""
     property string pictureWhen: ""
-    property bool pictureMissing: false
 
     // (source, who, ts, origin) - the exact shape ConversationView's
     // `pictureAsked` raises and MessagesPane forwards untouched. `origin`
@@ -124,11 +123,9 @@ Scope {
                                       local.width / zones.s, local.height / zones.s);
         root.pictureSource = source;
         root.pictureWho = who;
-        // "" is the one value `source` takes when the image was neither
-        // inline nor fetchable - see ConversationView's `src` comment - and
-        // that is exactly what PictureViewer's own `missing` text exists
-        // for (Review Focus 5).
-        root.pictureMissing = source === "";
+        // Whether this reads as "missing" is PictureViewer's own call now -
+        // it derives `missing` straight off `source === ""`, the same test
+        // this used to do here and hand over as a second property.
         root.pictureWhen = ts > 0
             ? Qt.formatDateTime(new Date(ts), "d MMM, HH:mm") : "";
         root.pictureOpen = true;
@@ -147,12 +144,38 @@ Scope {
     // Escape would dismiss the whole panel instead of collapsing Messages
     // back into it. So while Messages is up we leave the mode and let the
     // key arrive normally.
+    // Coalesced behind a 0ms Timer rather than applied inline. `isOpen` and
+    // `messagesOpen` each raise their own changed signal, and a single
+    // action - openMessages (summon() then messagesOpen = true), dismiss()
+    // (closeMessages() then panelState = "gone") - touches both in the same
+    // tick. The first call decides sway's mode from whichever of the two
+    // properties hadn't moved yet, and the second call's "fix" never lands:
+    // `swayMode` is one Process, reassigning `command` on it while it is
+    // still running from the first call is silently ignored, and setting
+    // `running = true` on a Process already running is a no-op. The net
+    // effect was the FIRST call's mode winning, which is backwards from
+    // every caller's intent. Restarting a 0ms Timer instead collapses any
+    // number of calls within one tick into a single firing that reads
+    // whatever isOpen/messagesOpen settled on - immune to how many
+    // properties a given caller happens to flip and in which order.
     function syncSwayMode(): void {
-        const want = (root.isOpen && !root.messagesOpen) ? "panel" : "default";
-        if (want === root.swayModeNow) return;
-        root.swayModeNow = want;
-        swayMode.command = ["@swaymsgBin@", "mode", want];
-        swayMode.running = true;
+        syncSwayModeTimer.restart();
+    }
+    Timer {
+        id: syncSwayModeTimer
+        interval: 0
+        repeat: false
+        onTriggered: {
+            const want = (root.isOpen && !root.messagesOpen) ? "panel" : "default";
+            if (want === root.swayModeNow) return;
+            root.swayModeNow = want;
+            // Belt and suspenders against the same trap: if something
+            // besides this timer ever leaves `swayMode` running, stop it
+            // first rather than let the reassigned command below go unsent.
+            if (swayMode.running) swayMode.running = false;
+            swayMode.command = ["@swaymsgBin@", "mode", want];
+            swayMode.running = true;
+        }
     }
     property string swayModeNow: "default"
 
@@ -283,10 +306,12 @@ Scope {
         // nobody asked to have restored. `closeMessages()` is the one place
         // `messages.audio.stop()` is called, so routing through it here
         // (rather than stopping the player directly) is what makes THIS
-        // dismissal stop the audio too - the same thing the mod+m toggle
-        // path below already does by calling `closeMessages(); dismiss();`
-        // itself; this just makes it true of every other way out as well,
-        // instead of leaving it to each call site to remember.
+        // dismissal stop the audio too, same as the mod+m toggle path below
+        // which also calls `closeMessages()` ahead of `dismiss()`. Which of
+        // closeMessages()/closePicture() runs before `panelState = "gone"`
+        // no longer matters for sway's mode either way - see
+        // `syncSwayMode`'s own comment for why a tick touching both
+        // properties used to pick the wrong one.
         root.closePicture();
         root.closeMessages();
         dismissMode = panelState === "detached" ? "free" : "docked";
@@ -1067,7 +1092,6 @@ Scope {
                                     source: root.pictureSource
                                     who: root.pictureWho
                                     when: root.pictureWhen
-                                    missing: root.pictureMissing
                                 }
                             }
 
