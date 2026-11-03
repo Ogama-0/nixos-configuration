@@ -273,6 +273,22 @@ Scope {
     }
     function dismiss(): void {
         if (panelState === "gone") return;
+        // Every dismissal path lands here - IPC, Escape at the panel's own
+        // level, a workspace switch, lockActive - and each of them has to
+        // put away Messages and the picture viewer too, not just the sheet.
+        // The spec names this as an anti-goal in so many words: a voice
+        // note left playing out of a surface that just went invisible, with
+        // no reachable pause button, is worse than not having played it at
+        // all, and a picture left open behind a dismissed panel is state
+        // nobody asked to have restored. `closeMessages()` is the one place
+        // `messages.audio.stop()` is called, so routing through it here
+        // (rather than stopping the player directly) is what makes THIS
+        // dismissal stop the audio too - the same thing the mod+m toggle
+        // path below already does by calling `closeMessages(); dismiss();`
+        // itself; this just makes it true of every other way out as well,
+        // instead of leaving it to each call site to remember.
+        root.closePicture();
+        root.closeMessages();
         dismissMode = panelState === "detached" ? "free" : "docked";
         animatingOut = true;
         panelState = "gone";

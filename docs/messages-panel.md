@@ -336,6 +336,16 @@ property the caller sets (`ControlPanel.openPicture` sets it to
 Review Focus 5 is that this state says so in the frame itself ("Your phone
 did not send this picture.") rather than holding an empty rectangle forever.
 
+**The viewer closes with the panel too.** `ControlPanel.dismiss()` calls
+`closePicture()` and `closeMessages()` before it starts the sheet's own
+closing animation — there is no picture-viewer state worth restoring across
+a dismissal, and leaving one open (or a voice note still sounding —
+`closeMessages()` is the one place `messages.audio.stop()` is called)
+behind a panel that just went invisible is the spec's named anti-goal, not
+a nicety. This covers every dismissal route — IPC, Escape at the panel's
+own level, a workspace switch, `lockActive` — not just the ones that
+happened to call `closeMessages()` for themselves already.
+
 ## The keyboard
 
 Messages already holds the keyboard exclusively (above), so it may as well be

@@ -293,8 +293,24 @@ Item {
                                     // Image is a "Cannot open" in the log and
                                     // an empty box on screen - it was there,
                                     // in the first run of this.
+                                    // `root.audio.fileUrl()` holds the
+                                    // %-encoding rule, not a second copy of
+                                    // it here: kdeconnect's own cache paths
+                                    // carry a raw space AND a literal "%20"
+                                    // (e.g. ".../Ogama phone/PART_...Mes1.amr")
+                                    // and a bare "file://" + path leaves
+                                    // both unescaped - the "%" needs to
+                                    // become "%25" or the file is simply not
+                                    // found. `encodeURI` does that (it is
+                                    // not in its unreserved set) as a side
+                                    // effect of the space encoding
+                                    // MessageAudio's own fixture already
+                                    // exercises.
                                     readonly property string src: !attItem.isImage ? ""
-                                        : modelData.path ? "file://" + modelData.path
+                                        : modelData.path
+                                            ? (root.audio
+                                               ? root.audio.fileUrl(modelData.path)
+                                               : "file://" + modelData.path)
                                         : modelData.data
                                            ? "data:" + modelData.mime + ";base64,"
                                              + modelData.data
