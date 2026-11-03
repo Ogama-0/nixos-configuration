@@ -551,6 +551,33 @@ ShellRoot {
               "a signalled message never reached the store - this is the one "
               + "that makes requestConversation answer into the void");
 
+        // attachmentReceived off the real bus: (filePath, fileName), where
+        // fileName is actually the attachment's uniqueIdentifier, not a
+        // display name - measured with busctl monitor against a live
+        // transfer rather than guessed. Both MessagesModel's own d[0]/d[1]
+        // read and MessageAudio's fileArrived(uid, path) agree on this
+        // order, but nothing failed before this if either side got it
+        // backwards - the symptom would be a bubble stuck on "fetching..."
+        // forever, silently, because putAttachmentFile(path, uid) writes
+        // the row under the wrong key and no attachment ever matches it
+        // again.
+        wireModel.handleSignal({
+            type: "signal",
+            interface: "org.kde.kdeconnect.device.conversations",
+            member: "attachmentReceived",
+            payload: { type: "v", data: [{
+                type: "(ss)",
+                data: ["/home/ogama/.cache/kdeconnect.daemon/Ogama phone/"
+                       + "PART_1793285193054_5430c1de711.png",
+                       "PART_1793285193054_5430c1de711.png"]
+            }] }
+        });
+        check(wireStore.attachmentFiles()["PART_1793285193054_5430c1de711.png"]
+                  === "/home/ogama/.cache/kdeconnect.daemon/Ogama phone/"
+                      + "PART_1793285193054_5430c1de711.png",
+              "attachmentReceived stored the path/uid swapped or not at all: "
+                  + JSON.stringify(wireStore.attachmentFiles()));
+
         // conversationLoaded is a bare array at the same depth, and it is
         // what clears the in-flight guard. Miss it and fetchOlder() returns
         // at its first line forever.
