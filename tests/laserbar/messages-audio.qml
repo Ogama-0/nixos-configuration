@@ -130,9 +130,49 @@ ShellRoot {
         check(audio.paused === true && audio.playingId === "b",
               "toggling the same id did not pause it in place");
 
+        // --- a note that plays to its own end must clear itself, not just
+        // pause rendering forever ------------------------------------------
+        //
+        // The stub never moves its own playbackState - nothing here decodes
+        // audio - so this drives it by hand to StoppedState (0) the way a
+        // real MediaPlayer would once decoding runs out, with a trip through
+        // PlayingState (1) first so the property actually changes and the
+        // Connections handler fires (QML suppresses a changed signal on a
+        // no-op assignment, and the stub already starts at 0).
+        audio.toggle("g", root.realFile, "g.amr", 1);
+        check(audio.playingId === "g",
+              "toggle did not start playing g: " + audio.playingId);
+        audio.position = 3000;
+        audio.duration = 3000;
+        stub.playbackState = 1;
+        stub.playbackState = 0;
+        check(audio.playingId === "" && audio.position === 0 && audio.duration === 0,
+              "playback reaching its own end left playingId/position/duration "
+                  + "behind - playingId=" + audio.playingId
+                  + " position=" + audio.position
+                  + " duration=" + audio.duration);
+
+        // And the bubble must not need two taps to replay: toggle() on the
+        // SAME id right after must START it again, not pause an already-
+        // stopped player (the "same id toggles rather than restarts" branch
+        // above, misfiring because playingId was never cleared).
+        const playsBeforeReplay = stub.plays;
+        audio.toggle("g", root.realFile, "g.amr", 1);
+        check(audio.playingId === "g" && stub.plays === playsBeforeReplay + 1,
+              "replaying a note right after it ended paused instead of "
+                  + "starting it");
+
         // --- REVIEW FOCUS 3: the panel going away stops it --------------------
+        //
+        // Relative, not a hardcoded count: the block above already asked the
+        // stub to stop() both when "g" took over from "b" and when the
+        // simulated end-of-track fired, so the absolute count a straight
+        // read of this fixture's history would suggest is not 1 any more -
+        // what actually matters is that THIS stop() call moves it by
+        // exactly one, same as REVIEW FOCUS 4 below already checks it.
+        const stopsBeforeFocus3 = stub.stops;
         audio.stop();
-        check(audio.playingId === "" && stub.stops === 2,
+        check(audio.playingId === "" && stub.stops === stopsBeforeFocus3 + 1,
               "stop() did not stop the player and clear playingId");
 
         // --- REVIEW FOCUS 4: the open thread changes while a note is playing --
@@ -200,7 +240,7 @@ ShellRoot {
         // --- REVIEW FOCUS 1: the row says we have it, the disk says otherwise --
         check(audio.playable("/c/definitely-not-here.amr") === false,
               "a nonexistent path was reported playable");
-        audio.toggle("e", "/c/definitely-not-here.amr", "PART_e.amr");
+        audio.toggle("e", "/c/definitely-not-here.amr", "PART_e.amr", 99);
         check(audio.playingId === "" && audio.missing === true,
               "a vanished file left the bubble spinning");
 

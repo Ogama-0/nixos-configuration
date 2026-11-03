@@ -67,6 +67,27 @@ Item {
         audioOutput: AudioOutput {}
     }
 
+    // Nothing else here ever hears a note reach the end of its own file -
+    // every other transition (switching notes, stop(), a vanished path) is
+    // something THIS component decided and already cleans up after. A note
+    // that simply finishes does not: the player settles into StoppedState
+    // on its own, and without this, playingId stays set forever - the
+    // ticker keeps polling a stopped player, the glyph stays on the pause
+    // bars, isActive stays true so the time freezes at the final position,
+    // and the next tap on that bubble calls toggle() down the "same id"
+    // branch, which pauses an already-stopped player instead of restarting
+    // it - the first tap after a note ends is always wasted.
+    // `root.player` is a `var`, swapped for the test stub, so this targets
+    // it through a `Connections` rather than a static `onPlaybackStateChanged`
+    // on `internalPlayer` directly - the stub needs to drive the same path.
+    Connections {
+        target: root.player
+        function onPlaybackStateChanged(): void {
+            if (root.player.playbackState === 0 && root.playingId !== "")
+                root.stop();
+        }
+    }
+
     // A pure existence probe, not a reader - `blockLoading` is what makes
     // `text()` below a synchronous stat rather than kicking off an async
     // load the caller would need a signal to find out about. Nothing reads
@@ -240,6 +261,8 @@ Item {
         root.pendingUid = "";
         root.pendingMsgId = "";
         root.missing = false;
+        root.position = 0;
+        root.duration = 0;
         fetchTimer.stop();
         root.startPlaying(msgId, path);
     }
