@@ -135,6 +135,21 @@ attachment's own part id (`MessagesModel.parseMessage`'s `a[0]`), unrelated
 to the message id, and the wrong one asks kdeconnectd for the wrong part or
 one that does not exist.
 
+## Two quickshell binaries, two different jobs
+
+There are now two `quickshell` binaries in the flake, and only one of them
+needs to know about any of the above. `lpkgs.quickshell-multimedia` — wrapped
+with the QtMultimedia/ffmpeg environment `MessageAudio` needs — runs the
+widgets service and is the one on `PATH`. `upkgs.quickshell`, unwrapped, is
+still what `modules/home-manager/display/sway/idle.nix` and
+`modules/nixosconf/greetd.nix` reference, and that is deliberate: `idle.nix`
+only uses it as an IPC *client* (no QtMultimedia import, nothing to wrap),
+and `greetd.nix` launches the greeter, whose QML tree (`modules/qml/`)
+imports no QtMultimedia either. If either of those surfaces ever grows a
+QtMultimedia import, it will die with "module not installed" against the
+unwrapped binary — swap it for `lpkgs.quickshell-multimedia` at that point,
+not before.
+
 ## Paired is not reachable
 
 Two different questions, and conflating them cost a whole cache.
@@ -428,3 +443,5 @@ bubble reads `#131312` across its padding and `#565451` across its words.
 | A thread opens blank and stays blank | Evicted cache plus a phone that is not answering. `oldestTimestamp` returning 0 is what should trigger the refetch. |
 | A line of the draft is hidden behind the conversation | `chrome` and the layout have drifted apart again — the row must reserve exactly what the box below it takes. |
 | `wl-paste`/`zenity` not found | Both are declared in the quickshell module's `home.packages`. Check you switched. |
+| No bar, no panel, no lock screen after a switch | Not a widget bug — a dead config. Check the QtMultimedia import path first: `lpkgs.quickshell-multimedia` is what the widgets service now runs on, and a bad wrap or a missing ffmpeg plugin takes down the whole shell at launch, not just voice notes. `nix eval --raw .#homeConfigurations.<profile>.activationPackage.drvPath` and `scripts/laserbar-preview.sh real /tmp/real.png` are the two checks that catch this before a switch. |
+| A voice note will not play | Three different causes, not one. **Backend absent**: `messages-audio-backend.qml` fails or `MediaPlayer` logs "module not installed" — the wrapped `quickshell-multimedia` isn't the binary that ran. **File missing locally**: the bubble shows `awaiting`/spins past `fetchTimeoutMs` into `missing` — `fetchAsked(partId, uid)` went out but `fileArrived` never named that uid; check `partId` is the attachment's own part id, not the message id (see "One player, not one per bubble" above). **Phone never sent it**: `requestAttachmentFile` reaches kdeconnectd fine but the phone has nothing to answer with — indistinguishable from the fetch case from this side except that it never resolves no matter how long you wait or how many times you retry. |
