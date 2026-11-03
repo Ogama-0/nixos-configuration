@@ -21,10 +21,11 @@ import "components/panel/messages"
 //   the SAME outgoing bubble, in each variant - this is the pair that proves
 //   @msgAccent@ reaches it, since base0D is blue in one and crimson in the
 //   other and a render identical in both would mean the token never arrived
-//     dark:  probe 480 484 40 8 --near '#008df8' 20
-//     light: probe 480 484 40 8 --near '#da103f' 20
+//     dark:  probe 480 420 40 8 --near '#008df8' 10
+//     light: probe 480 420 40 8 --near '#da103f' 20
 //   an incoming bubble is the plate, and the same probe rejects the accent
-//     probe 180 444 40 8 --near '#131312' 14
+//     dark:  probe 75  464 15  6 --near '#131312' 10
+//     light: probe 75  464 15  6 --near '#e5d9d6' 10
 //
 // Probe the PADDING of a bubble, never its middle. The middle is text, and a
 // region average over glyphs is the font's opinion: the same incoming bubble
