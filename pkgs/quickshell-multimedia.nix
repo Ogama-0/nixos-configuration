@@ -13,8 +13,19 @@ symlinkJoin {
   paths = [ quickshell ];
   nativeBuildInputs = [ makeWrapper ];
   postBuild = ''
-    rm $out/bin/quickshell
+    # `qs` is quickshell's own canonical short name for this same binary -
+    # symlinkJoin carries it over from the unwrapped package, and it is on
+    # PATH exactly like `quickshell` is. Leaving it as a symlink to the
+    # unwrapped store path means `qs -c widgets` skips QML_IMPORT_PATH
+    # entirely: `import QtMultimedia` fails and takes the whole config down
+    # the same way the unwrapped `quickshell` did before this wrapper
+    # existed. Both names need the same wrapper, not just the one a human
+    # is more likely to type first.
+    rm $out/bin/quickshell $out/bin/qs
     makeWrapper ${quickshell}/bin/quickshell $out/bin/quickshell \
+      --prefix QML_IMPORT_PATH : "${qt6.qtmultimedia}/lib/qt-6/qml" \
+      --prefix QT_PLUGIN_PATH : "${qt6.qtmultimedia}/lib/qt-6/plugins"
+    makeWrapper ${quickshell}/bin/quickshell $out/bin/qs \
       --prefix QML_IMPORT_PATH : "${qt6.qtmultimedia}/lib/qt-6/qml" \
       --prefix QT_PLUGIN_PATH : "${qt6.qtmultimedia}/lib/qt-6/plugins"
   '';
