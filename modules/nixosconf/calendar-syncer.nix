@@ -1,7 +1,14 @@
-{ cfg, config, inputs, ... }:
+{
+  cfg,
+  config,
+  inputs,
+  ...
+}:
 
-let host = "calsync.tail.${cfg.server.domain}";
-in {
+let
+  host = "calsync.tail.${cfg.domain}";
+in
+{
   # calendar_syncer (github.com/pixilie/calendar_syncer, private) mirrors ICS
   # subscriptions into a CalDAV calendar and keeps CalDAV calendars in sync
   # with each other. Here it writes into rustical.nix.
@@ -17,7 +24,9 @@ in {
   # Without CALSYNC_WEB_PASSWORD the service runs with *no* authentication at
   # all (see the `guard` middleware in its src/web.rs), and its UI holds the
   # CalDAV credentials of every account it syncs.
-  sops.secrets."calsync_web_password" = { sopsFile = ../../sops/oserv.yaml; };
+  sops.secrets."calsync_web_password" = {
+    sopsFile = ../../sops/oserv.yaml;
+  };
 
   # restartUnits belongs on the template, not the secret: the unit's
   # EnvironmentFile is the rendered template, so that is the file whose

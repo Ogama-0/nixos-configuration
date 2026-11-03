@@ -1,13 +1,13 @@
 {
-  pkgs,
+  upkgs,
   config,
   cfg,
   ...
 }:
 
 let
-  immichHost = "immich.${cfg.server.domain}";
-  immichTailHost = "immich.tail.${cfg.server.domain}";
+  immichHost = "immich.${cfg.domain}";
+  immichTailHost = "immich.tail.${cfg.domain}";
   immichRoot = "${cfg.path.hdd.app.immich}";
 in
 {
@@ -23,6 +23,7 @@ in
   # environment.sessionVariables.IMMICH_IGNORE_MOUNT_CHECK_ERRORS = "true";
 
   services.immich = {
+    package = upkgs.immich;
     enable = true;
     port = 2283;
 
@@ -38,10 +39,10 @@ in
       enable = true;
       port = 2281;
     };
-    settings.server.externalDomain = "http://${immichTailHost}";
+    settings.server.externalDomain = "https://${immichHost}";
   };
 
-  services.caddy.virtualHosts."http://${immichTailHost}" = {
+  services.caddy.virtualHosts."https://immich.${cfg.host.ipv6}" = {
     extraConfig = ''
       reverse_proxy http://[::1]:${toString config.services.immich.port} {
         transport http {

@@ -1,7 +1,7 @@
 { cfg, config, ... }:
 
 let
-  host = "status.tail.${cfg.server.domain}";
+  host = "status.tail.${cfg.domain}";
 in
 {
   # Gatus actively probes each service and exposes the result as plain,
@@ -57,7 +57,7 @@ in
           group = "media";
           # "/" answers 302 (redirect to /web/), which would fail
           # [STATUS] == 200 even on a perfectly healthy Jellyfin.
-          url = "http://jellyfin.${cfg.server.domain}/health";
+          url = "http://jellyfin.${cfg.domain}/health";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -67,7 +67,7 @@ in
         {
           name = "Immich";
           group = "media";
-          url = "http://immich.${cfg.server.domain}";
+          url = "http://immich.${cfg.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -102,7 +102,7 @@ in
         {
           name = "qBittorrent";
           group = "files";
-          url = "http://qbittorrent.${cfg.server.domain}";
+          url = "http://qbittorrent.${cfg.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -125,7 +125,7 @@ in
         {
           name = "Grafana";
           group = "web";
-          url = "http://grafana.tail.${cfg.server.domain}/api/health";
+          url = "http://grafana.tail.${cfg.domain}/api/health";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -138,7 +138,7 @@ in
           # redirects to /login, which would fail [STATUS] == 200.
           name = "Joplin";
           group = "dev";
-          url = "http://joplin.tail.${cfg.server.domain}/api/ping";
+          url = "http://joplin.tail.${cfg.domain}/api/ping";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -148,7 +148,7 @@ in
         {
           name = "Wakapi";
           group = "dev";
-          url = "http://wakapi.tail.${cfg.server.domain}";
+          url = "http://wakapi.${cfg.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -167,7 +167,7 @@ in
           # show up here — for that, `journalctl -u caddy | grep -i acme`.
           name = "Rustical";
           group = "calendar";
-          url = "http://rustical.tail.${cfg.server.domain}/ping";
+          url = "http://rustical.${cfg.domain}/ping";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -182,7 +182,7 @@ in
           # which is what the row is for.
           name = "Calsync";
           group = "calendar";
-          url = "http://calsync.tail.${cfg.server.domain}";
+          url = "http://calsync.tail.${cfg.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 401"
@@ -196,25 +196,48 @@ in
           # strips /proxy, so this lands on the proxy's own /health.
           name = "Calino";
           group = "calendar";
-          url = "http://calino.tail.${cfg.server.domain}/proxy/health";
+          url = "http://calino.${cfg.domain}/proxy/health";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
             "[RESPONSE_TIME] < 300"
           ];
         }
+        {
+          name = "LSI vitrine";
+          group = "web";
+          url = "https://lsi.${cfg.domain}";
+          interval = "15s";
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
+        }
+        {
+          name = "LSI app";
+          group = "web";
+          url = "https://app.lsi.ipv6.${cfg.domain}";
+          interval = "15s";
+          conditions = [
+            "[STATUS] == 200"
+            "[RESPONSE_TIME] < 300"
+          ];
+        }
+        {
+          name = "LSI deploy";
+          group = "web";
+          url =
+            "http://127.0.0.1:9001/api/v1/query?query="
+            + "node_systemd_unit_state%7Bname%3D%22la-scene-interieure-maj.service%22%2Cstate%3D%22failed%22%7D";
+          interval = "2m";
+          conditions = [
+            "[BODY].data.result[0].value[1] == 0"
+            "[RESPONSE_TIME] < 300"
+          ];
+        }
       ];
-
-      # No `security` block on purpose: the response carries only service
-      # names and response times, the probes need no secrets, and the
-      # vhost below is tailnet-only. See also the comment in grafana.nix
-      # on the path-restricted Prometheus vhost.
     };
   };
-
-  # 15s probes against a widget that polls every 10s: each result is seen
-  # roughly once. Probing faster multiplies load on the probed services
-  # for data that has not changed.
 
   services.caddy.virtualHosts."http://${host}" = {
     extraConfig = ''

@@ -1,6 +1,8 @@
 { cfg, ... }:
-let path = "${cfg.home_path}/.crafty";
-in {
+let
+  path = "${cfg.home_path}/.crafty";
+in
+{
   virtualisation.oci-containers = {
     backend = "docker";
     containers = {
@@ -23,7 +25,10 @@ in {
           "${path}/config:/crafty/app/config"
           "${path}/import:/crafty/import"
         ];
-        extraOptions = [ "--dns=8.8.8.8" "--dns=4.4.4.4" ];
+        extraOptions = [
+          "--dns=8.8.8.8"
+          "--dns=4.4.4.4"
+        ];
 
         autoStart = true;
       };
@@ -38,14 +43,20 @@ in {
     "d ${path}/import  0755 ${cfg.user} users -"
   ];
   networking.firewall = {
-    allowedTCPPorts = [ 30001 8123 19132 ];
-    allowedTCPPortRanges = [{
-      from = 25500;
-      to = 25600;
-    }];
+    allowedTCPPorts = [
+      30001
+      8123
+      19132
+    ];
+    allowedTCPPortRanges = [
+      {
+        from = 25500;
+        to = 25600;
+      }
+    ];
   };
 
-  services.nginx.virtualHosts."crafty.${cfg.server.domain}" = {
+  services.nginx.virtualHosts."crafty.${cfg.domain}" = {
     enableACME = true;
     forceSSL = true;
 

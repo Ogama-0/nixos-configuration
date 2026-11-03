@@ -15,7 +15,7 @@
     '';
 
     virtualHosts = {
-      "${cfg.server.domain}".extraConfig = ''
+      "${cfg.domain}".extraConfig = ''
         respond 404
       '';
 
@@ -32,7 +32,7 @@
       # every subdomain, Caddy will *not* generate the usual
       # HTTP->HTTPS redirect for a site that does use TLS — see the
       # hand-written redirect in rustical.nix.
-      "http://*.${cfg.server.domain}".extraConfig = ''
+      "http://*.${cfg.domain}".extraConfig = ''
         respond 404
       '';
 

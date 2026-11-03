@@ -1,8 +1,12 @@
 { cfg, config, ... }:
 
-let host = "wakapi.tail.${cfg.server.domain}";
-in {
-  sops.secrets."wakapi_password_salt" = { sopsFile = ../../sops/oserv.yaml; };
+let
+  host = "wakapi";
+in
+{
+  sops.secrets."wakapi_password_salt" = {
+    sopsFile = ../../sops/oserv.yaml;
+  };
   sops.templates."wakapi.env".content = ''
     WAKAPI_PASSWORD_SALT=${config.sops.placeholder.wakapi_password_salt}
   '';
@@ -16,14 +20,14 @@ in {
         listen_ipv4 = "127.0.0.1";
         listen_ipv6 = "-";
         port = 3033;
-        public_url = "http://${host}";
+        public_url = "http://${host}.${cfg.domain}";
       };
       db = {
         dialect = "sqlite3";
         name = "${config.services.wakapi.stateDir}/wakapi.db";
       };
       # We're serving over plain HTTP within the tailnet (no TLS, same as
-      # the rest of the *.tail.${cfg.server.domain} stack). Wakapi's real
+      # the rest of the *.tail.${cfg.domain} stack). Wakapi's real
       # code default for this is "false" despite what config.default.yml's
       # comment suggests, which sets the session cookie's Secure flag —
       # browsers then silently drop it over HTTP, so login never sticks.
@@ -31,7 +35,7 @@ in {
     };
   };
 
-  services.caddy.virtualHosts."http://${host}" = {
+  services.caddy.virtualHosts."https://${host}.${cfg.host.ipv6}" = {
     extraConfig = ''
       reverse_proxy http://127.0.0.1:3033
     '';

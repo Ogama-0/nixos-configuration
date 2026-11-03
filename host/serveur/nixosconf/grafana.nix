@@ -20,11 +20,10 @@
         http_port = 3000;
         enforce_domain = true;
         enable_gzip = true;
-        domain = "grafana.tail.${cfg.server.domain}";
+        domain = "grafana.tail.${cfg.domain}";
       };
 
-      security.secret_key =
-        "$__file{${config.sops.secrets."grafana_secret_key".path}}";
+      security.secret_key = "$__file{${config.sops.secrets."grafana_secret_key".path}}";
 
       analytics.reporting_enabled = false;
     };
@@ -47,24 +46,22 @@
           type = "loki";
           uid = "loki";
           access = "proxy";
-          url = "http://127.0.0.1:${
-              toString
-              config.services.loki.configuration.server.http_listen_port
-            }";
+          url = "http://127.0.0.1:${toString config.services.loki.configuration.server.http_listen_port}";
         }
       ];
 
-      dashboards.settings.providers = [{
-        name = "oserv";
-        options.path = "/etc/grafana-dashboards";
-      }];
+      dashboards.settings.providers = [
+        {
+          name = "oserv";
+          options.path = "/etc/grafana-dashboards";
+        }
+      ];
     };
   };
 
-  environment.etc."grafana-dashboards/oserv-services.json".source =
-    ./grafana-dashboard.json;
+  environment.etc."grafana-dashboards/oserv-services.json".source = ./grafana-dashboard.json;
 
-  services.caddy.virtualHosts."http://grafana.tail.${cfg.server.domain}" = {
+  services.caddy.virtualHosts."http://grafana.tail.${cfg.domain}" = {
     extraConfig = ''
       reverse_proxy http://127.0.0.1:3000
     '';
@@ -79,12 +76,10 @@
   # That restriction is the security control here — it must not be
   # loosened to a bare proxy for convenience. Metric *data* does remain
   # readable tailnet-wide, which is the accepted tradeoff.
-  services.caddy.virtualHosts."http://metrics.tail.${cfg.server.domain}" = {
+  services.caddy.virtualHosts."http://metrics.tail.${cfg.domain}" = {
     extraConfig = ''
       handle /api/v1/query* {
-          reverse_proxy http://127.0.0.1:${
-            toString config.services.prometheus.port
-          }
+          reverse_proxy http://127.0.0.1:${toString config.services.prometheus.port}
       }
       handle {
           respond 404
@@ -101,7 +96,9 @@
 
       auth_enabled = false;
 
-      server = { http_listen_port = 3030; };
+      server = {
+        http_listen_port = 3030;
+      };
 
       common = {
         path_prefix = "/var/lib/loki";
@@ -122,21 +119,25 @@
       };
 
       schema_config = {
-        configs = [{
-          from = "2024-01-01";
-          store = "tsdb";
-          object_store = "filesystem";
-          schema = "v13";
+        configs = [
+          {
+            from = "2024-01-01";
+            store = "tsdb";
+            object_store = "filesystem";
+            schema = "v13";
 
-          index = {
-            prefix = "index_";
-            period = "24h";
-          };
-        }];
+            index = {
+              prefix = "index_";
+              period = "24h";
+            };
+          }
+        ];
       };
 
       storage_config = {
-        filesystem = { directory = "/var/lib/loki/chunks"; };
+        filesystem = {
+          directory = "/var/lib/loki/chunks";
+        };
       };
     };
   };
@@ -197,7 +198,10 @@
         }
         {
           name = "immich-server";
-          comm = [ "immich" "immich-api" ];
+          comm = [
+            "immich"
+            "immich-api"
+          ];
         }
         {
           name = "immich-machine-learning";
@@ -244,6 +248,17 @@
           name = "calino-proxy";
           cmdline = [ "share/calino/proxy/server\\.mjs" ];
         }
+        {
+          # Another "node" comm (la-scene-interieure.nix), matched on its
+          # entrypoint. The unit's cmdline is literally "node production.ts":
+          # the wrapper in the store cd's into its own share/ before exec'ing
+          # node, so no path appears in argv at all and there is nothing more
+          # specific to anchor on.
+          # It does not collide with the two node matchers above, which match
+          # their own distinct entrypoint filenames.
+          name = "la-scene-interieure";
+          cmdline = [ "production\\.ts" ];
+        }
       ];
     };
 
@@ -252,13 +267,13 @@
       {
         job_name = "prometheus";
 
-        static_configs = [{ targets = [ "127.0.0.1:9001" ]; }];
+        static_configs = [ { targets = [ "127.0.0.1:9001" ]; } ];
       }
 
       {
         job_name = "node";
 
-        static_configs = [{ targets = [ "127.0.0.1:9002" ]; }];
+        static_configs = [ { targets = [ "127.0.0.1:9002" ]; } ];
       }
 
       {
@@ -273,19 +288,19 @@
         # an instant query reads fine at 1m.
         scrape_interval = "15s";
 
-        static_configs = [{ targets = [ "127.0.0.1:9256" ]; }];
+        static_configs = [ { targets = [ "127.0.0.1:9256" ]; } ];
       }
 
       {
         job_name = "loki";
 
-        static_configs = [{ targets = [ "127.0.0.1:3030" ]; }];
+        static_configs = [ { targets = [ "127.0.0.1:3030" ]; } ];
       }
 
       {
         job_name = "caddy";
 
-        static_configs = [{ targets = [ "127.0.0.1:2019" ]; }];
+        static_configs = [ { targets = [ "127.0.0.1:2019" ]; } ];
       }
 
     ];

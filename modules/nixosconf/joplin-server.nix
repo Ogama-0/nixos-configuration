@@ -2,10 +2,11 @@
 let
   path = "${cfg.home_path}/.joplin";
   subdomain = "joplin";
-  host = "${subdomain}.tail.${cfg.server.domain}";
+  host = "${subdomain}.tail.${cfg.domain}";
   port = 22300;
   dockerNetwork = "joplin-net";
-in {
+in
+{
   # The user-defined bridge both containers sit on. oci-containers does not
   # create docker networks, so without this unit the containers only start
   # on a machine where someone ran `docker network create joplin-net` by
@@ -14,7 +15,10 @@ in {
   # bridge has no embedded DNS).
   systemd.services."docker-network-${dockerNetwork}" = {
     path = [ pkgs.docker ];
-    after = [ "docker.service" "docker.socket" ];
+    after = [
+      "docker.service"
+      "docker.socket"
+    ];
     requires = [ "docker.service" ];
     wantedBy = [ "multi-user.target" ];
 

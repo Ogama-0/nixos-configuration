@@ -1,4 +1,10 @@
-{ cfg, config, inputs, upkgs, ... }:
+{
+  cfg,
+  config,
+  inputs,
+  upkgs,
+  ...
+}:
 
 let
   # The 0.16 line from nixpkgs-unstable, not the 0.12.15 in stable. Both
@@ -39,12 +45,12 @@ let
   #   IPv4-only clients use, since the portal is IPv6-only, and CalDAV does
   #   not care: it authenticates with HTTP Basic and keeps no cookies, so
   #   only the web frontend is affected by the lack of TLS.
-  publicHost = "rustical.${cfg.server.domain}";
-  tailHost = "rustical.tail.${cfg.server.domain}";
+  publicHost = "rustical.${cfg.host.ipv6}";
+  tailHost = "rustical.tail.${cfg.domain}";
 
   # The browser origin Calino is served from. Rustical has to hand it CORS
   # headers explicitly, because Calino talks CalDAV from the page itself.
-  calinoOrigin = "http://calino.tail.${cfg.server.domain}";
+  calinoOrigin = "http://calino.tail.${cfg.domain}";
 
   # Shared by both vhosts so Calino works whichever name it is pointed at.
   # Kept as one string rather than duplicated: the preflight method list is
@@ -82,7 +88,8 @@ let
   proxy = ''
     reverse_proxy http://${config.services.rustical.settings.http.bind}
   '';
-in {
+in
+{
   # Both the module and the package come from nixpkgs-unstable; the stable
   # module has to be taken out of the way first, or the two collide on
   # `services.rustical`.

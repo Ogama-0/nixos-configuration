@@ -6,8 +6,16 @@
 # index.html's canonical/OpenGraph tags), so the package is per-deployment
 # rather than generic — it is instantiated from flake.nix with the server's
 # own hostname.
-{ lib, stdenv, fetchFromGitHub, fetchPnpmDeps, pnpmConfigHook, pnpm_10_latest
-, nodejs_22, siteUrl }:
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  fetchPnpmDeps,
+  pnpmConfigHook,
+  pnpm_10_latest,
+  nodejs_22,
+  siteUrl,
+}:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "calino";
@@ -29,7 +37,11 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-VB/DQoqIv5OWmoSqBr0LEHxtxrG9C/4MUPUu8N+9up4=";
   };
 
-  nativeBuildInputs = [ nodejs_22 pnpm_10_latest pnpmConfigHook ];
+  nativeBuildInputs = [
+    nodejs_22
+    pnpm_10_latest
+    pnpmConfigHook
+  ];
 
   env = {
     VITE_SITE_URL = siteUrl;

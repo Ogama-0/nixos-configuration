@@ -1,7 +1,13 @@
-{ cfg, lib, lpkgs, pkgs, ... }:
+{
+  cfg,
+  lib,
+  lpkgs,
+  pkgs,
+  ...
+}:
 
 let
-  host = "calino.tail.${cfg.server.domain}";
+  host = "calino.tail.${cfg.domain}";
   origin = "http://${host}";
   proxyPort = 8081;
 
@@ -12,7 +18,8 @@ let
   # Private/link-local addresses are refused unconditionally by the proxy
   # itself, allowlist or not.
   allowedTargets = [ "zeus.ionis-it.com" ];
-in {
+in
+{
   # Calino (calino.io) is a CalDAV client that runs entirely in the browser:
   # the vhost below is a static site, and all calendar traffic goes from the
   # browser straight to rustical.nix (which is why rustical's vhost carries
