@@ -23,6 +23,7 @@ MessagesPane          one per screen: a view, holds no state
 └── ComposeRow        type, attach, paste, send
 
 MessageToasts         its own layer surface; MessageToast per thread
+PictureViewer         its own layer surface; grown from a tapped photo
 ```
 
 **`MessagesCore` is instantiated once, outside the `Variants`.** This is not
@@ -272,6 +273,69 @@ Messages cannot work that way — a compose field needs the keyboard. So:
 - the draft is kept in `MessagesPane.keptDraft` across a collapse, so Escape
   is not frightening.
 
+## The picture viewer, and the Escape chain it adds
+
+Tapping a photo opens `PictureViewer` full in the panel, over Messages
+rather than instead of it — `ControlPanel.pictureLayer` sits at `z: 110`
+against `messagesLayer`'s `z: 100`, grown out of the bubble exactly the way
+`messagesLayer` itself grows out of the mobile zone or a toast (same
+`Behavior on t`, same `NumberAnimation { duration: 210; easing.type:
+Easing.OutCubic }` — one animation feel, not two).
+
+That stacking makes Escape a three-step chain, and each step has to peel off
+exactly one layer:
+
+```
+picture open  →  Escape  →  Messages (still open)
+Messages open →  Escape  →  control panel (still open)
+panel open    →  Escape  →  gone
+```
+
+**The interlock that makes the first step work:** both `messagesLayer` and
+`pictureLayer` hold `Exclusive` keyboard focus while they are up, and QML
+grants active focus to whichever of several `focus: true` Items last had
+that binding evaluate true. `pictureLayer.focus` is just `root.pictureOpen`
+— it is the layer ABOVE everything else, so wanting focus unconditionally
+whenever it is open is correct. `messagesLayer.focus`, underneath it, is
+**not** just `root.messagesOpen` — it is
+`root.messagesOpen && !root.pictureOpen`. Without the second half, both
+layers claim focus while a picture is open and whichever one QML happens to
+resolve to could take Escape — on a bad resolution, closing Messages (and
+the picture with it, since the picture lives inside Messages' DOM-level
+expansion) instead of just the picture on top. The same shape would repeat
+for any future layer stacked on top of these two: the one underneath always
+has to explicitly cede focus to whatever can sit above it, not just assert
+its own half of the condition.
+
+**The origin rect has to be mapped, not read.** The bubble that was tapped
+lives in a delegate inside `ConversationView`'s `river` `ListView`, which is
+flipped (`verticalLayoutDirection: ListView.BottomToTop` — see that file's
+header comment for why) and sits inside `MessagesPane` inside `messagesBox`'s
+interpolated rect. The delegate's own `x`/`y` are local to that chain and
+mean nothing as an animation origin. `ConversationView`'s `pictureAsked`
+handlers call `attItem.mapToItem(null, 0, 0, attItem.width, attItem.height)`
+to escape all of that in one step, landing in the WINDOW's own coordinates;
+`MessagesPane` forwards the signal untouched, and `ControlPanel.openPicture`
+is the one place that converts it back — `zones.mapFromItem(null, ...)`
+undoes the `null` escape into `zones`' own space (the same unscaled
+940×700 stage `messagesOrigin` already lives in), then divides out
+`zones.s` to get back to the units `pictureOrigin` and the expansion math
+expect. Reading the delegate's `x`/`y` directly instead would make the
+photo fly in from whatever corner the flipped list happened to put that
+delegate at, not from the bubble — the kind of wrong that only shows up to
+a human looking at the animation, never to a probe.
+
+**`source` can be `""`.** An image attachment arrives with its bytes inline
+on the first announcement or not at all (`ConversationView`'s `src`
+comment) — there is no fetch to ask for the way there is for a voice note,
+so the bubble's own recess for an image reads "not sent" rather than "click
+to fetch", and tapping it raises `pictureAsked("", ...)` straight away
+instead of calling `attachmentAsked`. `PictureViewer.missing` is a plain
+property the caller sets (`ControlPanel.openPicture` sets it to
+`source === ""`), not something the viewer derives from `source` itself —
+Review Focus 5 is that this state says so in the frame itself ("Your phone
+did not send this picture.") rather than holding an empty rectangle forever.
+
 ## The keyboard
 
 Messages already holds the keyboard exclusively (above), so it may as well be
@@ -319,7 +383,7 @@ Logic: `messages-contacts`, `messages-hue`, `messages-store`,
 `quickshell` binary (ffmpeg plugin present) — `messages-audio` never touches
 a real player at all.
 Render: `messages-avatar`, `messages-sidebar`, `messages-thread`,
-`messages-pane`, `messages-toast`.
+`messages-pane`, `messages-toast`, `messages-voice`, `messages-viewer`.
 
 Run the render ones with `LASERBAR_VARIANT=light` too. Several bugs here were
 only ever visible in one variant.
@@ -347,6 +411,8 @@ bubble reads `#131312` across its padding and `#565451` across its words.
 | A thread stops at thirty messages | In order: is `loadingOlder` stuck true (then `pageSettle` is not firing and `fetchOlder()` is returning at its guard), does `handleSignal` still unwrap `conversationUpdated` (the pages arrive as nothing else), is `pageLimit` growing, is `fetchedCount` being skipped for the on-screen length again. |
 | Nothing at all, and `busctl` from a terminal works fine | Check the object path the command was built with. Anything derived from `deviceId` as a *binding* can still be the empty-device version inside `onConnectedChanged` — `devPathFor()` exists because of that. The symptom is `Invalid object path: /modules/kdeconnect/devices/` on stderr, which nothing reads. |
 | An attachment sits on "click to fetch" forever | Either the inline bytes are being ignored (images carry them), or `attachmentReceived` is not reaching `putAttachmentFile`, or the click has nothing behind it — it had no `MouseArea` at all for a while. |
+| Escape on a picture closes Messages too | `messagesLayer.focus` lost its `&& !root.pictureOpen` half — see "The picture viewer, and the Escape chain it adds" above. Both layers end up claiming focus and whichever one loses closes two things at once. |
+| A photo expands from the wrong corner | The origin rect reached `ControlPanel.openPicture` as the delegate's own local `x`/`y` instead of `attItem.mapToItem(null, ...)`, or `openPicture` is reading it without the `zones.mapFromItem(null, ...)` round-trip back into stage units. |
 | All shortcode senders one colour | A normaliser regression — alphanumeric ids have no digits and must fold to an `id:` key. |
 | A message stuck on "Sent" | Honest. The phone never echoed it back. |
 | A thread opens blank and stays blank | Evicted cache plus a phone that is not answering. `oldestTimestamp` returning 0 is what should trigger the refetch. |

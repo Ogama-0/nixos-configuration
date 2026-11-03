@@ -94,6 +94,50 @@ Scope {
 
     onMessagesOpenChanged: root.syncSwayMode()
 
+    // ---- the picture viewer ----
+    //
+    // Sits ABOVE Messages (see `pictureLayer`'s z below), grown out of
+    // whichever bubble was tapped the same way Messages itself grows out of
+    // the mobile zone or a toast - see `messagesLayer`'s own comment for the
+    // shape this one borrows wholesale rather than inventing a second feel.
+    property bool pictureOpen: false
+    property rect pictureOrigin: Qt.rect(0, 0, 1, 1)
+    property string pictureSource: ""
+    property string pictureWho: ""
+    property string pictureWhen: ""
+    property bool pictureMissing: false
+
+    // (source, who, ts, origin) - the exact shape ConversationView's
+    // `pictureAsked` raises and MessagesPane forwards untouched. `origin`
+    // arrives in GLOBAL (window) coordinates: the delegate that raised it
+    // sits inside a flipped ListView inside the pane, where its own x/y mean
+    // nothing, so it escaped its own coordinate space with `mapToItem(null,
+    // ...)` before this ever saw it. `zones` is this file's own stage - the
+    // same unscaled 940x700 space `messagesOrigin` lives in - so mapping
+    // back INTO it with `mapFromItem(null, ...)` and dividing out `zones.s`
+    // is what undoes that escape and lands `pictureOrigin` in the units
+    // `pictureLayer` below expects.
+    function openPicture(source, who, ts, origin): void {
+        const local = zones.mapFromItem(null, origin.x, origin.y,
+                                         origin.width, origin.height);
+        root.pictureOrigin = Qt.rect(local.x / zones.s, local.y / zones.s,
+                                      local.width / zones.s, local.height / zones.s);
+        root.pictureSource = source;
+        root.pictureWho = who;
+        // "" is the one value `source` takes when the image was neither
+        // inline nor fetchable - see ConversationView's `src` comment - and
+        // that is exactly what PictureViewer's own `missing` text exists
+        // for (Review Focus 5).
+        root.pictureMissing = source === "";
+        root.pictureWhen = ts > 0
+            ? Qt.formatDateTime(new Date(ts), "d MMM, HH:mm") : "";
+        root.pictureOpen = true;
+    }
+
+    function closePicture(): void {
+        root.pictureOpen = false;
+    }
+
     // Two mutually exclusive ways of getting Escape, and running both at
     // once is the bug this function exists to avoid.
     //
@@ -926,6 +970,8 @@ Scope {
                                     active: root.messagesOpen
                                     pendingConvId: root.messagesPending
                                     onCloseAsked: root.closeMessages()
+                                    onPictureAsked: (source, who, ts, origin) =>
+                                        root.openPicture(source, who, ts, origin)
                                 }
                             }
 
@@ -941,10 +987,90 @@ Scope {
                             // surface holds Exclusive focus while Messages
                             // is up - see syncSwayMode for why the sway mode
                             // has to stand down for that to work.
-                            focus: root.messagesOpen
+                            //
+                            // NOT just `root.messagesOpen`. `pictureLayer`
+                            // sits on top of this one (z:110 against z:100)
+                            // and claims focus the same way while a picture
+                            // is open - two Items with `focus: true` in the
+                            // same window both WANT the active focus, and
+                            // whichever QML happens to grant it is not a
+                            // promise either reads this code can lean on.
+                            // Ceding it explicitly here is what guarantees
+                            // Escape reaches the TOP layer first and closes
+                            // the picture rather than Messages underneath it.
+                            focus: root.messagesOpen && !root.pictureOpen
                             Keys.onEscapePressed: event => {
                                 event.accepted = true;
                                 root.closeMessages();
+                            }
+                        }
+
+                        // ---- the picture viewer ----
+                        //
+                        // Same shape as `messagesLayer` just above - an
+                        // animated box clipped around a pane, growing out of
+                        // wherever it was asked for - at the next z step up,
+                        // because a photo opened from inside Messages has to
+                        // draw OVER it, not replace it: Escape here has to
+                        // leave Messages standing underneath.
+                        Item {
+                            id: pictureLayer
+                            z: 110
+                            anchors.fill: parent
+                            visible: root.pictureOpen || pictureLayer.t > 0.001
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: root.pictureOpen
+                                acceptedButtons: Qt.AllButtons
+                                onClicked: {}
+                            }
+
+                            Rectangle {
+                                id: pictureBox
+                                clip: true
+                                color: Qt.rgba(pictureGround.r, pictureGround.g,
+                                               pictureGround.b, 1)
+                                readonly property color pictureGround: "@sheetBg@"
+                                radius: (1 - pictureLayer.t) * 14 * zones.s
+
+                                readonly property real t: pictureLayer.t
+
+                                x: (root.pictureOrigin.x * (1 - t)) * zones.s
+                                y: (root.pictureOrigin.y * (1 - t)) * zones.s
+                                width: (root.pictureOrigin.width
+                                        + (940 - root.pictureOrigin.width) * t) * zones.s
+                                height: (root.pictureOrigin.height
+                                         + (700 - root.pictureOrigin.height) * t) * zones.s
+
+                                PictureViewer {
+                                    width: 940 * zones.s
+                                    height: 700 * zones.s
+                                    uiScale: panel.uiScale
+                                    opacity: pictureLayer.t
+                                    source: root.pictureSource
+                                    who: root.pictureWho
+                                    when: root.pictureWhen
+                                    missing: root.pictureMissing
+                                }
+                            }
+
+                            property real t: root.pictureOpen ? 1 : 0
+                            Behavior on t {
+                                NumberAnimation {
+                                    duration: 210
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            // The layer above Messages, so this is the FIRST
+                            // Escape sees while a picture is open - see the
+                            // comment on messagesLayer.focus for why that
+                            // matters.
+                            focus: root.pictureOpen
+                            Keys.onEscapePressed: event => {
+                                event.accepted = true;
+                                root.closePicture();
                             }
                         }
 

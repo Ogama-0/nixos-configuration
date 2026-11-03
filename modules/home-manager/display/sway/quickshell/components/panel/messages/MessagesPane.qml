@@ -16,6 +16,9 @@ Item {
     property string pendingConvId: ""
 
     signal closeAsked()
+    // Forwarded untouched from ConversationView - see its own comment on
+    // the signal of the same name for what `origin` is expressed in.
+    signal pictureAsked(string source, string who, real ts, rect origin)
 
     readonly property bool hasThread: core && core.activeId !== ""
 
@@ -151,6 +154,8 @@ Item {
         onAttachmentAsked: (partId, uid) => {
             if (root.core) root.core.fetchAttachment(partId, uid);
         }
+        onPictureAsked: (source, who, ts, origin) =>
+            root.pictureAsked(source, who, ts, origin)
     }
 
     ComposeRow {

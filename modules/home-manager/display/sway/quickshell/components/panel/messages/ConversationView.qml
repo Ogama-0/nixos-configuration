@@ -41,6 +41,13 @@ Item {
     // (partID, uniqueIdentifier) - the two arguments requestAttachmentFile
     // takes. Raised by tapping an attachment that is still on the phone.
     signal attachmentAsked(int partId, string uid)
+    // Raised by tapping a photo - either the one that is already showing
+    // (`source` is its resolved URL) or the recess an image attachment
+    // falls into when it has no bytes at all (`source` is "", and the
+    // viewer's own `missing` text is what that empty string becomes -
+    // Review Focus 5). `origin` is already in GLOBAL (window) coordinates,
+    // not this delegate's own x/y - see the MouseAreas below for why.
+    signal pictureAsked(string source, string who, real ts, rect origin)
 
     // A wash that darkens in BOTH variants.
     //
@@ -323,6 +330,31 @@ Item {
                                         layer.enabled: true
                                     }
 
+                                    // Opens it full. `mapToItem(null, ...)`
+                                    // rather than attItem.x/y - attItem
+                                    // lives inside a delegate inside a
+                                    // flipped ListView (ConversationView's
+                                    // own header comment explains the flip),
+                                    // so its OWN x/y are bubble-local and
+                                    // meaningless as an animation origin;
+                                    // `null` escapes all of that to the
+                                    // window's own coordinates in one step,
+                                    // which is what `ControlPanel.openPicture`
+                                    // is written to receive back.
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        visible: att.visible
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            const origin = attItem.mapToItem(
+                                                null, 0, 0,
+                                                attItem.width, attItem.height);
+                                            root.pictureAsked(attItem.src,
+                                                root.title, entry.modelData.ts,
+                                                origin);
+                                        }
+                                    }
+
                                     // The voice note's own control row -
                                     // button, bar, time. It drives `audio`
                                     // directly and raises nothing, so there
@@ -360,24 +392,51 @@ Item {
                                             width: parent.width - 20 * root.uiScale
                                             horizontalAlignment: Text.AlignHCenter
                                             wrapMode: Text.WordWrap
-                                            text: attItem.label + "\n"
-                                                + (attItem.asked ? "fetching…"
-                                                   : "on the phone — click to fetch")
+                                            // An image with neither inline
+                                            // bytes nor a path has nothing to
+                                            // fetch - images arrive inline on
+                                            // the first announcement or not
+                                            // at all (ConversationView's
+                                            // `src` comment above) - so it
+                                            // gets a different label than the
+                                            // "click to fetch" that applies
+                                            // to everything else still on the
+                                            // phone.
+                                            text: attItem.isImage
+                                                ? attItem.label + "\nnot sent"
+                                                : attItem.label + "\n"
+                                                    + (attItem.asked ? "fetching…"
+                                                       : "on the phone — click to fetch")
                                             color: entry.outgoing
                                                 ? "@msgAccentInk@" : "@mutedColor@"
                                             font.pixelSize: Math.round(11 * root.uiScale)
                                         }
 
-                                        // It said "click to fetch" and
-                                        // nothing was listening. The file
-                                        // arrives later as attachmentReceived
-                                        // and reaches the bubble through the
-                                        // store, so there is nothing to wait
-                                        // on here beyond saying we asked.
+                                        // Two different taps behind the same
+                                        // recess. An image here is tapped to
+                                        // open the full viewer on its
+                                        // "missing" state (Review Focus 5) -
+                                        // there is no fetch to ask for. Any
+                                        // other attachment is "click to
+                                        // fetch" and nothing was listening:
+                                        // the file arrives later as
+                                        // attachmentReceived and reaches the
+                                        // bubble through the store, so there
+                                        // is nothing to wait on here beyond
+                                        // saying we asked.
                                         MouseArea {
                                             anchors.fill: parent
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: {
+                                                if (attItem.isImage) {
+                                                    const origin = attItem.mapToItem(
+                                                        null, 0, 0,
+                                                        attItem.width, attItem.height);
+                                                    root.pictureAsked("",
+                                                        root.title, entry.modelData.ts,
+                                                        origin);
+                                                    return;
+                                                }
                                                 attItem.asked = true;
                                                 root.attachmentAsked(
                                                     attItem.modelData.partId,
