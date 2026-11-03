@@ -72,7 +72,6 @@ Scope {
                 source: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAZElEQVR4nO3PUQkAIBTAwBfRiAYzjCH8OITBAtxm7fN1wwUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY8dgHxS5E8ayJMEgAAAABJRU5ErkJggg=="
                 who: "Lauren Ulrich"
                 when: "Today 08:32"
-                missing: false
             }
         }
 
@@ -87,7 +86,8 @@ Scope {
                 source: ""
                 who: "Lauren Ulrich"
                 when: "Today 08:33"
-                missing: true
+                // missing is derived from source === "" now, not a second
+                // settable property - see PictureViewer's own comment.
             }
         }
     }

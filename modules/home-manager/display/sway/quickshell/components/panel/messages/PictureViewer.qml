@@ -20,14 +20,18 @@ Item {
     property string source: ""
     property string who: ""
     property string when: ""
-    // Set by the caller (`ControlPanel.openPicture`), not derived here -
-    // true exactly when `source` turned out to be "" on arrival: an image
-    // that is neither inline (the common case - see ConversationView's
+    // Derived, not settable: "" is the one value `source` takes when an
+    // image was neither inline (the common case - see ConversationView's
     // `src` comment) nor backed by a fetch, because images arrive with
-    // their bytes on the first announcement or not at all. Review Focus 5:
-    // this state must say so, not hold an empty frame forever - see the
-    // Text below.
-    property bool missing: false
+    // their bytes on the first announcement or not at all. A separate
+    // settable property here was redundant with `source` by construction -
+    // `ControlPanel.openPicture` computed it as `source === ""` and handed
+    // both over - which left a desync open that could never actually
+    // happen (there is no path that sets one without the other), so there
+    // was no real state here for the fixture's "missing-corner" probe to
+    // exercise either. This state still has to say so, not hold an empty
+    // frame forever - see the Text below.
+    readonly property bool missing: root.source === ""
 
     readonly property real footH: 44 * root.uiScale
 
