@@ -299,7 +299,20 @@ in
 
   services.caddy.virtualHosts."https://${appHost}" = {
     extraConfig = ''
-      reverse_proxy http://127.0.0.1:${toString web-port}
+      # Milo (an external Caddy relay on another machine, not managed here)
+      # fronts the public name and forwards here with Host rewritten to
+      # ${appHost} so it matches this vhost — the app never sees the
+      # browser's real Host. @sveltejs/adapter-node's CSRF check computes
+      # its own "self" origin from that raw Host header (there is no ORIGIN
+      # env var in this adapter-node version to override it), so a request
+      # whose Origin is https://${pubAppHost} but whose Host says
+      # ${appHost} gets rejected as cross-site on every POST — login
+      # included. Overwriting Host here pins the app's self-origin to the
+      # one name it should ever answer to, regardless of which name or
+      # relay got the request here.
+      reverse_proxy http://127.0.0.1:${toString web-port} {
+        header_up Host ${pubAppHost}
+      }
     '';
   };
   services.caddy.virtualHosts."https://${vitrineHost}" = {
