@@ -17,6 +17,12 @@
       "application/x-extension-xhtml" = "zen-beta.desktop";
       "application/x-extension-xht" = "zen-beta.desktop";
       "x-scheme-handler/claude-cli" = "claude-code-url-handler.desktop";
+
+      # Email + "Custom Thunderbird links" from Thunderbird's own System
+      # Integration dialog, not Newsgroups/Feeds/Calendar.
+      "message/rfc822" = "thunderbird.desktop";
+      "x-scheme-handler/mailto" = "thunderbird.desktop";
+      "x-scheme-handler/net.thunderbird" = "thunderbird.desktop";
     };
 
   };

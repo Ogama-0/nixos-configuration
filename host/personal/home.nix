@@ -20,6 +20,7 @@
     ../../modules/home-manager/keyboard.nix
     ../../modules/home-manager/wakapi.nix
     ../../modules/home-manager/calendar-sync.nix
+    ../../modules/home-manager/thunderbird.nix
     ../../modules/home-manager/nix-gc.nix
     ../../modules/home-manager/gns3.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"

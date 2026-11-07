@@ -20,12 +20,6 @@
     firefox
     google-chrome
     vesktop
-    # The plain `thunderbird` attr tracks the latest release (158.0), which
-    # hydra has not cached yet - building it locally needs more RAM than this
-    # machine has (12 clang jobs plus an LTO link, 13G and no swap: the kernel
-    # OOM killer takes it, or earlyoom does). The ESR channel is the stable
-    # one and is prebuilt.
-    thunderbird-esr
     # spotify
     deezer-enhanced
     # lpkgs.deezer-cli
