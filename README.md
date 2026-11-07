@@ -31,20 +31,23 @@ My personal NixOS + Home Manager flake, covering a main desktop, a home server, 
 
 ## Switching
 
-Switch a NixOS host (from the machine being configured):
+Each target below runs on the machine it switches (no remote `--target-host`):
 ```
-sudo nixos-rebuild switch --flake .#personal
-sudo nixos-rebuild switch --flake .#oserv
+make personal     # NixOS + Home Manager switch (main desktop)
+make oserv        # NixOS + Home Manager switch (home server)
+make epita        # Home Manager switch (EPITA computer)
+make epita-light  # Home Manager switch (EPITA computer, trimmed down)
+make check        # nix flake check
+make update       # nix flake update
 ```
 
-Switch a Home Manager profile (standalone for `epita`/`epita-light`; already part of the NixOS switch above for `personal`/`oserv`):
+These wrap [`nh`](https://github.com/nix-community/nh) (`nh os switch`/`nh home switch`),
+which every profile installs via `programs.nh`. Without `make`, the raw
+equivalents are:
 ```
-nix run nixpkgs#home-manager -- switch --flake .#<profile>
-```
-
-Check the flake evaluates without switching:
-```
-nix flake check
+nh os switch . -H personal
+nh os switch . -H oserv
+nh home switch . -c <profile>   # epita, epita-light
 ```
 
 ## Desktop shell

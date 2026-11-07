@@ -12,6 +12,7 @@
     ../../modules/home-manager/alacritty.nix
     ../../modules/home-manager/zellij/default.nix
     ../../modules/home-manager/wakapi.nix
+    ../../modules/home-manager/nh.nix
     ./tools.nix
   ];
 

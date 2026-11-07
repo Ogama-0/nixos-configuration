@@ -30,6 +30,7 @@
 
     ../../modules/nixosconf/docker.nix
     ../../modules/nixosconf/joplin-server.nix # <- docker
+    ../../modules/nixosconf/nh.nix
     # ../../modules/nixosconf/crafty.nix        # <- docker
 
     ./users

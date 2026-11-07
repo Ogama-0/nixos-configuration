@@ -8,15 +8,22 @@ Personal NixOS + Home Manager flake configuration for three profiles: `personal`
 
 ## Commands
 
-Switch a NixOS host (from the machine being configured):
+A `Makefile` at the repo root wraps the switches below in `make personal`,
+`make oserv`, `make epita`, `make epita-light`, `make check`, `make update`.
+Each target runs on the machine it switches (no remote `--target-host`).
+
+Switch a NixOS host (from the machine being configured), via
+[`nh`](https://github.com/nix-community/nh) (every profile installs it
+through `programs.nh`, see `modules/nixosconf/nh.nix` and
+`modules/home-manager/nh.nix`):
 ```
-sudo nixos-rebuild switch --flake .#personal
-sudo nixos-rebuild switch --flake .#oserv
+nh os switch . -H personal
+nh os switch . -H oserv
 ```
 
 Switch a Home Manager profile (used standalone for `epita`/`epita-light`, and as part of the NixOS switch for `personal`/`oserv`):
 ```
-nix run nixpkgs#home-manager -- switch --flake .#<profile>
+nh home switch . -c <profile>
 ```
 Valid `<profile>` values: `personal`, `oserv`, `epita`, `epita-light`.
 

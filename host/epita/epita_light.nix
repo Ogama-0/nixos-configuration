@@ -7,7 +7,7 @@
     ../../modules/home-manager/display/i3
     ../../modules/home-manager/kitty.nix
     ../../modules/home-manager/wakapi.nix
-
+    ../../modules/home-manager/nh.nix
   ];
 
   sops.age.keyFile = "/home/${cfg.login}/.config/sops/age/keys.txt";
