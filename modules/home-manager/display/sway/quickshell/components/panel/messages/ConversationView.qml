@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 
 // The thread: a header, a river of bubbles, and whatever the phone has sent
 // us of the history so far.
@@ -130,7 +131,11 @@ Item {
         // rebuild every delegate each time a message lands.
         verticalLayoutDirection: ListView.BottomToTop
         cacheBuffer: 300 * root.uiScale
-        boundsBehavior: Flickable.StopAtBounds
+        // See ThreadList's own comment on this same switch - a hard stop at
+        // the ends felt stiff next to ordinary trackpad momentum scrolling.
+        boundsBehavior: Flickable.DragAndOvershootBounds
+        flickDeceleration: 2500
+        maximumFlickVelocity: 4000
 
         // Flipped, so "the top" is the END of the view.
         onAtYEndChanged: if (atYEnd && !root.loadingOlder) root.olderWanted()
@@ -184,6 +189,15 @@ Item {
             readonly property real attWidth: atts.length === 0 ? 0
                 : entry.hasAudio ? 224 * root.uiScale : 188 * root.uiScale
 
+            // A photo with no caption gets no padding either - iMessage
+            // fills the whole bubble with the image rather than floating it
+            // in a frame of accent colour. A voice note keeps its padding
+            // regardless (it is a control row, not a thumbnail, and a
+            // play button flush against the bubble's own edge reads as
+            // cut off rather than deliberate).
+            readonly property bool bleeds: atts.length > 0 && !entry.hasAudio
+                && !(modelData.body && modelData.body.length > 0)
+
             // The model is newest-first, so the message BEFORE this one in
             // time is the next index up. A separator belongs above a message
             // that opens a new day - or above the oldest one we hold.
@@ -219,32 +233,66 @@ Item {
                         ? parent.width - width - 20 * root.uiScale
                         : 20 * root.uiScale
                     width: Math.min(parent.width * 0.64,
-                                    Math.max(bodyText.implicitWidth, entry.attWidth)
-                                    + 28 * root.uiScale)
-                    height: content.implicitHeight + 18 * root.uiScale
-                    radius: 17 * root.uiScale
+                                    entry.bleeds ? entry.attWidth
+                                        : Math.max(bodyText.implicitWidth, entry.attWidth)
+                                          + 28 * root.uiScale)
+                    height: content.implicitHeight + (entry.bleeds ? 0 : 18 * root.uiScale)
+                    // A bled photo takes the SAME modest radius as its own
+                    // corner mask below (11, not 17) - the ordinary chat
+                    // bubble radius, blown up to cover a 188px-wide photo,
+                    // read as a big diagonal wedge bitten out of the corner
+                    // rather than the gentle iMessage-style round this was
+                    // meant to match.
+                    radius: (entry.bleeds ? 11 : 17) * root.uiScale
                     color: entry.outgoing ? "@msgAccent@" : "@plateBg@"
+                    // Bounds insurance only. `clip` clips to an item's
+                    // BOUNDING RECTANGLE, never to its `radius` - so this is
+                    // not, and cannot be, what keeps a photo's square corners
+                    // inside the bubble's rounded ones. The MultiEffect mask
+                    // on the attachment Image below is the thing that does
+                    // that; an earlier comment here credited this line with
+                    // it, which would have led someone to delete the mask.
+                    clip: true
 
-                    // The corner nearest the tail squares off. Both sides,
-                    // because a bubble with four equal corners reads as a
-                    // card and loses which end of the conversation it came
-                    // from at a glance.
-                    Rectangle {
-                        width: parent.radius
-                        height: parent.radius
-                        color: parent.color
-                        x: entry.outgoing ? parent.width - width : 0
-                        y: parent.height - height
-                    }
+                    // There is NO square-corner patch here, and there must
+                    // not be one. A bubble whose tail corner squares off
+                    // reads better - it says which end of the conversation
+                    // the message came from - but the way to draw it is not
+                    // a child Rectangle in `parent.color`:
+                    //
+                    // @plateBg@ is #12FFFAF3, a near-white at 7% alpha. The
+                    // bubble lays that wash over the sheet once; a child in
+                    // the same colour lays it down a SECOND time, and the
+                    // corner comes out at double strength - measured at
+                    // srgb(36,36,34) against the bubble's own srgb(19,19,18)
+                    // - which on a dark ground reads as a white square stuck
+                    // to the bubble. Outgoing bubbles hid it, because
+                    // @msgAccent@ is opaque; every incoming one showed it.
+                    //
+                    // Doing it properly means an opaque bubble colour
+                    // (plateBg composited onto sheetBg once, up front) so
+                    // that a child in that colour is pixel-identical, or a
+                    // Shape - and a ShapePath whose data changes draws
+                    // nothing at all (rule 4), which a per-message bubble
+                    // size guarantees. Until one of those is done, four
+                    // equal corners is the honest look.
 
                     Column {
                         id: content
-                        x: 14 * root.uiScale
-                        y: 9 * root.uiScale
-                        width: parent.width - 28 * root.uiScale
+                        x: entry.bleeds ? 0 : 14 * root.uiScale
+                        y: entry.bleeds ? 0 : 9 * root.uiScale
+                        width: entry.bleeds ? parent.width : parent.width - 28 * root.uiScale
                         spacing: 6 * root.uiScale
 
-                        Text {
+                        // A TextEdit, not a Text, so the words can be
+                        // selected and copied the way they can in any other
+                        // messaging window. readOnly keeps it a label in
+                        // every other respect.
+                        //
+                        // PlainText explicitly: a message body is whatever
+                        // somebody typed, and TextEdit's RichText would
+                        // happily render markup that arrived in an SMS.
+                        TextEdit {
                             id: bodyText
                             visible: text.length > 0
                             width: parent.width
@@ -252,6 +300,39 @@ Item {
                             color: entry.outgoing ? "@msgAccentInk@" : "@clockColor@"
                             font.pixelSize: Math.round(13.5 * root.uiScale)
                             wrapMode: Text.Wrap
+                            textFormat: TextEdit.PlainText
+                            readOnly: true
+                            selectByMouse: true
+
+                            // The accent/ink pair either way round. Both
+                            // orders are a designed contrast pair in BOTH
+                            // variants, which a highlight built from
+                            // @clockColor@ would not be - that one inverts
+                            // between dark and light.
+                            selectionColor: entry.outgoing
+                                ? "@msgAccentInk@" : "@msgAccent@"
+                            selectedTextColor: entry.outgoing
+                                ? "@msgAccent@" : "@msgAccentInk@"
+
+                            // Clicking a bubble gives it the keyboard, and a
+                            // TextEdit swallows Escape by default - the same
+                            // trap docs/messages-panel.md names for the
+                            // search field and the compose box. Declining it
+                            // here keeps Escape collapsing the pane from
+                            // inside a message too.
+                            Keys.onEscapePressed: event => event.accepted = false
+                            // Delete and Backspace, on the other hand, are
+                            // SWALLOWED. A read-only TextEdit ignores editing
+                            // keys, which would let them bubble up to
+                            // MessagesPane's Suppr handler and remove the
+                            // conversation you were only trying to read.
+                            // MessagesPane gates on the list having focus as
+                            // well; this is the other half of that.
+                            Keys.onDeletePressed: event => event.accepted = true
+                            Keys.onPressed: event => {
+                                if (event.key === Qt.Key_Backspace)
+                                    event.accepted = true;
+                            }
                         }
 
                         Column {
@@ -266,10 +347,24 @@ Item {
                                     required property var modelData
                                     width: entry.attWidth
                                     // A voice note is a thin control row, not
-                                    // a thumbnail - 126px of height for it
-                                    // would be mostly empty bubble.
+                                    // a thumbnail. A photo sizes to its OWN
+                                    // aspect ratio, like iMessage - cropping
+                                    // it into a fixed 188x126 box was cutting
+                                    // the top and bottom off anything that
+                                    // was not already landscape-ish (a tall
+                                    // phone photo, a poster, a screenshot
+                                    // with text baked into the top/bottom).
+                                    // 126 is only the guess shown before the
+                                    // image has loaded and reported its own
+                                    // size; clamped both ways so a panorama
+                                    // cannot turn the bubble into a column
+                                    // and a near-square photo does not go
+                                    // flat.
                                     height: attItem.isAudio ? 48 * root.uiScale
-                                        : 126 * root.uiScale
+                                        : (att.status === Image.Ready && att.implicitWidth > 0
+                                            ? Math.max(100 * root.uiScale, Math.min(260 * root.uiScale,
+                                                width * att.implicitHeight / att.implicitWidth))
+                                            : 126 * root.uiScale)
 
                                     readonly property bool isImage:
                                         String(modelData.mime || "").startsWith("image/")
@@ -338,12 +433,82 @@ Item {
                                         visible: attItem.src !== ""
                                                  && status !== Image.Error
                                         source: attItem.src
+                                        // Crop, which for this box is the
+                                        // same thing as Fit for every photo
+                                        // whose ratio the height above was
+                                        // allowed to match - and the right
+                                        // answer for the ones it was not.
+                                        // Fit letterboxed anything past the
+                                        // clamp: an ordinary 9:16 phone
+                                        // portrait wants 334px of height,
+                                        // gets 260, and was then fitted to
+                                        // 146px wide, leaving ~21px of bare
+                                        // bubble down each side INSIDE the
+                                        // rounded mask - accent colour, on an
+                                        // outgoing one.
                                         fillMode: Image.PreserveAspectCrop
                                         asynchronous: true
-                                        // The bubble already clips to its
-                                        // radius; this keeps the crop from
-                                        // squaring the corners back off.
-                                        layer.enabled: true
+
+                                        // An actual rounded-corner mask, not
+                                        // four hand-placed circles standing
+                                        // in for one - the quarter-circle
+                                        // trick that used to live here read
+                                        // as a separate round blob glued to
+                                        // each corner rather than a clean
+                                        // curve, because it is a visibly
+                                        // different shape (a true circular
+                                        // arc meeting a Rectangle's own
+                                        // radius antialiasing at the same
+                                        // nominal radius, drawn by two
+                                        // unrelated draw calls) instead of
+                                        // one continuous mask. RevealMask.qml
+                                        // already proves the pattern works
+                                        // in this renderer: `visible: false`
+                                        // together with `layer.enabled: true`
+                                        // on the mask item is what makes
+                                        // MultiEffect actually grab it - an
+                                        // earlier attempt here skipped one of
+                                        // those two and got a blank image for
+                                        // its trouble.
+                                        // Images only. Every attachment
+                                        // delegate owns this Image, and for
+                                        // a voice note it is invisible with
+                                        // an empty source - but an enabled
+                                        // layer plus the mask's own below is
+                                        // two framebuffers per bubble, paid
+                                        // to round the corners of something
+                                        // that never draws.
+                                        layer.enabled: attItem.isImage
+                                        layer.effect: MultiEffect {
+                                            maskEnabled: true
+                                            maskSource: attMask
+                                            maskThresholdMin: 0.0
+                                            maskSpreadAtMin: 0.0
+                                        }
+                                    }
+
+                                    Item {
+                                        id: attMask
+                                        anchors.fill: att
+                                        visible: false
+                                        // Paired with att.layer.enabled
+                                        // above - a mask with nothing to
+                                        // mask is a framebuffer for nothing.
+                                        layer.enabled: attItem.isImage
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            // 11 either way, deliberately:
+                                            // a bled photo's bubble takes
+                                            // this same number (see
+                                            // bubble.radius) so that its
+                                            // edge and the mask's agree.
+                                            // Written as a ternary on
+                                            // bubble.radius, which resolved
+                                            // to 11 in both branches.
+                                            radius: 11 * root.uiScale
+                                            color: "white"
+                                        }
                                     }
 
                                     // Opens it full. `mapToItem(null, ...)`

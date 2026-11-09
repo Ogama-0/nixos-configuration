@@ -78,6 +78,54 @@ Item {
         model.reloadFlags();
     }
 
+    // Hides the conversation now; a fresh incoming message un-hides it on
+    // its own - see MessageStore.setRemoved and MessagesModel.ingestMessage.
+    // `nextId` is where the selection should land if `convId` was the open
+    // one - the caller works it out from the list on screen (see
+    // ThreadList.neighbourOf). "" means "nothing open", which is right when
+    // the one removed was the last conversation there was.
+    function removeConversation(convId: string, nextId: string): void {
+        store.setRemoved(convId, true);
+        model.reloadFlags();
+        root.stepOutIfActive(convId, nextId);
+    }
+
+    // Hides it AND drops every future message for the number on arrival -
+    // see MessageStore.setBlocked and the blockedIds() check in
+    // MessagesModel.ingestMessage/ingestBatch.
+    function blockConversation(convId: string, nextId: string): void {
+        store.setBlocked(convId, true);
+        model.reloadFlags();
+        root.stepOutIfActive(convId, nextId);
+    }
+
+    // Hiding a thread says nothing about whether you are SITTING IN IT, and
+    // both functions above are reachable from a row's own menu while that
+    // row is the open one. The guard belongs HERE rather than in the key
+    // handler that first needed it: it used to be the keyboard path alone,
+    // so Suppr stepped out and the identical action from the mouse did not.
+    //
+    // What that left behind: the row leaves the sidebar while
+    // ConversationView carries on showing the thread, with a live compose
+    // field still pointed at a number that - in the Block case - was just
+    // blocked. `activeId` is also no longer findable in ThreadList.listed,
+    // so its selectedIndex goes to -1 and the next arrow key jumps to the
+    // top of the list instead of the removed row's neighbour.
+    //
+    // SIDEWAYS, not out. Landing on nothing meant the selection was gone
+    // (ThreadList.selectedIndex goes to -1 with no activeId), so the next
+    // arrow key jumped to the top of the list - remove two neighbours and
+    // you walked back down from the top twice. The row that took its place
+    // on screen is the one you were already looking at.
+    //
+    // root.openConversation, not model's: the wrapper is where audio.stop()
+    // lives, and a voice note from the thread you just removed must not go
+    // on sounding underneath the thread that replaced it.
+    function stepOutIfActive(convId: string, nextId: string): void {
+        if (convId && convId === model.activeId)
+            root.openConversation(nextId || "");
+    }
+
     // Answer without opening anything. The toast's whole purpose.
     function replyTo(convId: string, text: string): void {
         const was = model.activeId;

@@ -71,6 +71,24 @@ Item {
         event.accepted = true;
     }
 
+    // Suppr, while a thread is open: removes the conversation you are
+    // looking at and drops you back on the list.
+    //
+    // Gated on the LIST actually holding the keyboard, rather than on
+    // everything else happening to swallow Delete first. That assumption
+    // held while the only focusable things in here were two text fields
+    // (which consume it as an editing key) - but the message bubbles are
+    // read-only TextEdits now, and a read-only TextEdit IGNORES Delete, so
+    // it bubbled up here and removed the conversation out from under
+    // somebody who had clicked into a message to copy a word of it.
+    Keys.onDeletePressed: event => {
+        if (!list.activeFocus) return;
+        if (!root.hasThread || !root.core) return;
+        event.accepted = true;
+        const id = root.core.activeId;
+        root.core.removeConversation(id, list.neighbourOf(id));
+    }
+
     // The draft survives a collapse. Escape is how you leave this pane, and
     // losing half a typed message to it would make Escape frightening.
     property string keptDraft: ""
@@ -79,10 +97,33 @@ Item {
         if (root.active) {
             compose.draft = root.keptDraft;
             root.consumePending();
-            root.focusList();
+            // Not a direct call. `active` and the surface's
+            // WlrKeyboardFocus.Exclusive grant (ControlPanel.qml) both flip
+            // off the same `messagesOpen` change, but the real Wayland focus
+            // grant is a compositor round-trip and this handler runs
+            // synchronously on the same tick - forceActiveFocus() landed
+            // before the surface actually held the keyboard, so the first
+            // arrow press went nowhere until a click (which calls focusList()
+            // again on its own) gave the list focus for real. One tick is
+            // enough for the grant to land.
+            focusSettle.restart();
         } else {
             root.keptDraft = compose.draft;
         }
+    }
+
+    Timer {
+        id: focusSettle
+        // A real Wayland round-trip, not a same-tick requeue like
+        // syncSwayModeTimer's 0ms - the compositor has to actually hand the
+        // surface the keyboard before forceActiveFocus() sticks. One frame
+        // is enough margin without being a felt delay.
+        interval: 30
+        repeat: false
+        // root.active can have flipped back off in the 30ms since restart()
+        // was called (a fast toggle) - stealing focus onto an already-closed
+        // pane is worse than just skipping the grab.
+        onTriggered: if (root.active) root.focusList()
     }
 
     onPendingConvIdChanged: root.consumePending()
@@ -116,6 +157,15 @@ Item {
 
         onConversationPicked: convId => { if (root.core) root.core.openConversation(convId) }
         onPinToggled: convId => { if (root.core) root.core.togglePin(convId) }
+        // The neighbour is read HERE, before the removal, because after it
+        // the row is gone from `listed` and there is nothing left to be
+        // next to.
+        onRemoveAsked: convId => {
+            if (root.core) root.core.removeConversation(convId, list.neighbourOf(convId));
+        }
+        onBlockAsked: convId => {
+            if (root.core) root.core.blockConversation(convId, list.neighbourOf(convId));
+        }
         // Right arrow or Tab on a row. Nothing to focus if no thread is
         // open, and the field is not even visible then.
         onFocusComposeAsked: if (root.hasThread) compose.focusField()

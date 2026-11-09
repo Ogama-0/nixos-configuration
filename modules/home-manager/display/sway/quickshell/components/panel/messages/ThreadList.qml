@@ -41,7 +41,15 @@ FocusScope {
 
     signal conversationPicked(string convId)
     signal pinToggled(string convId)
+    signal removeAsked(string convId)
+    signal blockAsked(string convId)
     signal composeAsked()
+
+    // Which row's Remove/Block menu is open, if any - one at a time, since
+    // it replaces that row's own preview line in place (see the delegate
+    // below) rather than floating a popup the ListView's clip would cut off
+    // the moment the row scrolls near an edge.
+    property string menuForId: ""
     // Right arrow or Tab on a conversation: the thread is already open, now
     // put the cursor where you type. The pane owns the compose row, so this
     // is a request rather than a call.
@@ -59,6 +67,24 @@ FocusScope {
         return -1;
     }
 
+    // Where the selection should land when `convId` leaves the list: the
+    // row after it, or the row before when it was last. "" only when it was
+    // the only one.
+    //
+    // Asked of the VIEW and not of the model, because this is the order you
+    // are looking at: `listed` is by recency and drops the removed and the
+    // blocked, where model.conversations is pinned-first and keeps them.
+    // Call it BEFORE the removal, while convId is still in the list.
+    function neighbourOf(convId: string): string {
+        let i = -1;
+        for (let n = 0; n < root.listed.length; n++)
+            if (root.listed[n].convId === convId) { i = n; break; }
+        if (i < 0) return "";
+        if (i + 1 < root.listed.length) return root.listed[i + 1].convId;
+        if (i > 0) return root.listed[i - 1].convId;
+        return "";
+    }
+
     // One row up or down, clamped. Nothing selected yet lands on the first
     // row whichever way you pressed - the alternative is a first keypress
     // that does nothing at all.
@@ -72,17 +98,29 @@ FocusScope {
     }
 
     property string query: ""
+    // A menu left open behind a new search is a menu nobody can see the
+    // button for any more, since the row it belonged to may have scrolled
+    // out of the filtered results entirely.
+    onQueryChanged: root.menuForId = ""
 
-    readonly property var pinned: root.conversations.filter(c => c.pinned === true)
+    readonly property var pinned: root.conversations.filter(c =>
+        c.pinned === true && c.removed !== true && c.blocked !== true)
 
     // Newest first. Pinned threads stay in the list as well as the grid:
     // promoting them out of it would mean a message from a pinned contact
     // arrived somewhere you were not looking.
+    //
+    // Removed/blocked conversations drop out of the passive list - that is
+    // the whole point of removing or blocking one - but ONLY when there is
+    // no query. Typing a name or number still has to find them: that is the
+    // panel's own promise (docs/messages-panel.md says so in the UI copy
+    // too), and losing a conversation to search just because it was hidden
+    // would make "remove" indistinguishable from "delete forever".
     readonly property var listed: {
         const q = root.query.trim().toLowerCase();
         const all = root.conversations.slice();
         all.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        if (!q) return all;
+        if (!q) return all.filter(c => c.removed !== true && c.blocked !== true);
         return all.filter(c =>
             String(c.title || "").toLowerCase().indexOf(q) >= 0
             || String(c.number || "").toLowerCase().indexOf(q) >= 0
@@ -290,7 +328,13 @@ FocusScope {
         // Not a delegate per conversation: the whole point of a ListView here
         // is that a hundred threads cost the dozen rows you can see.
         cacheBuffer: 200 * root.uiScale
-        boundsBehavior: Flickable.StopAtBounds
+        // A hard stop at the ends reads as stiff next to any trackpad-driven
+        // scroll a person is used to (Firefox included) - letting it drag
+        // past the bound and ease back is what makes the coast feel like
+        // momentum rather than a wall.
+        boundsBehavior: Flickable.DragAndOvershootBounds
+        flickDeceleration: 2500
+        maximumFlickVelocity: 4000
 
         // The keyboard stop this pane opens on, so the arrows work before
         // anything has been clicked.
@@ -329,6 +373,18 @@ FocusScope {
             height: 56 * root.uiScale
 
             readonly property bool selected: modelData.convId === root.activeId
+            readonly property bool menuOpen: modelData.convId === root.menuForId
+            // moreArea OR'd in, not just rowArea: moreArea sits ON TOP of
+            // rowArea (z: 2, right below) specifically so a click on the
+            // button does not fall through - but that same stacking means
+            // rowArea stops seeing hover the instant the cursor crosses onto
+            // moreArea's bounds. Reading only rowArea.containsMouse made
+            // `hovered` go false the moment the mouse reached the button,
+            // which hid the button, which gave rowArea the hover back, which
+            // showed it again - the button blinking under the cursor and a
+            // click landing on whichever phase won the race, often rowArea's
+            // own onClicked (opening the conversation) instead.
+            readonly property bool hovered: rowArea.containsMouse || moreArea.containsMouse
 
             Rectangle {
                 anchors.fill: parent
@@ -373,12 +429,51 @@ FocusScope {
 
             Text {
                 id: when
+                visible: !row.hovered && !row.menuOpen
                 anchors.right: parent.right
                 anchors.rightMargin: 16 * root.uiScale
                 y: 9 * root.uiScale
                 text: root.relativeTime(row.modelData.ts)
                 color: "@mutedColor@"
                 font.pixelSize: Math.round(10.5 * root.uiScale)
+            }
+
+            // The Remove/Block trigger, in the timestamp's own spot - shown
+            // only on hover (or while its own menu is open, so moving the
+            // mouse off the row to click a menu item does not hide the
+            // button the menu hangs off of).
+            Rectangle {
+                id: moreBtn
+                // Above rowArea (declared below, anchors.fill: parent),
+                // which would otherwise win every click in this corner and
+                // the button would never fire.
+                z: 2
+                visible: row.hovered || row.menuOpen
+                anchors.right: parent.right
+                anchors.rightMargin: 10 * root.uiScale
+                y: 2 * root.uiScale
+                width: 22 * root.uiScale
+                height: 22 * root.uiScale
+                radius: 7 * root.uiScale
+                color: moreArea.containsMouse || row.menuOpen ? "@plateBg@" : "transparent"
+
+                Panel.PanelIcon {
+                    anchors.centerIn: parent
+                    name: "more"
+                    // 0.62, with the 2.2 dots PanelIcon now draws: ~2.7px
+                    // dots on a 4px pitch in this 22px button. See the
+                    // "more" case in PanelIcon for why the two numbers are
+                    // one decision.
+                    uiScale: root.uiScale * 0.62
+                    color: "@mutedColor@"
+                }
+
+                MouseArea {
+                    id: moreArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: root.menuForId = row.menuOpen ? "" : row.modelData.convId
+                }
             }
 
             Text {
@@ -394,6 +489,7 @@ FocusScope {
             }
 
             Text {
+                visible: !row.menuOpen
                 x: who.x
                 y: who.y + who.height + 1 * root.uiScale
                 width: parent.width - x - 16 * root.uiScale
@@ -406,12 +502,66 @@ FocusScope {
                 elide: Text.ElideRight
             }
 
+            // Replaces the preview line in place while open - see
+            // `menuForId`'s own comment for why this is not a floating
+            // popup. Two plain text buttons rather than anything heavier:
+            // this is a row inside a 340px sidebar, not a context menu with
+            // room to spare.
+            Row {
+                // Same reasoning as moreBtn.z above - without it rowArea
+                // eats every click meant for Remove/Block.
+                z: 2
+                visible: row.menuOpen
+                x: who.x
+                y: who.y + who.height + 1 * root.uiScale
+                height: 28 * root.uiScale
+                spacing: 8 * root.uiScale
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Remove"
+                    color: "@mutedColor@"
+                    font.pixelSize: Math.round(12 * root.uiScale)
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -6 * root.uiScale
+                        onClicked: {
+                            root.menuForId = "";
+                            root.removeAsked(row.modelData.convId);
+                        }
+                    }
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "·"
+                    color: "@mutedColor@"
+                    font.pixelSize: Math.round(12 * root.uiScale)
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Block"
+                    color: "@redColor@"
+                    font.pixelSize: Math.round(12 * root.uiScale)
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -6 * root.uiScale
+                        onClicked: {
+                            root.menuForId = "";
+                            root.blockAsked(row.modelData.convId);
+                        }
+                    }
+                }
+            }
+
             MouseArea {
                 id: rowArea
                 anchors.fill: parent
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onClicked: mouse => {
+                    root.menuForId = "";
                     if (mouse.button === Qt.RightButton) {
                         root.pinToggled(row.modelData.convId);
                         return;

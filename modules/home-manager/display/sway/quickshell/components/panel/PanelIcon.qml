@@ -115,6 +115,20 @@ Item {
         case "edit":
             return { s: ["M -8 4 L -8 8 L -4 8 L 7 -3 L 3 -7 L -8 4 Z",
                          "M 2 -6 L 6 -2", ""], f: "" };
+        // Three stacked dots, a conversation row's "more" trigger. One
+        // filled path carrying three disjoint circles rather than three
+        // ShapePaths - the `f` slot already exists on every icon and a dot
+        // this small does not need a stroke to read.
+        // Dots of 2.2, not 1.2. This icon is drawn at the smallest scale
+        // anything in the tree asks for, and the glyph box is 24 units: at
+        // the 0.45 it was first given, a 1.2 radius came out as a 1.1px dot
+        // - three of them, on a 2.6px pitch, inside a 22px button. The
+        // radius and the call site's scale have to be read together.
+        case "more":
+            return { s: ["", "", ""],
+                     f: "M -2.2 -6.5 A 2.2 2.2 0 1 1 2.2 -6.5 A 2.2 2.2 0 1 1 -2.2 -6.5 Z "
+                      + "M -2.2 0 A 2.2 2.2 0 1 1 2.2 0 A 2.2 2.2 0 1 1 -2.2 0 Z "
+                      + "M -2.2 6.5 A 2.2 2.2 0 1 1 2.2 6.5 A 2.2 2.2 0 1 1 -2.2 6.5 Z" };
         }
         return { s: ["", "", ""], f: "" };
     }

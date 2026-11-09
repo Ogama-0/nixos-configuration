@@ -136,7 +136,7 @@ ShellRoot {
                                        sentAt, true)]);
         store.putMessages(C, [root.msg("660", C, "bonjour a tous",
                                        sentAt + 1061, true)]);
-        store.resolvePending(C, "bonjour a tous", sentAt + 1061);
+        store.resolvePending(C, "bonjour a tous", sentAt + 1061, "660");
         const after = store.messages(C, 30, 0);
         check(after.length === 1,
               "the echo did not replace the pending row: "
@@ -153,9 +153,92 @@ ShellRoot {
         // honest state when the phone never confirmed - see docs.
         store.putMessages(C, [root.msg("pending-" + root.now, C, "never echoed",
                                        root.now, true)]);
-        store.resolvePending(C, "something else", root.now);
+        store.resolvePending(C, "something else", root.now, "no-such-echo");
         check(store.messages(C, 30, 0).length === 2,
               "resolvePending swept an unconfirmed message");
+
+        // --- resolvePending carries the ORIGINAL attachment onto the echo ---
+        //
+        // The phone's own echo for a sent photo carries whatever its MMS
+        // send pass recompressed it down to - visibly softer than what left
+        // this machine. The pending row is the only place the original file
+        // path survives; resolvePending has to copy it onto the echo before
+        // the pending row (and that path with it) is deleted.
+        const D = "conv-d";
+        const photoAt = root.now - 4000;
+        store.putMessages(D, [{
+            id: "pending-" + photoAt, convId: D, body: "", ts: photoAt,
+            outgoing: true, address: "",
+            attachments: [{ partId: -1, mime: "image/png", data: "",
+                            uid: "", path: "/tmp/original.png" }]
+        }]);
+        store.putMessages(D, [{
+            id: "661", convId: D, body: "", ts: photoAt + 900,
+            outgoing: true, address: "",
+            attachments: [{ partId: 3, mime: "image/jpeg",
+                            data: "dGlueQ==", uid: "u1", path: "" }]
+        }]);
+        store.resolvePending(D, "", photoAt + 900, "661");
+        const photoAfter = store.messages(D, 30, 0);
+        check(photoAfter.length === 1 && photoAfter[0].id === "661",
+              "the photo echo did not replace the pending row: "
+              + photoAfter.map(m => m.id).join(","));
+        check(photoAfter.length === 1
+              && photoAfter[0].attachments.length === 1
+              && photoAfter[0].attachments[0].path === "/tmp/original.png",
+              "the surviving row lost the original attachment: "
+              + JSON.stringify(photoAfter[0] && photoAfter[0].attachments));
+        // ...and kept everything the PHONE said about it. The first version
+        // of this assigned the pending row's whole attachments column over
+        // the echo's, which threw away partId, mime, uid and the inline
+        // bytes - and `uid` is the only handle requestAttachmentFile has, so
+        // a staged clipboard paste (/tmp, gone after a reboot) left the
+        // photo unrenderable AND unfetchable for good.
+        const pa = photoAfter[0].attachments[0];
+        check(pa.uid === "u1" && pa.partId === 3 && pa.mime === "image/jpeg"
+              && pa.data === "dGlueQ==",
+              "the merge overwrote what the phone announced: " + JSON.stringify(pa));
+
+        // --- one echo resolves ONE pending row ------------------------------
+        //
+        // Two uncaptioned photos sent inside the window are both body "", so
+        // the pending lookup matches both. Taking all of them meant the first
+        // echo deleted the second message's pending row as well - it vanished
+        // from the thread until its own echo arrived - and wrote the second
+        // photo onto the FIRST echo on the way past.
+        const E = "conv-e";
+        const pOne = root.now - 9000, pTwo = root.now - 8000;
+        store.putMessages(E, [{
+            id: "pending-" + pOne, convId: E, body: "", ts: pOne,
+            outgoing: true, address: "",
+            attachments: [{ partId: -1, mime: "image/png", data: "",
+                            uid: "", path: "/tmp/first.png" }]
+        }]);
+        store.putMessages(E, [{
+            id: "pending-" + pTwo, convId: E, body: "", ts: pTwo,
+            outgoing: true, address: "",
+            attachments: [{ partId: -1, mime: "image/png", data: "",
+                            uid: "", path: "/tmp/second.png" }]
+        }]);
+        store.putMessages(E, [{
+            id: "770", convId: E, body: "", ts: pOne + 400, outgoing: true,
+            address: "",
+            attachments: [{ partId: 1, mime: "image/jpeg", data: "",
+                            uid: "e1", path: "" }]
+        }]);
+        store.resolvePending(E, "", pOne + 400, "770");
+        const twoAfter = store.messages(E, 30, 0);
+        check(twoAfter.length === 2,
+              "one echo swept both pending photos: "
+              + twoAfter.map(m => m.id).join(","));
+        const echoed = twoAfter.filter(m => m.id === "770")[0];
+        check(echoed && echoed.attachments[0].path === "/tmp/first.png",
+              "the echo took the WRONG photo: "
+              + JSON.stringify(echoed && echoed.attachments));
+        const stillPending = twoAfter.filter(m => m.id !== "770")[0];
+        check(stillPending && stillPending.id === "pending-" + pTwo,
+              "the second photo's pending row did not survive: "
+              + twoAfter.map(m => m.id).join(","));
 
         // --- how many of the newest the phone has given us -------------------
         //

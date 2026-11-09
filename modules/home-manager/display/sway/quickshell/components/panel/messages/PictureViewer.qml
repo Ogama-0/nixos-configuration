@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Io
 
 // A photo, full in the panel. `ControlPanel.pictureLayer` grows this out of
 // the bubble that was tapped exactly the way `messagesLayer` grows
@@ -34,6 +35,63 @@ Item {
     readonly property bool missing: root.source === ""
 
     readonly property real footH: 44 * root.uiScale
+
+    // There is no second, lower-quality copy of an image anywhere in this
+    // pipeline - docs/kdeconnect-sms-payload.md has no thumbnail field, and
+    // ConversationView's `src` is either the SAME base64EncodedFile this
+    // Image decodes, or the same fetched file path. `source` already IS the
+    // full-quality original; this file only has to put it on screen at full
+    // size (PreserveAspectFit, below) rather than reuse the small bubble's
+    // own cached layer - which it already did not do.
+
+    // Returns whether anything was actually put on the clipboard, so the
+    // button can only claim "Copied" when it was. It used to be void and the
+    // caller set `copied` unconditionally - every source that is neither a
+    // data: URI nor a file:// path (an empty one, most of all) fell out of
+    // the bottom having done nothing, and said it had copied.
+    function copyToClipboard(): bool {
+        if (root.missing) return false;
+        if (root.source.indexOf("data:") === 0) {
+            const comma = root.source.indexOf(",");
+            const header = root.source.slice(5, comma); // "<mime>;base64"
+            const mime = header.split(";")[0];
+            // $1 rather than interpolating mime into the script string - the
+            // mime comes off the wire (the attachment's own announced type)
+            // and a positional arg is immune to it containing anything a
+            // shell would treat as special.
+            copyProc.command = ["sh", "-c", 'base64 -d | wl-copy --type "$1"',
+                                "sh", mime];
+            copyProc.stdinEnabled = true;
+            copyProc.running = true;
+            copyProc.write(root.source.slice(comma + 1));
+            // Closes the pipe so `base64 -d` sees EOF and wl-copy gets a
+            // complete image instead of hanging on a stdin nobody closed.
+            copyProc.stdinEnabled = false;
+            return true;
+        } else if (root.source.indexOf("file://") === 0) {
+            // kdeconnect's cache paths carry a literal "%" (see
+            // ConversationView's `src`), and decodeURI throws URIError on a
+            // "%" that does not begin a valid escape - which would abort
+            // this handler on the way past. The raw path is the better
+            // answer than no copy at all.
+            let path = root.source.slice(7);
+            try { path = decodeURI(path); } catch (e) { }
+            const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
+            const mime = ext === "png" ? "image/png"
+                : ext === "gif" ? "image/gif"
+                : ext === "webp" ? "image/webp" : "image/jpeg";
+            // Same reasoning as above, now for a filesystem path - it is the
+            // phone's own filename, not something to trust inside a string.
+            copyProc.command = ["sh", "-c", 'wl-copy --type "$1" < "$2"',
+                                "sh", mime, path];
+            copyProc.stdinEnabled = false;
+            copyProc.running = true;
+            return true;
+        }
+        return false;
+    }
+
+    Process { id: copyProc }
 
     // Fully opaque, same reasoning as `messagesBox.sheetGround` in
     // ControlPanel: this is a takeover of the whole stage, and a seam of
@@ -113,5 +171,47 @@ Item {
             readonly property color mutedTok: "@mutedColor@"
             font.pixelSize: Math.round(11 * root.uiScale)
         }
+
+        Rectangle {
+            visible: !root.missing
+            anchors.right: parent.right
+            anchors.rightMargin: 96 * root.uiScale
+            anchors.verticalCenter: parent.verticalCenter
+            width: copyLabel.implicitWidth + 20 * root.uiScale
+            height: 26 * root.uiScale
+            radius: height / 2
+            color: copyArea.containsMouse ? "@glassBorder@" : "@plateBg@"
+
+            Text {
+                id: copyLabel
+                anchors.centerIn: parent
+                text: root.copied ? "Copied" : "Copy"
+                color: "@clockColor@"
+                font.pixelSize: Math.round(11.5 * root.uiScale)
+            }
+
+            MouseArea {
+                id: copyArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    if (!root.copyToClipboard()) return;
+                    root.copied = true;
+                    copiedReset.restart();
+                }
+            }
+        }
+    }
+
+    // Flips the button's own label back after a moment - the only
+    // confirmation a clipboard write gets, since there is nothing else to
+    // show for it.
+    property bool copied: false
+    Timer {
+        id: copiedReset
+        interval: 1500
+        repeat: false
+        onTriggered: root.copied = false
     }
 }

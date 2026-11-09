@@ -162,7 +162,13 @@ Scope {
 
     Timer {
         interval: 30000
-        running: true
+        // Rule 1: nothing runs while the bar is shut. The capacity is read
+        // for one purpose - placing the collision - and the collision is
+        // only ever drawn while the bar is revealed, so this forked a shell
+        // 2,880 times a day for a number nobody could see. triggeredOnStart
+        // re-reads it on every reveal, which for a value that moves about a
+        // percent per ten minutes is fresher than the old cadence managed.
+        running: root.active
         repeat: true
         triggeredOnStart: true
         onTriggered: batteryProc.running = true

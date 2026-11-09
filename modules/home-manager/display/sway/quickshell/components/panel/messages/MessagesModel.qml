@@ -194,16 +194,82 @@ Item {
             // This may BE the echo of something we sent. The pending copy
             // goes once the real one is in, or the thread shows both.
             if (msg.outgoing)
-                root.store.resolvePending(msg.convId, msg.body, msg.ts);
+                root.store.resolvePending(msg.convId, msg.body, msg.ts, msg.id);
         }
-        root.fold(msg);
+
+        // ONE flag read for this message, shared by the block guard, the
+        // un-hide and fold() below - the same reason ingestBatch reads it
+        // once for a whole batch, and for the same traffic: a page arrives
+        // as one conversationUpdated PER MESSAGE and primeThreads() as a
+        // burst of fifty conversationCreated, so every query here is paid
+        // thirty or fifty times over, on the UI thread, while the open
+        // animation runs. This was a blockedIds() call of its own plus a
+        // flagsFor() on the fold line, which ran blockedIds twice and - with
+        // rebuild() below asking again - pinnedIds twice as well.
+        const flags = root.flagsFor();
+
+        // Blocked means never again, not "until the next text" - the row
+        // stays folded out of `threads` entirely (so no toast, no list
+        // entry) even though the message above was just written to disk.
+        // Unblocking (not reachable from the UI yet) finds the history
+        // waiting for it rather than a gap.
+        if (flags.blocked.indexOf(msg.convId) >= 0) return;
+
+        // Is this NEWS, or is it history arriving?
+        //
+        // `fresh` above only means "never seen this uID", which a page of
+        // scrollback satisfies completely: requestConversation answers with
+        // one conversationUpdated PER MESSAGE, all fromSignal, and for a
+        // thread whose history was never cached every one of them is fresh.
+        // So `fromSignal && fresh` cannot by itself tell a text that just
+        // landed from the backlog we asked for - and both things below
+        // depended on it being able to.
+        //
+        // History is, by definition, older than the newest message already
+        // held for the thread. STRICTLY older: the daemon re-announces that
+        // same newest message at the head of every page, and a re-
+        // announcement is not news either. A thread never seen at all has no
+        // newest message to be older than, so its first message is news.
+        const known = root.threads[msg.convId];
+        const isNews = !known || msg.ts > known.ts;
+
+        // A genuinely new message is the one thing that un-hides a REMOVED
+        // (not blocked) conversation - see MessageStore.setRemoved's own
+        // comment, which promises it is NEVER cleared by opening the thread
+        // from search.
+        //
+        // Keeping that promise needs `isNews`, not just fromSignal && fresh:
+        // opening a removed thread from search fires a page request, the
+        // page comes back as thirty fresh signals, and the conversation
+        // un-hid itself - precisely the thing the comment says cannot
+        // happen.
+        //
+        // And only when it IS removed. This used to write unconditionally,
+        // which is a SQLite transaction per message to set a column that
+        // already said 0 - thirty of them per page, for nothing.
+        const wasRemoved = flags.removed.indexOf(msg.convId);
+        if (fromSignal && fresh && isNews && wasRemoved >= 0) {
+            root.store.setRemoved(msg.convId, false);
+            // The local list has to agree: fold() reads `flags` rather than
+            // asking the store a second time, so leaving the id in it would
+            // fold the thread straight back to removed.
+            flags.removed.splice(wasRemoved, 1);
+        }
+
+        root.fold(msg, flags);
         if (msg.convId === root.activeId) {
             root.refreshActive();
             // Still arriving, so the page is not finished. See pageSettleMs.
             if (root.loadingOlder) pageSettle.restart();
         }
-        root.rebuild();
-        if (fromSignal && fresh) root.messageArrived(msg);
+        root.rebuild(flags.pins);
+        // Same reasoning as the un-hide above: a page of backlog is not a
+        // text that just arrived, so it does not get to raise one toast per
+        // message. ControlPanel's handler already drops toasts for the
+        // thread you are READING, which hid this in the common case - but
+        // open A, then open B before A's page lands, and A's history toasted
+        // itself at you a message at a time.
+        if (fromSignal && fresh && isNews) root.messageArrived(msg);
     }
 
     // The ten-field struct, or something else entirely. Checked before
@@ -234,18 +300,41 @@ Item {
             // A refresh that runs just after a send brings the echo back in
             // the batch rather than as a signal.
             for (const m of parsed)
-                if (m.outgoing) root.store.resolvePending(m.convId, m.body, m.ts);
+                if (m.outgoing)
+                    root.store.resolvePending(m.convId, m.body, m.ts, m.id);
         }
 
-        for (const m of parsed) { root.seen[m.id] = true; root.fold(m); }
+        const flags = root.flagsFor();
+        for (const m of parsed) {
+            root.seen[m.id] = true;
+            // Same "forever" rule as ingestMessage - a refresh must not
+            // resurrect a blocked number's thread either.
+            if (flags.blocked.indexOf(m.convId) >= 0) continue;
+            root.fold(m, flags);
+        }
         root.refreshActive();
-        root.rebuild();
+        root.rebuild(flags.pins);
+    }
+
+    // One store read standing in for pinnedIds()/removedIds()/blockedIds()
+    // called separately per message - ingestBatch folds up to fifty messages
+    // in one pass, each potentially creating a new thread entry, and a
+    // three-query lookup per message is twelve times what a refresh needs.
+    function flagsFor(): var {
+        return {
+            pins: root.store ? root.store.pinnedIds() : [],
+            removed: root.store ? root.store.removedIds() : [],
+            blocked: root.store ? root.store.blockedIds() : []
+        };
     }
 
     // Folds one parsed message into the thread map. No store write, no
     // rebuild, no signal - the callers above own those, which is what lets
-    // the batch path do them once.
-    function fold(msg: var): void {
+    // the batch path do them once. `flags` is `flagsFor()`'s result, read
+    // ONCE by the caller for the same reason. `undefined` is fine - see the
+    // `pinned`/`removed`/`blocked` lines below, where a missing list reads
+    // as "none of them", same as an empty one.
+    function fold(msg: var, flags: var): void {
         const prev = root.threads[msg.convId];
         // Only the newest message names the thread and writes the preview; a
         // page of history scrolling in must not rewrite the list.
@@ -259,6 +348,13 @@ Item {
             convId: msg.convId,
             title: newer || !prev ? who.name : prev.title,
             initials: newer || !prev ? who.initials : prev.initials,
+            // The raw number behind the thread, kept BESIDE the resolved
+            // name because ThreadList.listed searches both. `title` is the
+            // contact's name as soon as a vCard matched, so without this a
+            // saved contact could not be found by their own number at all -
+            // only unsaved ones, whose title happens to BE the number.
+            // resolve() has always returned it; it was never copied out.
+            number: newer || !prev ? (who.number || primary) : prev.number,
             hue: root.palette ? root.palette.hueFor(primary) : "#FF888888",
             addresses: newer || !prev ? msg.addresses : prev.addresses,
             isGroup: newer || !prev ? msg.addresses.length > 1 : prev.isGroup,
@@ -268,7 +364,24 @@ Item {
             // there is no markRead on the interface, so once we have decided
             // a thread is read the phone cannot argue.
             unread: prev ? prev.unread : !msg.read,
-            pinned: prev ? prev.pinned : false
+            // A thread's FIRST fold - after every rebuild and reboot, since
+            // `threads` starts empty every time - used to hardcode false
+            // here regardless of what the store actually held. Pins live in
+            // MessageStore, not on the wire at all, so every pinned
+            // conversation read as unpinned until something else happened to
+            // call reloadFlags() (pinning a different thread, say) and
+            // re-synced the whole map in one go - which is exactly the
+            // "pins vanish after a rebuild, then all come back once I pin
+            // one more" symptom. removed/blocked are the same class of
+            // field, read the same way.
+            pinned: prev ? prev.pinned : (flags && flags.pins ? flags.pins.indexOf(msg.convId) >= 0 : false),
+            // removed is the one flag that ingestMessage can flip mid-fold
+            // (see the setRemoved call just above the root.fold() call) - so
+            // unlike pinned above, a fresh `flags` read wins over `prev`
+            // when it disagrees, instead of always trusting the stale value.
+            removed: flags && flags.removed ? flags.removed.indexOf(msg.convId) >= 0
+                                             : (prev ? prev.removed : false),
+            blocked: prev ? prev.blocked : (flags && flags.blocked ? flags.blocked.indexOf(msg.convId) >= 0 : false)
         };
     }
 
@@ -287,33 +400,50 @@ Item {
                                       : { name: primary, initials: "" };
             t.title = who.name;
             t.initials = who.initials;
+            // Same field as fold()'s, re-resolved for the same reason: the
+            // vCards land after the first threads are built.
+            t.number = who.number || primary;
             t.hue = root.palette ? root.palette.hueFor(primary) : t.hue;
         }
         root.rebuild();
     }
 
-    // Re-reads pins and unread out of the store. Cheap, and called whenever
-    // something outside this object has changed one of them.
+    // Re-reads pins, unread, removed and blocked out of the store. Cheap,
+    // and called whenever something outside this object has changed one of
+    // them - togglePin, removeConversation, blockConversation.
     function reloadFlags(): void {
         if (!root.store) { root.rebuild(); return; }
         const pins = root.store.pinnedIds();
         const unread = root.store.unreadIds();
+        const removed = root.store.removedIds();
+        const blocked = root.store.blockedIds();
         for (const id in root.threads) {
             root.threads[id].pinned = pins.indexOf(id) >= 0;
             root.threads[id].unread = unread.indexOf(id) >= 0
                 || root.threads[id].unread;
+            root.threads[id].removed = removed.indexOf(id) >= 0;
+            root.threads[id].blocked = blocked.indexOf(id) >= 0;
         }
-        root.rebuild();
+        root.rebuild(pins);
     }
 
     // Pinned first in pin order, then everything by recency. Pinned threads
     // stay in the list as well as the grid - see ThreadList.
-    function rebuild(): void {
-        const pins = root.store ? root.store.pinnedIds() : [];
+    //
+    // `pins` is optional and is pinnedIds() when omitted. Every caller that
+    // has just read it hands it in instead: this runs once per ingested
+    // message, and pinnedIds() was the one query the per-message path paid
+    // twice. Only `undefined` means "did not look" - an empty array passed
+    // in is an answer, and is used as one rather than triggering a re-read.
+    function rebuild(pins: var): void {
+        // A local, not a reassigned parameter: a typed QML parameter is not
+        // a place to be writing to.
+        const order = pins === undefined
+            ? (root.store ? root.store.pinnedIds() : []) : pins;
         let out = [];
         for (const id in root.threads) out.push(root.threads[id]);
         out.sort((a, b) => {
-            const pa = pins.indexOf(a.convId), pb = pins.indexOf(b.convId);
+            const pa = order.indexOf(a.convId), pb = order.indexOf(b.convId);
             if (pa >= 0 && pb < 0) return -1;
             if (pb >= 0 && pa < 0) return 1;
             if (pa >= 0 && pb >= 0) return pa - pb;
@@ -335,7 +465,12 @@ Item {
         // Back to one page. A thread you had scrolled a long way into must
         // not reopen with four hundred bubbles in it.
         root.pageLimit = root.store ? root.store.pageSize : 30;
-        if (root.store) {
+        // Not for the empty id. "No thread open" is a real state and is
+        // reached deliberately - stepping out of a conversation that was
+        // just removed goes through here - but it is not a conversation, and
+        // writing it as one put a junk `conversations` row with convId ""
+        // in the store for touch() and setUnread() to keep updating.
+        if (root.store && convId) {
             root.store.touch(convId, 0);
             root.store.setUnread(convId, false);
         }
@@ -350,7 +485,13 @@ Item {
         // every step opens a thread, so a request fired from here is a
         // request per keypress at a phone that answers in its own time. The
         // thread you stopped on is the only one you meant.
-        openSettle.restart();
+        //
+        // Nothing to ask for when nothing is open: requestPage arms
+        // `loadingOlder` BEFORE it checks activeId (deliberately - see its
+        // comment), so firing it for the empty id left the pane claiming to
+        // be loading a page for 1.2s with no request in flight.
+        if (convId) openSettle.restart();
+        else openSettle.stop();
     }
 
     Timer {
@@ -408,6 +549,42 @@ Item {
     // There is no receipt. Nothing returns, and nothing confirms - the
     // message is only real once the phone echoes it back as a
     // conversationUpdated. Until then the bubble says so.
+    // Guessed from the extension, since a staged local file (picker or
+    // clipboard paste) carries no mime of its own - ConversationView only
+    // ever treats an attachment as an image via this field.
+    //
+    // The fallback is NOT an image. It used to be "image/jpeg" for anything
+    // unrecognised, and the picker is a plain `zenity --file-selection` with
+    // no filter on it, so attaching a video, a PDF or a voice memo produced
+    // a bubble claiming to be a photo, failing to decode, and showing the
+    // "Photo / not sent" recess. An attachment whose type we cannot name is
+    // an attachment, and the bubble says so.
+    function mimeForPath(path: string): string {
+        const s = String(path);
+        const dot = s.lastIndexOf(".");
+        const ext = dot < 0 ? "" : s.slice(dot + 1).toLowerCase();
+        switch (ext) {
+        case "png":  return "image/png";
+        case "gif":  return "image/gif";
+        case "webp": return "image/webp";
+        case "bmp":  return "image/bmp";
+        case "jpg":
+        case "jpeg": return "image/jpeg";
+        case "mp4":  return "video/mp4";
+        case "webm": return "video/webm";
+        case "3gp":  return "video/3gpp";
+        case "mkv":  return "video/x-matroska";
+        case "amr":  return "audio/amr";
+        case "m4a":  return "audio/mp4";
+        case "mp3":  return "audio/mpeg";
+        case "ogg":  return "audio/ogg";
+        case "opus": return "audio/opus";
+        case "wav":  return "audio/wav";
+        case "pdf":  return "application/pdf";
+        }
+        return "application/octet-stream";
+    }
+
     function send(text: string, attachments: var): string {
         const pendingId = "pending-" + Date.now();
         const path = root.devPathFor(root.deviceId);
@@ -424,14 +601,22 @@ Item {
                    "xsav", root.activeId, text, String(atts.length)];
         for (const a of atts) cmd = cmd.concat(["s", a]);
 
-        // Shown immediately, marked pending. If the phone never echoes it
-        // back it stays pending, which is the honest state - it is not
-        // promoted on a timer.
+        // Shown immediately, marked pending, carrying the ORIGINAL local file
+        // - not the empty array this used to be stashed with. The phone's
+        // own echo (`conversationUpdated`, a second or so later) carries
+        // whatever its MMS send pass recompressed the photo down to, visibly
+        // softer than what left this machine. MessageStore.resolvePending
+        // copies this same attachments column onto that echo before dropping
+        // the pending row, so the swap from "what I sent" to "what the
+        // carrier mangled" never actually happens on screen.
         if (root.store) {
             root.store.putMessages(root.activeId, [{
                 id: pendingId, convId: root.activeId, body: text,
                 ts: Date.now(), outgoing: true,
-                address: "", attachments: []
+                address: "", attachments: atts.map(a => ({
+                    partId: -1, mime: root.mimeForPath(a), data: "",
+                    uid: "", path: a
+                }))
             }]);
             root.refreshActive();
         }

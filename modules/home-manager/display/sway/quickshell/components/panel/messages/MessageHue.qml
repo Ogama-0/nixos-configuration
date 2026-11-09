@@ -76,12 +76,25 @@ Item {
     // overflows into a double, precision goes, and two numbers that differ in
     // their last digits start colliding.
     //
-    // NOT annotated `: int`. QML's int is a SIGNED 32-bit, so annotating it
-    // takes the perfectly good uint32 this returns and wraps it negative -
-    // hash("767248570") comes back as -1997306381 instead of 2297660915, and
-    // a negative modulo indexes off the front of the pool and yields
-    // undefined. Three of fifty numbers got a colour before this was caught.
-    function hash(s: string) {
+    // Annotated `: real`, and NOT `: int`. Both halves matter.
+    //
+    // Not `int`, because QML's int is a SIGNED 32-bit: it takes the
+    // perfectly good uint32 this returns and wraps it negative -
+    // hash("767248570") comes back as -1997306381 instead of 2297660915,
+    // and a negative modulo indexes off the front of the pool and yields
+    // undefined. Three of fifty numbers got a colour before that was caught.
+    //
+    // But not UNANNOTATED either, which is what it was. Qt then treats the
+    // return of a called function as void and logs, at ERROR, "<value>
+    // should be coerced to void because the function called is
+    // insufficiently annotated" - once per hueFor(), which is once per
+    // thread per rebuild. That was 17,324 ERROR lines in a week, and a log
+    // that full is a log nothing real can be found in.
+    //
+    // `real` is a double, which holds every uint32 exactly, so it names the
+    // type without truncating it. tests/laserbar/messages-hue.qml pins the
+    // value.
+    function hash(s: string): real {
         let h = 0x811c9dc5;
         for (let i = 0; i < s.length; i++) {
             h ^= s.charCodeAt(i);

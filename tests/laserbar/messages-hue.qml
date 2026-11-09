@@ -25,6 +25,22 @@ ShellRoot {
     Component.onCompleted: {
         let bad = [];
 
+        // The hash itself, pinned. `hash` is annotated `: real` and must not
+        // be annotated `: int`: QML's int is a SIGNED 32-bit, so the uint32
+        // FNV-1a produces wraps negative, a negative modulo indexes off the
+        // front of the pool, and the colour comes back undefined. This
+        // number is above 2^31 precisely so that it catches that - three of
+        // fifty real numbers hit it before it was understood.
+        //
+        // It also has to stay ANNOTATED. Unannotated, Qt treats the return
+        // of a called function as void and logs an ERROR per hueFor() call -
+        // 17,324 of them in a week, enough to bury anything real.
+        if (hue.hash("767248570") !== 2297660915)
+            bad.push("hash(767248570) = " + hue.hash("767248570")
+                     + ", wanted 2297660915 (signed wrap?)");
+        if (hue.hash("") !== 2166136261)
+            bad.push("hash(\"\") = " + hue.hash("") + ", wanted the FNV offset basis");
+
         // Stable: the same number twice, and once more after a detour, is one
         // colour. Not a tautology - a hash seeded from anything per-call, or a
         // pool re-parsed in a different order, breaks exactly here.

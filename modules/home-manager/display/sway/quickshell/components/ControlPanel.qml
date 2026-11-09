@@ -106,21 +106,24 @@ Scope {
     property string pictureWho: ""
     property string pictureWhen: ""
 
-    // (source, who, ts, origin) - the exact shape ConversationView's
-    // `pictureAsked` raises and MessagesPane forwards untouched. `origin`
-    // arrives in GLOBAL (window) coordinates: the delegate that raised it
-    // sits inside a flipped ListView inside the pane, where its own x/y mean
-    // nothing, so it escaped its own coordinate space with `mapToItem(null,
-    // ...)` before this ever saw it. `zones` is this file's own stage - the
-    // same unscaled 940x700 space `messagesOrigin` lives in - so mapping
-    // back INTO it with `mapFromItem(null, ...)` and dividing out `zones.s`
-    // is what undoes that escape and lands `pictureOrigin` in the units
-    // `pictureLayer` below expects.
+    // (source, who, ts, origin) - the shape ConversationView's `pictureAsked`
+    // raises and MessagesPane forwards untouched, except that `origin` has
+    // already been mapped into STAGE units (the unscaled 940x700 space
+    // `messagesOrigin` lives in) by the handler that calls this.
+    //
+    // It is mapped THERE and not here, and that is the whole point: this
+    // function tried to do it itself with `zones.mapFromItem(...)`, and
+    // `zones` is an id declared inside the `Variants` delegate far below.
+    // A QML id resolves only within the component that declares it, and a
+    // Variants delegate is its own component - so every call threw
+    // `ReferenceError: zones is not defined` on the function's first line
+    // and aborted before reaching `pictureOpen = true`. Clicking a photo did
+    // nothing at all, silently, because a ReferenceError is raised at CALL
+    // time: the shell loads clean, every fixture passes, and the only
+    // evidence is one warning per click in the log. Nothing on `root` may
+    // reach for an id that lives inside the Variants.
     function openPicture(source, who, ts, origin): void {
-        const local = zones.mapFromItem(null, origin.x, origin.y,
-                                         origin.width, origin.height);
-        root.pictureOrigin = Qt.rect(local.x / zones.s, local.y / zones.s,
-                                      local.width / zones.s, local.height / zones.s);
+        root.pictureOrigin = origin;
         root.pictureSource = source;
         root.pictureWho = who;
         // Whether this reads as "missing" is PictureViewer's own call now -
@@ -985,7 +988,13 @@ Scope {
                                 color: Qt.rgba(sheetGround.r, sheetGround.g,
                                                sheetGround.b, 1)
                                 readonly property color sheetGround: "@sheetBg@"
-                                radius: (1 - messagesLayer.t) * 14 * zones.s
+                                // At t=1 this fills the whole stage, so its
+                                // corners sit exactly on PanelSheet's own
+                                // 26px-radius corners (its path literal
+                                // above) - interpolating to 0 instead left
+                                // square corners poking out past the sheet's
+                                // rounded ones once Messages was fully open.
+                                radius: (14 + (26 - 14) * messagesLayer.t) * zones.s
 
                                 // t runs 0 (folded into the origin) to 1
                                 // (the whole stage).
@@ -1011,8 +1020,25 @@ Scope {
                                     active: root.messagesOpen
                                     pendingConvId: root.messagesPending
                                     onCloseAsked: root.closeMessages()
-                                    onPictureAsked: (source, who, ts, origin) =>
-                                        root.openPicture(source, who, ts, origin)
+                                    // Mapped here, inside the Variants, where
+                                    // `zones` is actually in scope. The
+                                    // delegate escaped its own coordinate
+                                    // space with `mapToItem(null, ...)`
+                                    // because it sits in a flipped ListView
+                                    // where its x/y mean nothing; this undoes
+                                    // that escape and divides out the stage
+                                    // scale. See openPicture for why the root
+                                    // cannot do this itself.
+                                    onPictureAsked: (source, who, ts, origin) => {
+                                        const local = zones.mapFromItem(
+                                            null, origin.x, origin.y,
+                                            origin.width, origin.height);
+                                        root.openPicture(source, who, ts,
+                                            Qt.rect(local.x / zones.s,
+                                                    local.y / zones.s,
+                                                    local.width / zones.s,
+                                                    local.height / zones.s));
+                                    }
                                 }
                             }
 
@@ -1073,7 +1099,9 @@ Scope {
                                 color: Qt.rgba(pictureGround.r, pictureGround.g,
                                                pictureGround.b, 1)
                                 readonly property color pictureGround: "@sheetBg@"
-                                radius: (1 - pictureLayer.t) * 14 * zones.s
+                                // Same corner-matching reasoning as
+                                // messagesBox.radius just above.
+                                radius: (14 + (26 - 14) * pictureLayer.t) * zones.s
 
                                 readonly property real t: pictureLayer.t
 
