@@ -73,15 +73,36 @@ Item {
     // knowing which device it is listening about.
     Component.onCompleted: pairedProc.running = true
 
-    // -l, not -a: every paired device, reachable or not.
+    // -l, not -a: every paired device, reachable or not. But a second paired
+    // device (a tablet, a watch) sorts into `-l` in pairing order, not
+    // capability order, and taking line [0] blindly picked whichever one
+    // paired FIRST - which doesn't even have to be reachable, let alone have
+    // the conversations plugin. Messages then asked a device with no SMS
+    // plugin for its conversations and got "No conversations yet." next to a
+    // phone that actually had fifty of them. So `-a` (reachable devices) is
+    // also asked, in the same shell call to avoid a second race, and used to
+    // prefer whichever paired device is actually online; a device that is
+    // currently asleep still falls back to pairing order, which is the
+    // original behaviour.
     Process {
         id: pairedProc
-        command: ["kdeconnect-cli", "-l", "--id-name-only"]
+        command: ["sh", "-c",
+            "kdeconnect-cli -l --id-name-only; printf '\\x1e'; "
+            + "kdeconnect-cli -a --id-name-only"]
         stdout: StdioCollector {
             onStreamFinished: {
-                const line = this.text.split("\n")
-                    .map(l => l.trim())
-                    .filter(l => l.length > 0)[0];
+                const [pairedBlock, reachableBlock] = this.text.split("\x1e");
+                const paired = (pairedBlock || "").split("\n")
+                    .map(l => l.trim()).filter(l => l.length > 0);
+                const reachableIds = (reachableBlock || "").split("\n")
+                    .map(l => l.trim()).filter(l => l.length > 0)
+                    .map(l => { const sep = l.indexOf(" ");
+                                 return sep < 0 ? l : l.slice(0, sep); });
+                const line = paired.find(l => {
+                    const sep = l.indexOf(" ");
+                    const id = sep < 0 ? l : l.slice(0, sep);
+                    return reachableIds.indexOf(id) >= 0;
+                }) || paired[0];
                 if (!line) { root.pairedId = ""; root.pairedName = ""; return; }
                 const sep = line.indexOf(" ");
                 root.pairedId = sep < 0 ? line : line.slice(0, sep);

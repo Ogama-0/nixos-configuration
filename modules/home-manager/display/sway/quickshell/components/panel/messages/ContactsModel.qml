@@ -36,7 +36,19 @@ Item {
     property string vcardDir: ""
 
     function load(deviceId: string): void {
-        if (!deviceId) { root.byNumber = ({}); root.ready = true; return; }
+        if (!deviceId) {
+            // MobileModel's pairedId can read back empty on a retry even for
+            // an already-paired phone (a slow or momentarily-empty
+            // `kdeconnect-cli -l`), and MessagesCore.onDeviceIdChanged calls
+            // load() on every such blip. Wiping byNumber here would flip
+            // `ready` true->false->true with an empty map and relabel() would
+            // stamp every thread's title back to its raw number - the names
+            // vanishing a moment after the panel opens. Only the very first
+            // call, before any device has ever been known, has nothing to
+            // lose by going empty.
+            if (root.vcardDir === "") { root.byNumber = ({}); root.ready = true; }
+            return;
+        }
         root.loadFrom(Quickshell.env("HOME")
             + "/.local/share/kpeoplevcard/kdeconnect-" + deviceId);
     }
