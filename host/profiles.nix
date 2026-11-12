@@ -15,6 +15,9 @@ rec {
     }:
     let
       base = rec {
+
+        real_name = "Oscar Cornut";
+
         inherit user mail is-epita;
         home_path = "/home/${user}";
         ssh = {

@@ -75,7 +75,8 @@ in
 
         inline-diagnostics = {
           cursor-line = "hint";
-          other-lines = "error";
+          other-lines = "warning";
+
         };
 
         indent-guides = {
