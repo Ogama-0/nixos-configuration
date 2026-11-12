@@ -3,11 +3,11 @@ let
   dconfExe = "${pkgs.dconf}/bin/dconf";
 
   alacrittyColorsPath = "${config.xdg.configHome}/alacritty/colors.toml";
-  alacrittyColors = import ../lib/alacritty-colors.nix { inherit pkgs; };
-  treeLink = import ../lib/quickshell-tree-link.nix { inherit pkgs; };
+  alacrittyColors = import ../../lib/alacritty-colors.nix { inherit pkgs; };
+  treeLink = import ../../lib/quickshell-tree-link.nix { inherit pkgs; };
 
   helixAutoTheme = "${config.xdg.configHome}/helix/themes/auto.toml";
-  helixTheme = import ../lib/helix-auto-theme.nix { inherit pkgs; };
+  helixTheme = import ../../lib/helix-auto-theme.nix { inherit pkgs; };
 
   # helix re-reads its config and theme on SIGUSR1 (verified: it logs
   # "failed to load theme" when sent one after the theme file is changed).
@@ -24,7 +24,7 @@ let
   '';
 
   zellijAutoTheme = "${config.xdg.configHome}/zellij/themes/auto.kdl";
-  zellijThemes = import ../lib/zellij-theme.nix { inherit pkgs; };
+  zellijThemes = import ../../lib/zellij-theme.nix { inherit pkgs; };
 
   # zellij paints its own chrome in true colour, so unlike the other TUIs it
   # does not follow alacritty's ANSI palette - it has to be told, and twice:
@@ -32,7 +32,7 @@ let
   #   * auto.kdl is the theme *new* sessions start in. zellij decides that for
   #     itself by asking the terminal for its background with OSC 11, but
   #     falls back to its own built-in (radioactive green) theme whenever no
-  #     answer arrives - see modules/lib/zellij-theme.nix.
+  #     answer arrives - see lib/zellij-theme.nix.
   #   * the `action` below is for the sessions already running.
   #
   # `action` targets a single session, so every live one gets its own call.
@@ -56,7 +56,7 @@ let
 
   # Shared with the greeter (pkgs/greetd-proxy), which has to make the same
   # sunrise/sunset decision before any user session exists.
-  tzTable = import ../lib/timezone-coords.nix;
+  tzTable = import ../../lib/timezone-coords.nix;
   timezoneCoords = tzTable.coords;
   fallbackLat = tzTable.fallback.lat;
   fallbackLng = tzTable.fallback.lng;

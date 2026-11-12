@@ -3,7 +3,7 @@
 # import) and by modules/home-manager/darkman.nix (to install the right one on
 # each sunrise/sunset).
 #
-# The values live in modules/lib/palette.nix under `<mode>.terminal` - edit
+# The values live in lib/palette.nix under `<mode>.terminal` - edit
 # them there, not here. This file only renders them as TOML.
 { pkgs }:
 let

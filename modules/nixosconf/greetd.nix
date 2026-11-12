@@ -7,8 +7,8 @@
 { pkgs, lpkgs, upkgs, lib, ... }:
 
 let
-  qmlTheme = import ../lib/qml-theme.nix;
-  palettes = import ../lib/theme-colors.nix;
+  qmlTheme = import ../../lib/qml-theme.nix;
+  palettes = import ../../lib/theme-colors.nix;
 
   # TEMPORARY instrumentation for the "first login is always rejected"
   # investigation. Records message types, timings and password *lengths* -
@@ -28,7 +28,7 @@ let
   # red "there are errors in your config file" banner on every login.
   # home-manager writes that config and puts swayfx on PATH, but nothing
   # execs it: greetd starts the session by absolute store path, right here.
-  sessionBin = "${import ../lib/swayfx.nix pkgs}/bin/sway";
+  sessionBin = "${import ../../lib/swayfx.nix pkgs}/bin/sway";
   swaymsgBin = "${pkgs.sway}/bin/swaymsg";
   systemctlBin = "${pkgs.systemd}/bin/systemctl";
 
@@ -52,7 +52,7 @@ let
 
   # GreetdSession carries no palette tokens, only the two binary paths, so
   # one copy serves both variants.
-  greetdSessionQml = themeGreeter "dark" darkImage ../qml/components/GreetdSession.qml;
+  greetdSessionQml = themeGreeter "dark" darkImage ../../qml/components/GreetdSession.qml;
 
   # If quickshell cannot start, fall back to a text greeter rather than
   # leaving the machine with no way in. This is the primary lockout guard.
@@ -104,8 +104,8 @@ ${lib.optionalString debugTrace ''
 in
 {
   environment.etc = {
-    "greeter/GreeterDark.qml".text = themeGreeter "dark" darkImage ../qml/GreeterDark.qml;
-    "greeter/GreeterLight.qml".text = themeGreeter "light" lightImage ../qml/GreeterLight.qml;
+    "greeter/GreeterDark.qml".text = themeGreeter "dark" darkImage ../../qml/GreeterDark.qml;
+    "greeter/GreeterLight.qml".text = themeGreeter "light" lightImage ../../qml/GreeterLight.qml;
     "greeter/components/GreetdSession.qml".text = greetdSessionQml;
     "greeter/sway.conf".source = swayConf;
   };

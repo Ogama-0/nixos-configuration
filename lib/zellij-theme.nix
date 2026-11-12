@@ -1,4 +1,4 @@
-# zellij's themes, built from modules/lib/palette.nix. Imported by
+# zellij's themes, built from lib/palette.nix. Imported by
 # modules/home-manager/zellij (to install them) and by
 # modules/home-manager/darkman.nix (to switch them). Two files, because zellij
 # switches in two different ways:

@@ -5,7 +5,7 @@
   # -------------------- Grafana -------------------- #
 
   sops.secrets."grafana_secret_key" = {
-    sopsFile = ../../../sops/oserv.yaml;
+    sopsFile = ../../../../sops/oserv.yaml;
     owner = "grafana";
   };
 

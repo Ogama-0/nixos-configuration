@@ -9,16 +9,16 @@
 }:
 
 let
-  allColors = import ../../../../lib/theme-colors.nix;
+  allColors = import ../../../../../lib/theme-colors.nix;
 
   # Semantic status colours, per variant. They are NOT one base16 slot: the
   # two palettes disagree about where each hue lives, and several light slots
   # fail their contrast floors outright. The measured values live in
-  # modules/lib/palette.nix under `<mode>.status` - edit them there.
+  # lib/palette.nix under `<mode>.status` - edit them there.
   #
   # The alpha prefixes are applied here because QML wants #AARRGGBB: FF for
   # the opaque bands, CC for the muted light column (base05 at 80%).
-  palette = import ../../../../lib/palette.nix;
+  palette = import ../../../../../lib/palette.nix;
 
   statusColorsFor =
     variant:
@@ -138,14 +138,14 @@ let
   # Lockscreen theming reuses the same @token@ substitution and the same
   # `allColors` palette as the bar; what differs is that each variant renders
   # its own component and artwork (see lockFor below).
-  qmlTheme = import ../../../../lib/qml-theme.nix;
+  qmlTheme = import ../../../../../lib/qml-theme.nix;
 
-  treeLink = import ../../../../lib/quickshell-tree-link.nix { inherit pkgs; };
+  treeLink = import ../../../../../lib/quickshell-tree-link.nix { inherit pkgs; };
 
   systemctlBin = "${pkgs.systemd}/bin/systemctl";
   # The session's own sway, not pkgs.sway, so this pulls nothing extra into
-  # the closure. See modules/lib/swayfx.nix.
-  swaymsgBin = "${import ../../../../lib/swayfx.nix pkgs}/bin/swaymsg";
+  # the closure. See lib/swayfx.nix.
+  swaymsgBin = "${import ../../../../../lib/swayfx.nix pkgs}/bin/swaymsg";
   corptaFontPath = "${config.home.homeDirectory}/nixos-configuration/assets/fonts/Corpta-DEMO.otf";
 
   themeFor =
@@ -361,7 +361,7 @@ in
   # that would make it a read-only store symlink darkman could not replace.
   # Seeded to the dark tree; darkman corrects it on its next run.
   #
-  # The link is made by modules/lib/quickshell-tree-link.nix rather than a bare
+  # The link is made by lib/quickshell-tree-link.nix rather than a bare
   # `ln -sfn`, because on the first application of this change widgets/ is
   # still a real directory and `ln -sfn` would link *into* it. See that file.
   # Only link when `widgets` is not already a symlink: darkman owns which tree

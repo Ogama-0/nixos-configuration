@@ -1,5 +1,5 @@
 # Coordinates used for local sunrise/sunset computation. Mirrors
-# host/personal/configuration.nix's time.timeZone and its two commented-out
+# modules/hosts/personal/configuration.nix's time.timeZone and its two commented-out
 # travel alternates. Consumed by modules/home-manager/darkman.nix and by
 # pkgs/greetd-proxy (via modules/nixosconf/greetd.nix).
 {

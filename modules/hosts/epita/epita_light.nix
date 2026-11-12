@@ -1,13 +1,13 @@
 { pkgs, cfg, ... }: {
   imports = [
-    ../../modules/home-manager/git.nix
-    ../../modules/home-manager/helix.nix
-    ../../modules/home-manager/sh.nix
-    ../../modules/home-manager/display/font.nix
-    ../../modules/home-manager/display/i3
-    ../../modules/home-manager/kitty.nix
-    ../../modules/home-manager/wakapi.nix
-    ../../modules/home-manager/nh.nix
+    ../../home-manager/git.nix
+    ../../home-manager/helix.nix
+    ../../home-manager/sh.nix
+    ../../home-manager/display/font.nix
+    ../../home-manager/display/i3
+    ../../home-manager/kitty.nix
+    ../../home-manager/wakapi.nix
+    ../../home-manager/nh.nix
   ];
 
   sops.age.keyFile = "/home/${cfg.login}/.config/sops/age/keys.txt";

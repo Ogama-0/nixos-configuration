@@ -1,6 +1,6 @@
 { lib, upkgs, ... }:
 let
-  colors = import ../../lib/theme-colors.nix;
+  colors = import ../../../lib/theme-colors.nix;
 
   # Vicinae derives its ~50 remaining semantic colors (list selection, input
   # borders, tooltips, ...) from these, inheriting whatever is left from the

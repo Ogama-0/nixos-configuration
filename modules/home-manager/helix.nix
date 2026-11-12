@@ -269,7 +269,7 @@ in
     run ${pkgs.coreutils}/bin/mkdir -p "${config.xdg.configHome}/helix/themes"
     if [ ! -e "${autoThemePath}" ]; then
       run ${pkgs.coreutils}/bin/install -m 644 \
-        ${(import ../lib/helix-auto-theme.nix { inherit pkgs; }) "dark"} \
+        ${(import ../../lib/helix-auto-theme.nix { inherit pkgs; }) "dark"} \
         "${autoThemePath}"
     fi
   '';

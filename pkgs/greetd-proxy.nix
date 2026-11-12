@@ -7,7 +7,7 @@
 # cannot pick a variant is a machine you cannot log into.
 
 let
-  tzTable = import ../modules/lib/timezone-coords.nix;
+  tzTable = import ../lib/timezone-coords.nix;
 
   rawProxy = writers.writePython3Bin "greetd-proxy-unwrapped"
     {

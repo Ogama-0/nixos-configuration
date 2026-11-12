@@ -9,24 +9,24 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/nixosconf/stream.nix
-    ../../modules/nixosconf/utilities.nix
-    ../../modules/nixosconf/nvidia.nix
-    ../../modules/nixosconf/geoclue.nix
-    ../../modules/nixosconf/kdeconnect.nix
-    ../../modules/nixosconf/steam.nix
-    ../../modules/nixosconf/printer.nix
-    ../../modules/nixosconf/mounting.nix
-    ../../modules/nixosconf/docker.nix
-    ../../modules/nixosconf/tailscale.nix
-    ../../modules/nixosconf/samba-cli.nix
-    ../../modules/nixosconf/gtklock
-    ../../modules/nixosconf/greetd.nix
-    ../../modules/nixosconf/vm.nix
-    ../../modules/nixosconf/localsend.nix
-    ../../modules/nixosconf/earlyoom.nix
-    ../../modules/nixosconf/gns3-root.nix
-    ../../modules/nixosconf/nh.nix
+    ../../nixosconf/stream.nix
+    ../../nixosconf/utilities.nix
+    ../../nixosconf/nvidia.nix
+    ../../nixosconf/geoclue.nix
+    ../../nixosconf/kdeconnect.nix
+    ../../nixosconf/steam.nix
+    ../../nixosconf/printer.nix
+    ../../nixosconf/mounting.nix
+    ../../nixosconf/docker.nix
+    ../../nixosconf/tailscale.nix
+    ../../nixosconf/samba-cli.nix
+    ../../nixosconf/gtklock
+    ../../nixosconf/greetd.nix
+    ../../nixosconf/vm.nix
+    ../../nixosconf/localsend.nix
+    ../../nixosconf/earlyoom.nix
+    ../../nixosconf/gns3-root.nix
+    ../../nixosconf/nh.nix
 
     ./nixosconf/backup-laptop.nix
     ./nixosconf/volumes.nix

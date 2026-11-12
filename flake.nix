@@ -16,6 +16,11 @@
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
+
+    import-tree.url = "github:vic/import-tree";
+
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -94,7 +99,7 @@
             cfg = cfg-perso;
             inherit lpkgs upkgs;
           };
-          modules = [ ./host/personal/configuration.nix ];
+          modules = [ ./modules/hosts/personal/configuration.nix ];
         };
         oserv = lib.nixosSystem {
           inherit system;
@@ -103,7 +108,7 @@
             inherit inputs lpkgs upkgs;
           };
           modules = [
-            ./host/serveur/configuration.nix
+            ./modules/hosts/oserv/configuration.nix
             nixos-hardware.nixosModules.dell-optiplex-3050
             sops-nix.nixosModules.sops
           ];
@@ -122,7 +127,7 @@
           };
           inherit pkgs;
           modules = [
-            ./host/personal/home.nix
+            ./modules/hosts/personal/home.nix
             sops-nix.homeManagerModules.sops
           ];
         };
@@ -137,7 +142,7 @@
           };
           inherit pkgs;
           modules = [
-            ./host/serveur/home.nix
+            ./modules/hosts/oserv/home.nix
             sops-nix.homeManagerModules.sops
           ];
         };
@@ -152,7 +157,7 @@
           };
           inherit pkgs;
           modules = [
-            ./host/epita/epita.nix
+            ./modules/hosts/epita/epita.nix
             sops-nix.homeManagerModules.sops
           ];
         };
@@ -166,7 +171,7 @@
           };
           inherit pkgs;
           modules = [
-            ./host/epita/epita_light.nix
+            ./modules/hosts/epita/epita_light.nix
             sops-nix.homeManagerModules.sops
           ];
         };

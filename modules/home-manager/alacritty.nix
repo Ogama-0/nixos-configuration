@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 let
   colorsPath = "${config.xdg.configHome}/alacritty/colors.toml";
-  alacrittyColors = import ../lib/alacritty-colors.nix { inherit pkgs; };
+  alacrittyColors = import ../../lib/alacritty-colors.nix { inherit pkgs; };
 in
 {
   programs.alacritty = {

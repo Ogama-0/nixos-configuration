@@ -1,7 +1,7 @@
 # The body of ~/.config/helix/themes/auto.toml, which darkman swaps at runtime.
 # Imported by modules/home-manager/helix.nix (to seed it) and by
 # modules/home-manager/darkman.nix (to switch it), so these live in exactly one
-# place - same reason as modules/lib/palette.nix.
+# place - same reason as lib/palette.nix.
 #
 # helix is the one app that does NOT follow the terminal's ANSI palette. It
 # gets real themes instead, because term16_* only reaches for the 16 ANSI

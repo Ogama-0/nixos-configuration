@@ -1,11 +1,11 @@
 { cfg, ... }: {
   imports = [
     # global import
-    ../../modules/home-manager/sh.nix
-    ../../modules/home-manager/helix.nix
-    ../../modules/home-manager/git.nix
-    ../../modules/home-manager/display/font.nix
-    ../../modules/home-manager/wakapi.nix
+    ../../home-manager/sh.nix
+    ../../home-manager/helix.nix
+    ../../home-manager/git.nix
+    ../../home-manager/display/font.nix
+    ../../home-manager/wakapi.nix
     ./home-manager/tools.nix
   ];
 

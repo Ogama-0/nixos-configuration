@@ -4,13 +4,13 @@
 #
 # What reads this:
 #   ui       -> the quickshell bar, widgets and lockscreen, the greeter, mako,
-#               and vicinae, via modules/lib/theme-colors.nix
-#   terminal -> alacritty, via modules/lib/alacritty-colors.nix - and through
+#               and vicinae, via lib/theme-colors.nix
+#   terminal -> alacritty, via lib/alacritty-colors.nix - and through
 #               alacritty, most TUI apps (bat, yazi, ...) since they draw with
 #               the terminal's own ANSI colours. helix is the exception: it
-#               uses real themes instead, see modules/lib/helix-auto-theme.nix
+#               uses real themes instead, see lib/helix-auto-theme.nix
 #   status   -> the oserv status widget, via the quickshell module
-#   both     -> zellij, via modules/lib/zellij-theme.nix - it needs its own
+#   both     -> zellij, via lib/zellij-theme.nix - it needs its own
 #               themes because it paints its chrome in true colour instead of
 #               the terminal's ANSI slots, and it takes the ground from `ui`
 #               but the light accents from `terminal` (reasons in that file)

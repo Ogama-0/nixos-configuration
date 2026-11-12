@@ -1,6 +1,6 @@
 { pkgs, lib, config, ... }:
 let
-  themes = import ../../lib/zellij-theme.nix { inherit pkgs; };
+  themes = import ../../../lib/zellij-theme.nix { inherit pkgs; };
   autoThemePath = "${config.xdg.configHome}/zellij/themes/auto.kdl";
 in
 {
