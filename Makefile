@@ -1,11 +1,13 @@
 NIX_FLAGS := --extra-experimental-features "nix-command flakes"
 
 .DEFAULT_GOAL := help
-.PHONY: help personal oserv epita epita-light check update
+.PHONY: help personal personal-hm oserv oserv-hm epita epita-light check update
 
 help:
-	@echo "make personal     NixOS + Home Manager switch (main desktop)"
-	@echo "make oserv        NixOS + Home Manager switch (home server, run on oserv itself)"
+	@echo "make personal     NixOS + Home Manager switch, sudo (main desktop)"
+	@echo "make personal-hm  Home Manager switch only, no sudo (main desktop)"
+	@echo "make oserv        NixOS + Home Manager switch, sudo (home server, run on oserv itself)"
+	@echo "make oserv-hm     Home Manager switch only, no sudo (home server, run on oserv itself)"
 	@echo "make epita        Home Manager switch (EPITA computer)"
 	@echo "make epita-light  Home Manager switch (EPITA computer, trimmed down)"
 	@echo "make check        nix flake check"
@@ -14,8 +16,15 @@ help:
 personal:
 	nh os switch . -H personal
 
+personal-hm:
+	nh home switch . -c personal
+	systemctl --user restart quickshell-widgets
+
 oserv:
 	nh os switch . -H oserv
+
+oserv-hm:
+	nh home switch . -c oserv
 
 epita:
 	cp ~/afs/.wakatime.cfg ~
