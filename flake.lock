@@ -69,11 +69,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794504117,
-        "narHash": "sha256-Tsh3/82e7xdVadpQA6s3AprlcOaN82hL1NIyK0dhv9U=",
+        "lastModified": 1794522859,
+        "narHash": "sha256-375GI5RBD8lnoeDUnM9PyplAgxI3TclG2oT8s6+3rAE=",
         "ref": "refs/heads/main",
-        "rev": "6b769d3862889126d7914294d350dcfbbbe790bf",
-        "revCount": 191,
+        "rev": "0359c1db4d32557666a84f6766b46c85aee212b2",
+        "revCount": 192,
         "type": "git",
         "url": "ssh://git@github.com/Ogama-0/lsi-web-interface"
       },
