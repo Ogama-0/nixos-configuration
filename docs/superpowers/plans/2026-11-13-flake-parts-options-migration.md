@@ -306,10 +306,10 @@ Five tasks with identical shape. Do them in this order — `core` is smallest an
 
 | Task | Domain | Files from | Notes |
 |---|---|---|---|
-| 5 | `features/core/` | `home-manager/{sh,git,nh,nix-gc,keyboard}.nix`, `nixosconf/{ssh,nh,utilities}.nix`, `hosts/*/home-manager/tool*.nix`, `hosts/epita/tools.nix` | `nh` and `wakapi` exist on both sides — merge each pair into one file |
+| 5 | `features/core/` | `home-manager/{sh,git,nh,nix-gc,keyboard}.nix`, `nixosconf/{ssh,nh,utilities}.nix`, `hosts/*/home-manager/tool*.nix`, `hosts/epita/tools.nix` | `nh` exists on both sides — merge the pair into one file. `wakapi` merges in Task 8, not here (see ledger ruling) |
 | 6 | `features/system/` | `nixosconf/{docker,tailscale,avahi,mounting,nvidia,printer,geoclue,earlyoom,vm,steam,localsend,kdeconnect,postgresql-collation,samba,samba-cli,gns3-root,stream}.nix` | `postgresql-collation` must apply wherever `services.postgresql` runs: default its enable to `config.services.postgresql.enable` rather than making it a host flag |
-| 7 | `features/dev/` | `home-manager/{helix,vim,zed-editor,gns3,joplin-desktop}.nix`, `zellij/`, `home-manager/wakapi.nix` | `helix.nix` has uncommitted work resolved in Task 1; this task also drops `wakatime-ls` from `extraSpecialArgs` (Step 2c) |
-| 8 | `features/server/` | `nixosconf/{caddy,jellyfin,immich,wakapi,rustical,calendar-syncer,calino,joplin-server,status-page,la-scene-interieure,qbittorrent,crafty}.nix`, `hosts/oserv/nixosconf/grafana.nix` | `joplin-server` and `crafty` need docker: default their enable to `false` and assert `ogama.system.docker.enable` when on |
+| 7 | `features/dev/` | `home-manager/{helix,vim,zed-editor,gns3,joplin-desktop}.nix`, `zellij/` | `helix.nix` has uncommitted work resolved in Task 1; this task also drops `wakatime-ls` from `extraSpecialArgs` (Step 2c) |
+| 8 | `features/server/` | `nixosconf/{caddy,jellyfin,immich,wakapi,rustical,calendar-syncer,calino,joplin-server,status-page,la-scene-interieure,qbittorrent,crafty}.nix`, `home-manager/wakapi.nix`, `hosts/oserv/nixosconf/grafana.nix` | `joplin-server` and `crafty` need docker: default their enable to `false` and assert `ogama.system.docker.enable` when on. `wakapi`'s two halves merge into one `features/server/wakapi.nix` |
 | 9 | `features/desktop/` | `home-manager/{firefox,kitty,alacritty,thunderbird,gammastep,darkman,display/*}.nix`, `nixosconf/{greetd,gtklock}.nix` | Largest. `display/sway/quickshell/` carries the bar, messages panel, calendar and status widget |
 
 For **each** of Tasks 5–9:
