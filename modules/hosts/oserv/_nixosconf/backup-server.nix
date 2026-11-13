@@ -1,4 +1,5 @@
-{ config, ... }:
+{ config,
+  ... }:
 
 let
   mkBasicJob = { paths, repo }: {
@@ -48,6 +49,16 @@ in {
         paths = config.ogama.server.path.hdd.document;
         repo = config.ogama.server.path.backup.hdd.document;
       };
+
+      "hdd-photo-backup" = mkBasicJob {
+        paths = config.ogama.server.path.hdd.photo;
+        repo = config.ogama.server.path.backup.hdd.photo;
+      };
+
+      "hdd-photo-1-backup" = mkBasicJob {
+        paths = config.ogama.server.path.hdd.photo_1;
+        repo = config.ogama.server.path.backup.hdd.photo_1;
+      };
     };
 
     repos = {
@@ -78,6 +89,16 @@ in {
         authorizedKeys = [ config.ogama.identity.sshPubkey ];
         path = config.ogama.server.path.backup.hdd.document;
       };
+
+      "hdd-photo-backup" = {
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.hdd.photo;
+      };
+
+      "hdd-photo-1-backup" = {
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.hdd.photo_1;
+      };
       # --------- REMOTE --------- #
       "laptop-document-backup" = {
         authorizedKeys = [ config.ogama.identity.sshPubkey ];
@@ -91,6 +112,8 @@ in {
 
     "d ${config.ogama.server.path.backup.HDD_path}                   0755 borg users -"
     "d ${config.ogama.server.path.backup.hdd.document}              0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.photo}                 0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.photo_1}               0755 borg users -"
     "d ${config.ogama.server.path.backup.hdd.share.path}             0755 borg users -"
     "d ${config.ogama.server.path.backup.hdd.share.public_HDD_path}  0755 borg users -"
     "d ${config.ogama.server.path.backup.HDD_app}                    0755 borg users -"

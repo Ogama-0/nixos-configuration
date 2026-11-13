@@ -52,6 +52,8 @@ let
               qbittorrent = "${HDD_app}/qbittorrent";
             };
             document = "${HDD_path}/document";
+            photo = "${HDD_path}/photo";
+            photo_1 = "${HDD_path}/photo-1";
             share = rec {
               path = "${HDD_path}/share";
               public_HDD_path = "${path}/public";
@@ -79,6 +81,8 @@ let
                 immich = "${HDD_app}/immich";
               };
               document = "${HDD_path}/document";
+              photo = "${HDD_path}/photo";
+              photo_1 = "${HDD_path}/photo-1";
               share = rec {
                 path = "${HDD_path}/share";
                 public_HDD_path = "${path}/public";

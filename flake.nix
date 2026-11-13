@@ -31,7 +31,7 @@
     calendar-syncer.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     lsi-web-interface.url = "git+ssh://git@github.com/Ogama-0/lsi-web-interface";
-    lsi-web-interface.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    # lsi-web-interface.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
   # No host wiring, no package list, no specialArgs plumbing: import-tree

@@ -10,7 +10,7 @@ let
 in
 {
   flake.featureModules.nixos.qbittorrent =
-    { config, pkgs, lib, ... }:
+    { cfg, config, pkgs, lib, ... }:
     {
       imports = [ sharedOptions ];
 
@@ -24,7 +24,7 @@ in
           torrent_file_path = "${qb_path}/torrents";
 
           # Downloads land straight inside the Jellyfin libraries. incomplete_path is on
-          # the same filesystem (/mnt/hdd-tmp) as these, so the move on completion is a
+          # the same filesystem (/mnt/hdd) as these, so the move on completion is a
           # rename, not a copy — and Jellyfin's realtime monitor picks the file up as
           # soon as it appears.
           jelly = config.ogama.server.path.hdd.app.jellyfin;

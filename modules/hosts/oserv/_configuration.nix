@@ -6,7 +6,6 @@
 
     # Must be imported wherever services.postgresql runs: it unblocks
     # ensureDatabases after a glibc bump. See the module for why.
-    # ../../nixosconf/qbittorrent.nix
 
     # Calendar stack: rustical is the CalDAV server, calendar-syncer feeds it,
     # calino is the browser client for it.
@@ -33,7 +32,10 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # ogama.system.zfs is on; the ZFS kernel module only builds against an LTS
+  # kernel on this nixpkgs pin (linuxPackages_latest's zfs-kernel is marked
+  # broken — see modules/features/system/zfs.nix).
+  boot.kernelPackages = pkgs.linuxPackages;
   networking.hostName = "${config.ogama.identity.user}host"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
@@ -42,6 +44,19 @@
     allowPing = true;
 
   };
+
+  # I have to delet this very quickly ...
+  security.sudo.extraRules = [
+    {
+      users = [ "ogama_serv" ];
+      commands = [
+        {
+          command = "ALL";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
 
   environment.systemPackages = with pkgs; [
     nano

@@ -663,7 +663,7 @@
     {
       "id": 20,
       "type": "gauge",
-      "title": "Disk usage: HDD (/mnt/hdd-tmp)",
+      "title": "Disk usage: HDD (@HDD_PATH@)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -704,7 +704,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/mnt/hdd-tmp\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/hdd-tmp\"}) * 100",
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"@HDD_PATH@\"} / node_filesystem_size_bytes{mountpoint=\"@HDD_PATH@\"}) * 100",
           "refId": "A"
         }
       ]
@@ -919,6 +919,57 @@
             "uid": "loki"
           },
           "expr": "{unit=\"docker-joplin.service\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "type": "stat",
+      "title": "Backups",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "FAILED",
+                  "color": "red"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "node_systemd_unit_state{name=~\"borgbackup-job-.*\", state=\"failed\"}",
+          "legendFormat": "{{name}}",
           "refId": "A"
         }
       ]

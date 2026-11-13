@@ -17,6 +17,7 @@
   };
 
   ogama.system = {
+    zfs.enable = true;
     avahi.enable = true;
     docker.enable = true;
     samba.enable = true;
@@ -28,6 +29,7 @@
   };
 
   ogama.server = {
+    qbittorrent.enable = true;
     joplinServer.enable = true;
     caddy.enable = true;
     calendarSyncer.enable = true;

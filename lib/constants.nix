@@ -10,7 +10,7 @@
 
   paths = {
     ssd = "/mnt/ssd";
-    hdd = "/mnt/hdd-tmp";
+    hdd = "/mnt/hdd";
     backup = "/mnt/backup";
   };
 }
