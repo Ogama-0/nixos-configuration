@@ -1,5 +1,6 @@
 { config, pkgs, ... }: {
   imports = [
+    ./_toggles.nix
     ../../home-manager/git.nix
     ../../home-manager/helix.nix
     ../../home-manager/sh.nix

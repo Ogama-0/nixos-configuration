@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./_toggles.nix
     ../../nixosconf/ssh.nix
     ../../nixosconf/tailscale.nix
     ../../nixosconf/samba.nix

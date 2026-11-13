@@ -1,6 +1,7 @@
 { config, pkgs, ... }:
 {
   imports = [
+    ./_toggles.nix
     ./_home-manager/tool.nix
     ./_home-manager/default-app.nix
     ../../home-manager/sh.nix

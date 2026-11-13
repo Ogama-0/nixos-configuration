@@ -8,6 +8,7 @@
 
 {
   imports = [
+    ./_toggles.nix
     ./_hardware-configuration.nix
     ../../nixosconf/stream.nix
     ../../nixosconf/utilities.nix

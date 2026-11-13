@@ -1,5 +1,6 @@
 { config, ... }: {
   imports = [
+    ./_toggles.nix
     # global import
     ../../home-manager/sh.nix
     ../../home-manager/helix.nix

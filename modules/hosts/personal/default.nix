@@ -9,7 +9,7 @@
     inherit pkgs;
     specialArgs = { inherit lpkgs upkgs; };
     modules = [
-      config.flake.featureModules.nixos.sharedOptions
+      config.flake.nixosModules.featuresNixos
       ./_configuration.nix
     ];
   };
@@ -21,7 +21,7 @@
       inherit inputs pkgs upkgs lpkgs;
     };
     modules = [
-      config.flake.featureModules.home.sharedOptions
+      config.flake.homeModules.featuresHome
       ./_home.nix
       inputs.sops-nix.homeManagerModules.sops
     ];

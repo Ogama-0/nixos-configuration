@@ -5,7 +5,7 @@
     inherit system;
     specialArgs = { inherit inputs lpkgs upkgs; };
     modules = [
-      config.flake.featureModules.nixos.sharedOptions
+      config.flake.nixosModules.featuresNixos
       ./_configuration.nix
       inputs.nixos-hardware.nixosModules.dell-optiplex-3050
       inputs.sops-nix.nixosModules.sops
@@ -19,7 +19,7 @@
       inherit inputs pkgs lpkgs;
     };
     modules = [
-      config.flake.featureModules.home.sharedOptions
+      config.flake.homeModules.featuresHome
       ./_home.nix
       inputs.sops-nix.homeManagerModules.sops
     ];

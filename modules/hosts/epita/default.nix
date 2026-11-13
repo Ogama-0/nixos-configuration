@@ -15,7 +15,7 @@ let
         inherit inputs pkgs lpkgs;
       };
       modules = [
-        config.flake.featureModules.home.sharedOptions
+        config.flake.homeModules.featuresHome
         entry
         inputs.sops-nix.homeManagerModules.sops
       ];
