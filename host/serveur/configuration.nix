@@ -16,7 +16,7 @@
     ../../modules/nixosconf/jellyfin.nix
     ../../modules/nixosconf/immich.nix
     ../../modules/nixosconf/wakapi.nix
-    # ../../modules/nixosconf/qbittorrent.nix
+    ../../modules/nixosconf/qbittorrent.nix
     ../../modules/nixosconf/status-page.nix
 
     # Calendar stack: rustical is the CalDAV server, calendar-syncer feeds it,
@@ -45,7 +45,10 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # zfs.nix enables ZFS; its kernel module only builds against an LTS
+  # kernel on this nixpkgs pin (linuxPackages_latest's zfs-kernel is
+  # marked broken — see modules/nixosconf/zfs.nix).
+  boot.kernelPackages = pkgs.linuxPackages;
   networking.hostName = "${cfg.user}host"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
@@ -54,6 +57,19 @@
     allowPing = true;
 
   };
+
+  # I have to delet this very quickly ...
+  security.sudo.extraRules = [
+    {
+      users = [ "ogama_serv" ];
+      commands = [
+        {
+          command = "ALL";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
 
   environment.systemPackages = with pkgs; [
     nano

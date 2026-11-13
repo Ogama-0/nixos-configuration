@@ -2,6 +2,27 @@
 
 let
   host = "status.tail.${cfg.domain}";
+
+  # Borg jobs are oneshot systemd units on a timer, not HTTP services, so
+  # they're probed the same way "LSI deploy" is: a Prometheus query against
+  # node-exporter's systemd collector (already scraping every unit's state,
+  # borg jobs included, via enabledCollectors = [ "systemd" ] in
+  # grafana.nix) rather than a URL. 2m interval, same reasoning as LSI
+  # deploy — nothing here is cheap enough to poll at the default 15s, and
+  # borg jobs only run "daily" so a failure doesn't need sub-minute
+  # detection.
+  mkBorgEndpoint = name: unit: {
+    inherit name;
+    group = "backup";
+    url =
+      "http://127.0.0.1:9001/api/v1/query?query="
+      + "node_systemd_unit_state%7Bname%3D%22${unit}.service%22%2Cstate%3D%22failed%22%7D";
+    interval = "2m";
+    conditions = [
+      "[BODY].data.result[0].value[1] == 0"
+      "[RESPONSE_TIME] < 300"
+    ];
+  };
 in
 {
   # Gatus actively probes each service and exposes the result as plain,
@@ -235,6 +256,13 @@ in
             "[RESPONSE_TIME] < 300"
           ];
         }
+        (mkBorgEndpoint "Borg SSD" "borgbackup-job-ssd-backup")
+        (mkBorgEndpoint "Borg HDD share" "borgbackup-job-hdd-share-public-backup")
+        (mkBorgEndpoint "Borg Immich" "borgbackup-job-hdd-app-immich-backup")
+        (mkBorgEndpoint "Borg Jellyfin" "borgbackup-job-hdd-app-jellyfin-backup")
+        (mkBorgEndpoint "Borg Document" "borgbackup-job-hdd-document-backup")
+        (mkBorgEndpoint "Borg Photo" "borgbackup-job-hdd-photo-backup")
+        (mkBorgEndpoint "Borg Photo 1" "borgbackup-job-hdd-photo-1-backup")
       ];
     };
   };

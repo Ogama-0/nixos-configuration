@@ -48,6 +48,16 @@ in {
         paths = cfg.path.hdd.document;
         repo = cfg.path.backup.hdd.document;
       };
+
+      "hdd-photo-backup" = mkBasicJob {
+        paths = cfg.path.hdd.photo;
+        repo = cfg.path.backup.hdd.photo;
+      };
+
+      "hdd-photo-1-backup" = mkBasicJob {
+        paths = cfg.path.hdd.photo_1;
+        repo = cfg.path.backup.hdd.photo_1;
+      };
     };
 
     repos = {
@@ -78,6 +88,16 @@ in {
         authorizedKeys = [ cfg.ssh.pubkey ];
         path = cfg.path.backup.hdd.document;
       };
+
+      "hdd-photo-backup" = {
+        authorizedKeys = [ cfg.ssh.pubkey ];
+        path = cfg.path.backup.hdd.photo;
+      };
+
+      "hdd-photo-1-backup" = {
+        authorizedKeys = [ cfg.ssh.pubkey ];
+        path = cfg.path.backup.hdd.photo_1;
+      };
       # --------- REMOTE --------- #
       "laptop-document-backup" = {
         authorizedKeys = [ cfg.ssh.pubkey ];
@@ -91,6 +111,8 @@ in {
 
     "d ${cfg.path.backup.HDD_path}                   0755 borg users -"
     "d ${cfg.path.backup.hdd.document}              0755 borg users -"
+    "d ${cfg.path.backup.hdd.photo}                 0755 borg users -"
+    "d ${cfg.path.backup.hdd.photo_1}               0755 borg users -"
     "d ${cfg.path.backup.hdd.share.path}             0755 borg users -"
     "d ${cfg.path.backup.hdd.share.public_HDD_path}  0755 borg users -"
     "d ${cfg.path.backup.HDD_app}                    0755 borg users -"

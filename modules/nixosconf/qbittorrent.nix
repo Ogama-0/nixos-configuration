@@ -14,7 +14,7 @@ let
   torrent_file_path = "${qb_path}/torrents";
 
   # Downloads land straight inside the Jellyfin libraries. incomplete_path is on
-  # the same filesystem (/mnt/hdd-tmp) as these, so the move on completion is a
+  # the same filesystem (/mnt/hdd) as these, so the move on completion is a
   # rename, not a copy — and Jellyfin's realtime monitor picks the file up as
   # soon as it appears.
   jelly = cfg.path.hdd.app.jellyfin;
@@ -161,7 +161,7 @@ in
     };
   };
 
-  services.caddy.virtualHosts."http://qbittorrent.${cfg.server.host.ipv6}" = {
+  services.caddy.virtualHosts."http://qbittorrent.${cfg.host.ipv6}" = {
     extraConfig = ''
       reverse_proxy http://127.0.0.1:${toString config.services.qbittorrent.webuiPort}
     '';

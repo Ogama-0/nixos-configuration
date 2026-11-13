@@ -1,7 +1,7 @@
 rec {
   paths = {
     SSD = "/mnt/ssd";
-    HDD = "/mnt/hdd-tmp";
+    HDD = "/mnt/hdd";
     BACKUP = "/mnt/backup";
   };
 
@@ -68,6 +68,8 @@ rec {
               qbittorrent = "${HDD_app}/qbittorrent";
             };
             document = "${HDD_path}/document";
+            photo = "${HDD_path}/photo";
+            photo_1 = "${HDD_path}/photo-1";
 
             share = rec {
               path = "${HDD_path}/share";
@@ -100,6 +102,8 @@ rec {
                 immich = "${HDD_app}/immich";
               };
               document = "${HDD_path}/document";
+              photo = "${HDD_path}/photo";
+              photo_1 = "${HDD_path}/photo-1";
 
               share = rec {
                 path = "${HDD_path}/share";

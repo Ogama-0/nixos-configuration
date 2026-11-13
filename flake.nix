@@ -26,7 +26,7 @@
     calendar-syncer.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     lsi-web-interface.url = "git+ssh://git@github.com/Ogama-0/lsi-web-interface";
-    lsi-web-interface.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    # lsi-web-interface.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
   outputs =
@@ -84,7 +84,9 @@
         # and `qt6` have to come from the same nixpkgs that
         # upkgs.quickshell actually resolves to, or the wrapped QtMultimedia
         # is a version `import QtMultimedia` loads but QMediaPlayer refuses.
-        quickshell-multimedia = (import nixpkgs-unstable { inherit system; }).callPackage ./pkgs/quickshell-multimedia.nix { };
+        quickshell-multimedia =
+          (import nixpkgs-unstable { inherit system; }).callPackage ./pkgs/quickshell-multimedia.nix
+            { };
       };
 
       nixosConfigurations = {

@@ -1,4 +1,32 @@
-{ cfg, config, ... }:
+{
+  cfg,
+  config,
+  pkgs,
+  ...
+}:
+
+let
+  # The URLs probed for La Scène intérieure, innermost first. They live here
+  # because three places have to agree on them to the character: the blackbox
+  # job's targets, the `instance` labels that come out of it, and the panels
+  # that select on those labels. The port comes from the service's own option
+  # rather than a repeated 3500 (see modules/nixosconf/la-scene-interieure.nix,
+  # which moves it off Grafana's 3000).
+  lsiUpstream = "127.0.0.1:${toString config.services.laSceneInterieure.port}";
+  lsiProbeAppLocal = "http://${lsiUpstream}/";
+
+  # Not the home page: the two outages of 12 November 2026 both left "/"
+  # answering 200 while every page that reads the contents was dead (500, then
+  # SIGSEGV). /solo is the cheapest route that touches the database and loads
+  # the image code, and it answers 200 without a session.
+  lsiProbeContenus = "http://${lsiUpstream}/solo";
+
+  # The public names, so the probe crosses Milo and TLS exactly as a visitor
+  # does. app.lsi is the application; lsi is the pre-rendered vitrine, which has
+  # no process and no unit, so a probe is the only thing that can say it is up.
+  lsiProbeApp = "https://app.lsi.${cfg.domain}/";
+  lsiProbeVitrine = "https://lsi.${cfg.domain}/";
+in
 
 {
 
@@ -59,7 +87,41 @@
     };
   };
 
-  environment.etc."grafana-dashboards/oserv-services.json".source = ./grafana-dashboard.json;
+  # @HDD_PATH@ keeps the dashboard's HDD panel following cfg.path.HDD_path
+  # rather than a hardcoded mountpoint string that silently goes stale the
+  # next time that path is renamed (as it was, from /mnt/hdd-tmp).
+  environment.etc."grafana-dashboards/oserv-services.json".text =
+    builtins.replaceStrings [ "@HDD_PATH@" ] [ cfg.path.HDD_path ]
+      (builtins.readFile ./grafana-dashboard.json);
+
+  # La Scène intérieure gets a dashboard of its own rather than two more rows on
+  # the one above: it is the only service here with a public website in front of
+  # it, so "is it up" has four different answers (unit, local port, local Caddy,
+  # public name) that are worth seeing side by side. The host-wide dashboard
+  # stays a per-service UP/DOWN grid.
+  #
+  # The probe URLs are substituted for the same reason @HDD_PATH@ is: they are
+  # the `instance` label the panels select on, so a hardcoded domain would make
+  # every website panel go quietly empty the day cfg.domain changes. They must
+  # match the targets of the blackbox-lsi job below character for character —
+  # trailing slash included.
+  environment.etc."grafana-dashboards/la-scene-interieure.json".text =
+    builtins.replaceStrings
+      [
+        "@UPSTREAM@"
+        "@APP_LOCAL_URL@"
+        "@CONTENUS_URL@"
+        "@APP_URL@"
+        "@VITRINE_URL@"
+      ]
+      [
+        lsiUpstream
+        lsiProbeAppLocal
+        lsiProbeContenus
+        lsiProbeApp
+        lsiProbeVitrine
+      ]
+      (builtins.readFile ./grafana-dashboard-lsi.json);
 
   services.caddy.virtualHosts."http://grafana.tail.${cfg.domain}" = {
     extraConfig = ''
@@ -262,6 +324,30 @@
       ];
     };
 
+    # Blackbox, for the one service here that has a website in front of it.
+    # Everything else on this host is reachable over the tailnet only, where "is
+    # the unit active" is the whole answer. La Scène intérieure answers the
+    # public internet through an external relay, and its vitrine is pre-rendered
+    # files with no process at all — probing is the only way to see either.
+    exporters.blackbox = {
+      enable = true;
+      port = 9115;
+      configFile = (pkgs.formats.yaml { }).generate "blackbox.yml" {
+        modules.http_2xx = {
+          prober = "http";
+          timeout = "10s";
+          http = {
+            # Redirects are followed on purpose: the app sends visitors without
+            # a session to the login page with a 303, and that is a healthy
+            # answer. What this checks is that the route renders at all — both
+            # failures of 12 November 2026 happened while loading the page's
+            # own module, well before any redirect.
+            follow_redirects = true;
+          };
+        };
+      };
+    };
+
     scrapeConfigs = [
 
       {
@@ -301,6 +387,50 @@
         job_name = "caddy";
 
         static_configs = [ { targets = [ "127.0.0.1:2019" ]; } ];
+      }
+
+      {
+        job_name = "blackbox-lsi";
+
+        # The exporter is *asked* to probe a URL, so what gets scraped is the
+        # exporter and the URL travels as ?target=. The three relabel rules
+        # below are the standard dance for that: put the configured target in
+        # the query parameter, keep it as the series' `instance` (which is what
+        # the dashboard selects on, hence the shared definitions at the top of
+        # this file), then point the scrape itself at the exporter.
+        metrics_path = "/probe";
+        params.module = [ "http_2xx" ];
+
+        # Every probe is a real request to the real site, so once a minute:
+        # enough to catch an outage within the span of a coffee, cheap enough
+        # not to matter, and it keeps the vitrine's figures honest.
+        scrape_interval = "60s";
+
+        static_configs = [
+          {
+            targets = [
+              lsiProbeAppLocal
+              lsiProbeContenus
+              lsiProbeApp
+              lsiProbeVitrine
+            ];
+          }
+        ];
+
+        relabel_configs = [
+          {
+            source_labels = [ "__address__" ];
+            target_label = "__param_target";
+          }
+          {
+            source_labels = [ "__param_target" ];
+            target_label = "instance";
+          }
+          {
+            target_label = "__address__";
+            replacement = "127.0.0.1:${toString config.services.prometheus.exporters.blackbox.port}";
+          }
+        ];
       }
 
     ];

@@ -4,20 +4,25 @@ let
 
   backup = cfg.path.backup.path;
 in {
+  imports = [ ../../../modules/nixosconf/zfs.nix ];
 
   fileSystems."${SSD_path}" = {
     device = "/dev/disk/by-uuid/251634ee-7ca6-4d69-81b4-5348f1dd3ef1";
     fsType = "ext4";
   };
 
+  # sdd merged into one partition spanning the full 3.6T disk, replacing
+  # the old sdd1 (hdd-tmp data) + sdd2 (backup, now the zpool below) split.
   fileSystems."${HDD_path}" = {
-    # device = "/dev/disk/by-uuid/8f067717-34ae-4f64-b2ed-b674c6d388b3"; #old broken disk
-    device = "/dev/disk/by-uuid/c25a051e-110e-4e1d-8955-12cefe409c65"; # tmp hdd
+    device = "/dev/disk/by-uuid/a64279e1-2f2d-49ad-9c8b-bf22fb4442c6";
     fsType = "ext4";
   };
+
+  # zpool "backup" (sda + sdc, stripe). Pool created manually (zpool create
+  # is not a NixOS option); import/mount from here on is declarative.
   fileSystems."${backup}" = {
-    device = "/dev/disk/by-uuid/4cb52e18-8ad9-455b-9a1b-f4d60b5e2fbb";
-    fsType = "ext4";
+    device = "backup";
+    fsType = "zfs";
   };
 
   systemd.tmpfiles.rules = [
