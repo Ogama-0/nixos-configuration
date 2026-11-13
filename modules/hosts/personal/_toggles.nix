@@ -17,4 +17,21 @@
     keyboard.enable = true;
     nixGc.enable = true;
   };
+
+  ogama.system = {
+    docker.enable = true;
+    earlyoom.enable = true;
+    geoclue.enable = true;
+    gns3Root.enable = true;
+    kdeconnect.enable = true;
+    localsend.enable = true;
+    mounting.enable = true;
+    nvidia.enable = true;
+    printer.enable = true;
+    sambaCli.enable = true;
+    steam.enable = true;
+    stream.enable = true;
+    tailscale.enable = true;
+    vm.enable = true;
+  };
 }

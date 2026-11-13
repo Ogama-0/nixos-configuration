@@ -11,6 +11,11 @@
     modules = [
       config.flake.nixosModules.featuresNixos
       ./_configuration.nix
+      # Every feature is imported into every NixOS host now, and one of them
+      # (samba) defines sops.secrets. An option definition has to resolve even
+      # when its mkIf condition is false, so the host that never had sops still
+      # needs the module that declares the option.
+      inputs.sops-nix.nixosModules.sops
     ];
   };
 

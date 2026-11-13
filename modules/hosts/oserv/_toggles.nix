@@ -15,4 +15,11 @@
     sh.enable = true;
     git.enable = true;
   };
+
+  ogama.system = {
+    avahi.enable = true;
+    docker.enable = true;
+    samba.enable = true;
+    tailscale.enable = true;
+  };
 }

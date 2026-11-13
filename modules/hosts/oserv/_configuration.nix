@@ -3,15 +3,11 @@
 {
   imports = [
     ./_toggles.nix
-    ../../nixosconf/tailscale.nix
-    ../../nixosconf/samba.nix
-    ../../nixosconf/avahi.nix
 
     ../../nixosconf/caddy.nix
 
     # Must be imported wherever services.postgresql runs: it unblocks
     # ensureDatabases after a glibc bump. See the module for why.
-    ../../nixosconf/postgresql-collation.nix
 
     ../../nixosconf/jellyfin.nix
     ../../nixosconf/immich.nix
@@ -27,8 +23,6 @@
 
     # Not exposed by caddy.nix: its reverse proxy is added separately.
     ../../nixosconf/la-scene-interieure.nix
-
-    ../../nixosconf/docker.nix
     ../../nixosconf/joplin-server.nix # <- docker
     # ../../nixosconf/crafty.nix        # <- docker
 

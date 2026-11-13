@@ -10,22 +10,8 @@
   imports = [
     ./_toggles.nix
     ./_hardware-configuration.nix
-    ../../nixosconf/stream.nix
-    ../../nixosconf/nvidia.nix
-    ../../nixosconf/geoclue.nix
-    ../../nixosconf/kdeconnect.nix
-    ../../nixosconf/steam.nix
-    ../../nixosconf/printer.nix
-    ../../nixosconf/mounting.nix
-    ../../nixosconf/docker.nix
-    ../../nixosconf/tailscale.nix
-    ../../nixosconf/samba-cli.nix
     ../../nixosconf/gtklock
     ../../nixosconf/greetd.nix
-    ../../nixosconf/vm.nix
-    ../../nixosconf/localsend.nix
-    ../../nixosconf/earlyoom.nix
-    ../../nixosconf/gns3-root.nix
 
     ./_nixosconf/backup-laptop.nix
     ./_nixosconf/volumes.nix
