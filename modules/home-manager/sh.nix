@@ -1,7 +1,7 @@
 {
+  config,
   pkgs,
   lib,
-  cfg,
   ...
 }:
 {
@@ -208,10 +208,10 @@
   home.sessionVariables.SHELL = lib.getExe pkgs.fish;
 
   home.sessionVariables._ZO_DATA_DIR =
-    if cfg.is-epita then
-      "${cfg.home_path}/afs/.local/share/zoxide"
+    if config.ogama.identity.isEpita then
+      "${config.ogama.identity.homePath}/afs/.local/share/zoxide"
     else
-      "${cfg.home_path}/.local/share/zoxide";
+      "${config.ogama.identity.homePath}/.local/share/zoxide";
 
   programs.direnv = {
     enable = true;

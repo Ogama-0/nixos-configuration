@@ -1,14 +1,13 @@
 {
   upkgs,
   config,
-  cfg,
   ...
 }:
 
 let
-  immichHost = "immich.${cfg.domain}";
-  immichTailHost = "immich.tail.${cfg.domain}";
-  immichRoot = "${cfg.path.hdd.app.immich}";
+  immichHost = "immich.${config.ogama.server.domain}";
+  immichTailHost = "immich.tail.${config.ogama.server.domain}";
+  immichRoot = "${config.ogama.server.path.hdd.app.immich}";
 in
 {
   # systemd.tmpfiles.rules = [
@@ -42,7 +41,7 @@ in
     settings.server.externalDomain = "https://${immichHost}";
   };
 
-  services.caddy.virtualHosts."https://immich.${cfg.host.ipv6}" = {
+  services.caddy.virtualHosts."https://immich.${config.ogama.server.ipv6Host}" = {
     extraConfig = ''
       reverse_proxy http://[::1]:${toString config.services.immich.port} {
         transport http {

@@ -1,8 +1,8 @@
-{ cfg, pkgs, ... }:
+{ config, pkgs, ... }:
 {
   imports = [
-    ./home-manager/tool.nix
-    ./home-manager/default-app.nix
+    ./_home-manager/tool.nix
+    ./_home-manager/default-app.nix
     ../../home-manager/sh.nix
     ../../home-manager/alacritty.nix
     ../../home-manager/display/sway
@@ -26,7 +26,16 @@
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
   ];
 
-  sops.age.keyFile = "${cfg.home_path}/.config/sops/age/keys.txt";
+  # Per-host identity. These were entries in host/profiles.nix, reached through
+  # a `cfg` attrset in specialArgs; they are declared options now
+  # (modules/features/core/shared-options.nix) and set here, by the host they
+  # describe.
+  ogama.identity = {
+    user = "ogama";
+    sshPubkey = "AAAAC3NzaC1lZDI1NTE5AAAAILaKjKo1kaGVYdA5U6kvrjhDj1T3tp04CmiZE3YmA7id";
+  };
+
+  sops.age.keyFile = "${config.ogama.identity.homePath}/.config/sops/age/keys.txt";
 
   nixpkgs = {
     config = {
@@ -44,7 +53,7 @@
 
     username = "ogama";
     homeDirectory = "/home/ogama";
-    sessionVariables.swp = "${cfg.share.swapsev_path}";
+    sessionVariables.swp = "${config.ogama.share.swapsevPath}";
 
     stateVersion = "24.11";
   };

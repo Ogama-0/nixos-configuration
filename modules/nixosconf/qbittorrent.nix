@@ -1,5 +1,4 @@
 {
-  cfg,
   config,
   pkgs,
   lib,
@@ -9,7 +8,7 @@ let
   profile_dir = "/var/lib/qBittorrent";
   conf_file = "${profile_dir}/qBittorrent/config/qBittorrent.conf";
 
-  qb_path = cfg.path.hdd.app.qbittorrent;
+  qb_path = config.ogama.server.path.hdd.app.qbittorrent;
   incomplete_path = "${qb_path}/incomplete";
   torrent_file_path = "${qb_path}/torrents";
 
@@ -17,7 +16,7 @@ let
   # the same filesystem (/mnt/hdd-tmp) as these, so the move on completion is a
   # rename, not a copy — and Jellyfin's realtime monitor picks the file up as
   # soon as it appears.
-  jelly = cfg.path.hdd.app.jellyfin;
+  jelly = config.ogama.server.path.hdd.app.jellyfin;
   categories = {
     films.save_path = "${jelly}/FILM";
     series.save_path = "${jelly}/SHOWS";
@@ -161,7 +160,7 @@ in
     };
   };
 
-  services.caddy.virtualHosts."http://qbittorrent.${cfg.server.host.ipv6}" = {
+  services.caddy.virtualHosts."http://qbittorrent.${config.ogama.server.ipv6Host}" = {
     extraConfig = ''
       reverse_proxy http://127.0.0.1:${toString config.services.qbittorrent.webuiPort}
     '';

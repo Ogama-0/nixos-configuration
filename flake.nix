@@ -48,6 +48,7 @@
       systems = [ "x86_64-linux" ];
       imports = [
         (inputs.import-tree ./modules/flake)
+        (inputs.import-tree ./modules/features)
         (inputs.import-tree ./modules/hosts)
       ];
     };

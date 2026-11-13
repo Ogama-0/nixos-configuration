@@ -1,4 +1,4 @@
-{ cfg, pkgs, ... }:
+{ config, pkgs, ... }:
 {
   # Home-manager's Thunderbird module fully owns and regenerates
   # profiles.ini/user.js for every profile it manages, so this declares a
@@ -8,7 +8,7 @@
   # this profile.
   accounts.email.accounts = {
     gmail-primary = {
-      address = cfg.mail;
+      address = config.ogama.identity.mail;
       flavor = "gmail.com";
       realName = "Oscar Cornut";
       primary = true;

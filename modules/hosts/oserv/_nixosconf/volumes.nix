@@ -1,8 +1,8 @@
-{ cfg, ... }:
+{ config, ... }:
 let
-  inherit (cfg.path) SSD_path HDD_path;
+  inherit (config.ogama.server.path) SSD_path HDD_path;
 
-  backup = cfg.path.backup.path;
+  backup = config.ogama.server.path.backup.path;
 in {
 
   fileSystems."${SSD_path}" = {
@@ -21,9 +21,9 @@ in {
   };
 
   systemd.tmpfiles.rules = [
-    "d ${SSD_path} 0755 ${cfg.user} users -"
-    "d ${HDD_path} 0755 ${cfg.user} users -"
-    "d ${backup} 0755 ${cfg.user} users -"
+    "d ${SSD_path} 0755 ${config.ogama.identity.user} users -"
+    "d ${HDD_path} 0755 ${config.ogama.identity.user} users -"
+    "d ${backup} 0755 ${config.ogama.identity.user} users -"
   ];
 
 }

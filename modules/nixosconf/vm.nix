@@ -1,4 +1,4 @@
-{ cfg, pkgs, ... }: {
+{ config, pkgs, ... }: {
   programs.virt-manager.enable = true;
 
   environment.systemPackages = with pkgs; [ dnsmasq ];
@@ -10,5 +10,5 @@
   services.qemuGuest.enable = true;
   services.spice-vdagentd.enable = true; # enable copy and paste between host and guest
 
-  users.users.${cfg.user}.extraGroups = [ "libvirtd" ];
+  users.users.${config.ogama.identity.user}.extraGroups = [ "libvirtd" ];
 }

@@ -1,5 +1,5 @@
 {
-  cfg,
+  config,
   lib,
   lpkgs,
   pkgs,
@@ -7,7 +7,7 @@
 }:
 
 let
-  host = "calino.tail.${cfg.domain}";
+  host = "calino.tail.${config.ogama.server.domain}";
   origin = "http://${host}";
   proxyPort = 8081;
 

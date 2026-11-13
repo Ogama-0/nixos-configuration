@@ -1,15 +1,15 @@
-{ cfg, ... }:
+{ config, ... }:
 
 let
   mkBasicJob = { paths, repo }: {
     inherit paths;
     patterns = [
-      "- ${cfg.path.SSD_path}/.Trash-1000" # don't backup trash
-      "- ${cfg.path.SSD_path}/lost+found"
+      "- ${config.ogama.server.path.SSD_path}/.Trash-1000" # don't backup trash
+      "- ${config.ogama.server.path.SSD_path}/lost+found"
     ];
     startAt = "daily";
     compression = "auto,zstd";
-    environment.BORG_RSH = "ssh -i ${cfg.ssh.path.pub}";
+    environment.BORG_RSH = "ssh -i ${config.ogama.identity.sshKeyPath.pub}";
     inherit repo;
     encryption.mode = "none";
     prune.keep = {
@@ -25,28 +25,28 @@ in {
 
     jobs = {
       "ssd-backup" = mkBasicJob {
-        paths = cfg.path.SSD_path;
-        repo = cfg.path.backup.SSD_path;
+        paths = config.ogama.server.path.SSD_path;
+        repo = config.ogama.server.path.backup.SSD_path;
       };
 
       "hdd-share-public-backup" = mkBasicJob {
-        paths = cfg.path.hdd.share.public_HDD_path;
-        repo = cfg.path.backup.hdd.share.public_HDD_path;
+        paths = config.ogama.server.path.hdd.share.public_HDD_path;
+        repo = config.ogama.server.path.backup.hdd.share.public_HDD_path;
       };
 
       "hdd-app-immich-backup" = mkBasicJob {
-        paths = cfg.path.hdd.app.immich;
-        repo = cfg.path.backup.hdd.app.immich;
+        paths = config.ogama.server.path.hdd.app.immich;
+        repo = config.ogama.server.path.backup.hdd.app.immich;
       };
 
       "hdd-app-jellyfin-backup" = mkBasicJob {
-        paths = cfg.path.hdd.app.jellyfin;
-        repo = cfg.path.backup.hdd.app.jellyfin;
+        paths = config.ogama.server.path.hdd.app.jellyfin;
+        repo = config.ogama.server.path.backup.hdd.app.jellyfin;
       };
 
       "hdd-document-backup" = mkBasicJob {
-        paths = cfg.path.hdd.document;
-        repo = cfg.path.backup.hdd.document;
+        paths = config.ogama.server.path.hdd.document;
+        repo = config.ogama.server.path.backup.hdd.document;
       };
     };
 
@@ -55,50 +55,50 @@ in {
       # --------- LOCAL --------- #
 
       "ssd-backup" = {
-        authorizedKeys = [ cfg.ssh.pubkey ];
-        path = cfg.path.backup.SSD_path;
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.SSD_path;
       };
 
       "hdd-share-public-backup" = {
-        authorizedKeys = [ cfg.ssh.pubkey ];
-        path = cfg.path.backup.hdd.share.public_HDD_path;
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.hdd.share.public_HDD_path;
       };
 
       "hdd-app-immich-backup" = {
-        authorizedKeys = [ cfg.ssh.pubkey ];
-        path = cfg.path.backup.hdd.app.immich;
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.hdd.app.immich;
       };
 
       "hdd-app-jellyfin-backup" = {
-        authorizedKeys = [ cfg.ssh.pubkey ];
-        path = cfg.path.backup.hdd.app.jellyfin;
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.hdd.app.jellyfin;
       };
 
       "hdd-document-backup" = {
-        authorizedKeys = [ cfg.ssh.pubkey ];
-        path = cfg.path.backup.hdd.document;
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.hdd.document;
       };
       # --------- REMOTE --------- #
       "laptop-document-backup" = {
-        authorizedKeys = [ cfg.ssh.pubkey ];
-        path = cfg.path.backup.laptop.document;
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.laptop.document;
       };
     };
   };
 
   systemd.tmpfiles.rules = [
-    "d ${cfg.path.backup.SSD_path}                   0755 borg users -"
+    "d ${config.ogama.server.path.backup.SSD_path}                   0755 borg users -"
 
-    "d ${cfg.path.backup.HDD_path}                   0755 borg users -"
-    "d ${cfg.path.backup.hdd.document}              0755 borg users -"
-    "d ${cfg.path.backup.hdd.share.path}             0755 borg users -"
-    "d ${cfg.path.backup.hdd.share.public_HDD_path}  0755 borg users -"
-    "d ${cfg.path.backup.HDD_app}                    0755 borg users -"
-    "d ${cfg.path.backup.hdd.app.immich}             0755 borg users -"
-    "d ${cfg.path.backup.hdd.app.jellyfin}           0755 borg users -"
+    "d ${config.ogama.server.path.backup.HDD_path}                   0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.document}              0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.share.path}             0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.share.public_HDD_path}  0755 borg users -"
+    "d ${config.ogama.server.path.backup.HDD_app}                    0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.app.immich}             0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.app.jellyfin}           0755 borg users -"
 
-    "d ${cfg.path.backup.laptop.path}                0755 borg users -"
-    "d ${cfg.path.backup.laptop.document}            0755 borg users -"
+    "d ${config.ogama.server.path.backup.laptop.path}                0755 borg users -"
+    "d ${config.ogama.server.path.backup.laptop.document}            0755 borg users -"
   ];
   users.users.borg = {
     openssh.authorizedKeys.keys = [

@@ -1,7 +1,7 @@
-{ cfg, config, ... }:
+{ config, ... }:
 
 let
-  host = "status.tail.${cfg.domain}";
+  host = "status.tail.${config.ogama.server.domain}";
 in
 {
   # Gatus actively probes each service and exposes the result as plain,
@@ -57,7 +57,7 @@ in
           group = "media";
           # "/" answers 302 (redirect to /web/), which would fail
           # [STATUS] == 200 even on a perfectly healthy Jellyfin.
-          url = "http://jellyfin.${cfg.domain}/health";
+          url = "http://jellyfin.${config.ogama.server.domain}/health";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -67,7 +67,7 @@ in
         {
           name = "Immich";
           group = "media";
-          url = "http://immich.${cfg.domain}";
+          url = "http://immich.${config.ogama.server.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -102,7 +102,7 @@ in
         {
           name = "qBittorrent";
           group = "files";
-          url = "http://qbittorrent.${cfg.domain}";
+          url = "http://qbittorrent.${config.ogama.server.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -125,7 +125,7 @@ in
         {
           name = "Grafana";
           group = "web";
-          url = "http://grafana.tail.${cfg.domain}/api/health";
+          url = "http://grafana.tail.${config.ogama.server.domain}/api/health";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -138,7 +138,7 @@ in
           # redirects to /login, which would fail [STATUS] == 200.
           name = "Joplin";
           group = "dev";
-          url = "http://joplin.tail.${cfg.domain}/api/ping";
+          url = "http://joplin.tail.${config.ogama.server.domain}/api/ping";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -148,7 +148,7 @@ in
         {
           name = "Wakapi";
           group = "dev";
-          url = "http://wakapi.${cfg.domain}";
+          url = "http://wakapi.${config.ogama.server.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -167,7 +167,7 @@ in
           # show up here — for that, `journalctl -u caddy | grep -i acme`.
           name = "Rustical";
           group = "calendar";
-          url = "http://rustical.${cfg.domain}/ping";
+          url = "http://rustical.${config.ogama.server.domain}/ping";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -182,7 +182,7 @@ in
           # which is what the row is for.
           name = "Calsync";
           group = "calendar";
-          url = "http://calsync.tail.${cfg.domain}";
+          url = "http://calsync.tail.${config.ogama.server.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 401"
@@ -196,7 +196,7 @@ in
           # strips /proxy, so this lands on the proxy's own /health.
           name = "Calino";
           group = "calendar";
-          url = "http://calino.${cfg.domain}/proxy/health";
+          url = "http://calino.${config.ogama.server.domain}/proxy/health";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -206,7 +206,7 @@ in
         {
           name = "LSI vitrine";
           group = "web";
-          url = "https://lsi.${cfg.domain}";
+          url = "https://lsi.${config.ogama.server.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"
@@ -216,7 +216,7 @@ in
         {
           name = "LSI app";
           group = "web";
-          url = "https://app.lsi.ipv6.${cfg.domain}";
+          url = "https://app.lsi.ipv6.${config.ogama.server.domain}";
           interval = "15s";
           conditions = [
             "[STATUS] == 200"

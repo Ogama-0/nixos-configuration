@@ -3,25 +3,25 @@
 # This is the only flake-parts module in the directory. Everything else here is
 # a plain NixOS or Home Manager module in a _-prefixed file, invisible to
 # import-tree and referenced by path below.
-{ inputs, pkgs, upkgs, lpkgs, profiles, ... }:
+{ config, inputs, pkgs, upkgs, lpkgs, ... }:
 {
   flake.nixosConfigurations.personal = inputs.nixpkgs.lib.nixosSystem {
     inherit pkgs;
-    specialArgs = {
-      cfg = profiles.cfg-perso;
-      inherit lpkgs upkgs;
-    };
-    modules = [ ./_configuration.nix ];
+    specialArgs = { inherit lpkgs upkgs; };
+    modules = [
+      config.flake.featureModules.nixos.sharedOptions
+      ./_configuration.nix
+    ];
   };
 
   flake.homeConfigurations.personal = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
     extraSpecialArgs = {
       wakatime-ls = inputs.wakatime-ls.packages.${pkgs.system}.default;
-      cfg = profiles.cfg-perso;
       inherit inputs pkgs upkgs lpkgs;
     };
     modules = [
+      config.flake.featureModules.home.sharedOptions
       ./_home.nix
       inputs.sops-nix.homeManagerModules.sops
     ];

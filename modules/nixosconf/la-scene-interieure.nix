@@ -1,5 +1,4 @@
 {
-  cfg,
   config,
   lib,
   pkgs,
@@ -13,12 +12,12 @@ let
   # Caddy upgrades WebSockets by itself.
   web-port = 3500;
 
-  pubVitrineHost = "lsi.${cfg.domain}";
+  pubVitrineHost = "lsi.${config.ogama.server.domain}";
   pubAppHost = "app.${pubVitrineHost}";
-  vitrineHost = "lsi.ipv6.${cfg.domain}";
+  vitrineHost = "lsi.ipv6.${config.ogama.server.domain}";
   appHost = "app.${vitrineHost}";
 
-  configuration = "${cfg.home_path}/nixos-configuration";
+  configuration = "${config.ogama.identity.homePath}/nixos-configuration";
 
   # Read out of flake.lock rather than written here, because the two must agree
   # and nothing would have caught it if they did not: the updater compares this
@@ -104,7 +103,7 @@ in
   sops.secrets = lib.optionalAttrs autoFollow {
     "lsi_deploy_key" = {
       sopsFile = ../../sops/oserv.yaml;
-      owner = cfg.user;
+      owner = config.ogama.identity.user;
       mode = "0400";
     };
   };
@@ -158,7 +157,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       # Root, because it ends in `nixos-rebuild switch`. The git and
-      # flake-update steps drop to ${cfg.user} via runuser, so nothing here
+      # flake-update steps drop to ${config.ogama.identity.user} via runuser, so nothing here
       # leaves root-owned objects in a user-owned .git — which would break
       # ordinary git use afterwards.
       User = "root";
@@ -201,7 +200,7 @@ in
       # instance), and reverting to HEAD would silently discard it and move the
       # recorded revision further back than this tick ever moved it forward.
       #
-      # Written by root into a file owned by ${cfg.user}: `cp` truncates in
+      # Written by root into a file owned by ${config.ogama.identity.user}: `cp` truncates in
       # place rather than replacing the inode, so the ownership survives.
       avant=$(mktemp)
       cp flake.lock "$avant"
@@ -221,10 +220,10 @@ in
       # non-root user and resets PATH from login.defs rather than keeping the
       # unit's `path`, so `nix` and `git` are not reliably found on the other
       # side of it.
-      runuser -u ${cfg.user} -- env GIT_SSH_COMMAND="${gitSsh}" \
+      runuser -u ${config.ogama.identity.user} -- env GIT_SSH_COMMAND="${gitSsh}" \
         ${config.nix.package}/bin/nix flake update lsi-web-interface
 
-      # Build *before* committing the lock, and as ${cfg.user} rather than as
+      # Build *before* committing the lock, and as ${config.ogama.identity.user} rather than as
       # root. Two separate reasons, both learned the hard way:
       #
       #   · root cannot evaluate this flake at all. Nix reads the working tree
@@ -238,7 +237,7 @@ in
       #     locked == remote, exits early, and auto-deploy is silently wedged
       #     until someone reads the journal. Building first and putting the
       #     lock back on failure makes a transient failure retry by itself.
-      if ! paquet=$(runuser -u ${cfg.user} -- env GIT_SSH_COMMAND="${gitSsh}" \
+      if ! paquet=$(runuser -u ${config.ogama.identity.user} -- env GIT_SSH_COMMAND="${gitSsh}" \
             ${config.nix.package}/bin/nix build --no-link --print-out-paths \
             "${configuration}#nixosConfigurations.oserv.config.system.build.toplevel"); then
         echo "construction échouée — verrou remis en place, on réessaiera" >&2
@@ -264,7 +263,7 @@ in
       # wedged on a broken system with nobody retrying. Activation *does* fail
       # for ordinary reasons — a unit that will not start is one.
       #
-      # Runs as ${cfg.user}: git refuses to open a repository owned by someone
+      # Runs as ${config.ogama.identity.user}: git refuses to open a repository owned by someone
       # else ("detected dubious ownership"), and root is exempt only when
       # SUDO_UID says who it really is, which a systemd unit never sets. The
       # `git ls-remote <url>` above is unaffected because it never opens the
@@ -273,12 +272,12 @@ in
       # Guarded because `set -e` is on and `git commit` exits non-zero with
       # nothing staged, which an already-current lock would otherwise turn
       # into a failed unit.
-      if runuser -u ${cfg.user} -- ${pkgs.git}/bin/git diff --quiet HEAD -- flake.lock; then
+      if runuser -u ${config.ogama.identity.user} -- ${pkgs.git}/bin/git diff --quiet HEAD -- flake.lock; then
         echo "flake.lock déjà à jour, rien à committer"
       else
-        runuser -u ${cfg.user} -- ${pkgs.git}/bin/git \
+        runuser -u ${config.ogama.identity.user} -- ${pkgs.git}/bin/git \
           -c user.name="la-scene-interieure-maj" \
-          -c user.email="${cfg.mail}" \
+          -c user.email="${config.ogama.identity.mail}" \
           commit -q -m "chore(lsi): suit ${branch} ($distant)" -- flake.lock
       fi
     '';
@@ -327,7 +326,7 @@ in
 
   # Caddy would normally add this redirect itself, but it skips it when another
   # site already claims the same host on port 80 — and caddy.nix's
-  # `http://*.${cfg.domain}` catch-all claims every subdomain, so an
+  # `http://*.${config.ogama.server.domain}` catch-all claims every subdomain, so an
   # http:// link to this name otherwise gets the catch-all's bare 404 and looks
   # like a dead service. An exact-host vhost outranks the wildcard. Same block
   # rustical.nix carries, for the same reason.

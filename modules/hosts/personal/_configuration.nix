@@ -8,7 +8,7 @@
 
 {
   imports = [
-    ./hardware-configuration.nix
+    ./_hardware-configuration.nix
     ../../nixosconf/stream.nix
     ../../nixosconf/utilities.nix
     ../../nixosconf/nvidia.nix
@@ -28,9 +28,18 @@
     ../../nixosconf/gns3-root.nix
     ../../nixosconf/nh.nix
 
-    ./nixosconf/backup-laptop.nix
-    ./nixosconf/volumes.nix
+    ./_nixosconf/backup-laptop.nix
+    ./_nixosconf/volumes.nix
   ];
+
+  # Per-host identity. These were entries in host/profiles.nix, reached through
+  # a `cfg` attrset in specialArgs; they are declared options now
+  # (modules/features/core/shared-options.nix) and set here, by the host they
+  # describe.
+  ogama.identity = {
+    user = "ogama";
+    sshPubkey = "AAAAC3NzaC1lZDI1NTE5AAAAILaKjKo1kaGVYdA5U6kvrjhDj1T3tp04CmiZE3YmA7id";
+  };
 
   # Use the systemd-boot EFI boot loader.
   boot = {

@@ -1,7 +1,7 @@
-{ cfg, ... }:
+{ config, ... }:
 {
   programs.nh = {
     enable = true;
-    flake = "${cfg.home_path}/nixos-configuration";
+    flake = "${config.ogama.identity.homePath}/nixos-configuration";
   };
 }

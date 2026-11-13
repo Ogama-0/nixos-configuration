@@ -1,8 +1,8 @@
-{ cfg, ... }:
+{ config, ... }:
 let
   headscale-port = 3006;
   headscale-derp-port = 3478;
-  headscale-hostname = "headscale.{cfg.server.domain}";
+  headscale-hostname = "headscale.{config.ogama.server.domain}";
   headscale-metrics-port = 9003;
 in {
   networking.firewall.allowedUDPPorts = [ headscale-derp-port ];

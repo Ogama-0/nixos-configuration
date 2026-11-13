@@ -1,5 +1,5 @@
-{ cfg, ... }:
-let document_path = "${cfg.home_path}/document";
+{ config, ... }:
+let document_path = "${config.ogama.identity.homePath}/document";
 in {
   services.borgbackup = {
 
@@ -12,8 +12,8 @@ in {
         ];
         startAt = "daily";
         compression = "auto,zstd";
-        environment.BORG_RSH = "ssh -i ${cfg.ssh.path.priv}";
-        repo = "borg@ogamaservhost:${cfg.server.path.backup.laptop.document}";
+        environment.BORG_RSH = "ssh -i ${config.ogama.identity.sshKeyPath.priv}";
+        repo = "borg@ogamaservhost:${config.ogama.server.path.backup.laptop.document}";
         encryption.mode = "none";
         prune.keep = {
           within = "1d";

@@ -1,8 +1,8 @@
-{ pkgs, cfg, ... }:
+{ config, pkgs, ... }:
 let
-  path = "${cfg.home_path}/.joplin";
+  path = "${config.ogama.identity.homePath}/.joplin";
   subdomain = "joplin";
-  host = "${subdomain}.tail.${cfg.domain}";
+  host = "${subdomain}.tail.${config.ogama.server.domain}";
   port = 22300;
   dockerNetwork = "joplin-net";
 in
@@ -96,9 +96,9 @@ in
   };
 
   systemd.tmpfiles.rules = [
-    "d ${path}          0755 ${cfg.user} users -"
-    "d ${path}/config   0755 ${cfg.user} users -"
-    "d ${path}/joplindb 0755 ${cfg.user} users -"
+    "d ${path}          0755 ${config.ogama.identity.user} users -"
+    "d ${path}/config   0755 ${config.ogama.identity.user} users -"
+    "d ${path}/joplindb 0755 ${config.ogama.identity.user} users -"
   ];
 
   # No networking.firewall.allowedTCPPorts: the container publishes on

@@ -1,11 +1,11 @@
-{ cfg, config, ... }: {
+{ config, ... }: {
   services.caddy = {
     enable = true;
 
     # Replaces the old security.acme.defaults.email — Caddy manages its
     # own ACME account/storage (in /var/lib/caddy), no separate
     # security.acme block needed at all.
-    email = cfg.mail;
+    email = config.ogama.identity.mail;
 
     # Exposes caddy_http_requests_total / caddy_http_request_duration_seconds
     # (with a "code" label) on the admin API's default 127.0.0.1:2019/metrics,
@@ -15,7 +15,7 @@
     '';
 
     virtualHosts = {
-      "${cfg.domain}".extraConfig = ''
+      "${config.ogama.server.domain}".extraConfig = ''
         respond 404
       '';
 
@@ -23,7 +23,7 @@
       # vhost below. Deliberately kept plain HTTP (the "http://" scheme
       # prefix disables automatic HTTPS for this site): a real wildcard
       # cert would need a DNS-01 challenge, which isn't configured here.
-      # Any *.${cfg.server.domain} request over HTTPS that isn't
+      # Any *.${config.ogama.server.domain} request over HTTPS that isn't
       # jellyfin/rustical will simply fail the TLS handshake instead of
       # silently being served by an unrelated backend, unlike nginx's
       # implicit default_server fallback.
@@ -32,7 +32,7 @@
       # every subdomain, Caddy will *not* generate the usual
       # HTTP->HTTPS redirect for a site that does use TLS — see the
       # hand-written redirect in rustical.nix.
-      "http://*.${cfg.domain}".extraConfig = ''
+      "http://*.${config.ogama.server.domain}".extraConfig = ''
         respond 404
       '';
 

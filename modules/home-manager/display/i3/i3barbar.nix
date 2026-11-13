@@ -1,4 +1,4 @@
-{ pkgs, cfg, ... }:
+{ config, pkgs, ... }:
 
 {
   programs.i3status-rust = {
@@ -52,7 +52,7 @@
 
   xsession.windowManager.i3.config.bars = [{
     statusCommand =
-      "${pkgs.i3status-rust}/bin/i3status-rs ${cfg.home_path}/.config/i3status-rust/config-default.toml";
+      "${pkgs.i3status-rust}/bin/i3status-rs ${config.ogama.identity.homePath}/.config/i3status-rust/config-default.toml";
     mode = "hide";
     fonts.size = 11.0;
 

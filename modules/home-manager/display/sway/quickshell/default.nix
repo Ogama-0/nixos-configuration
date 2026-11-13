@@ -1,5 +1,4 @@
 {
-  cfg,
   pkgs,
   upkgs,
   lpkgs,
@@ -120,17 +119,17 @@ let
 
   # Built from the profile so the tailnet hostnames are never hardcoded in QML.
   #
-  # `cfg.server.domain`, one level, from either side. host/profiles.nix builds
+  # `config.ogama.server.domain`, one level, from either side. host/profiles.nix builds
   # every profile as `base // (extra base)`; cfg-perso's extra sets
   # `server = cfg-server`, and cfg-server's own base already carries `domain`,
-  # so `cfg.server.domain` is "ogama.me" from the personal profile and
-  # `cfg.domain` is the same string from the server one.
+  # so `config.ogama.server.domain` is "ogama.me" from the personal profile and
+  # `config.ogama.server.domain` is the same string from the server one.
   #
   # This said `.server.server` for a while, with a comment arguing the doubling
   # was deliberate. It is not: cfg-perso.server has no `server` attribute at
   # all (check with `nix eval --impure --expr 'builtins.attrNames (import
   # ./host/profiles.nix).cfg-perso.server'`), so that form simply threw.
-  serverDomain = cfg.server.domain;
+  serverDomain = config.ogama.server.domain;
 
   statusApiUrl = "http://status.tail.${serverDomain}/api/v1/endpoints/statuses";
   metricsApiUrl = "http://metrics.tail.${serverDomain}/api/v1/query";

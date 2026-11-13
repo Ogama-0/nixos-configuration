@@ -1,12 +1,11 @@
 {
-  cfg,
   config,
   inputs,
   ...
 }:
 
 let
-  host = "calsync.tail.${cfg.domain}";
+  host = "calsync.tail.${config.ogama.server.domain}";
 in
 {
   # calendar_syncer (github.com/pixilie/calendar_syncer, private) mirrors ICS
@@ -46,7 +45,7 @@ in
   };
 
   systemd.services.calendar-syncer = {
-    environment.CALSYNC_WEB_USER = cfg.user;
+    environment.CALSYNC_WEB_USER = config.ogama.identity.user;
 
     # Ordering only — `wants` does not make a failed rustical fail this unit,
     # and a sync pass that finds rustical down just errors and retries at its
@@ -60,7 +59,7 @@ in
   # excepted), so GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET would be dead weight
   # while publicUrl is plain HTTP on the tailnet. ICS mirroring and
   # CalDAV<->CalDAV sync, which is what this server is for, need none of it.
-  # To add it later: real TLS on *.tail.${cfg.server.domain} (ACME DNS-01,
+  # To add it later: real TLS on *.tail.${config.ogama.server.domain} (ACME DNS-01,
   # see caddy.nix), then two more sops keys appended to the env template
   # above.
 

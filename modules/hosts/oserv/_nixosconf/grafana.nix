@@ -1,4 +1,4 @@
-{ cfg, config, ... }:
+{ config, ... }:
 
 {
 
@@ -20,7 +20,7 @@
         http_port = 3000;
         enforce_domain = true;
         enable_gzip = true;
-        domain = "grafana.tail.${cfg.domain}";
+        domain = "grafana.tail.${config.ogama.server.domain}";
       };
 
       security.secret_key = "$__file{${config.sops.secrets."grafana_secret_key".path}}";
@@ -61,7 +61,7 @@
 
   environment.etc."grafana-dashboards/oserv-services.json".source = ./grafana-dashboard.json;
 
-  services.caddy.virtualHosts."http://grafana.tail.${cfg.domain}" = {
+  services.caddy.virtualHosts."http://grafana.tail.${config.ogama.server.domain}" = {
     extraConfig = ''
       reverse_proxy http://127.0.0.1:3000
     '';
@@ -76,7 +76,7 @@
   # That restriction is the security control here — it must not be
   # loosened to a bare proxy for convenience. Metric *data* does remain
   # readable tailnet-wide, which is the accepted tradeoff.
-  services.caddy.virtualHosts."http://metrics.tail.${cfg.domain}" = {
+  services.caddy.virtualHosts."http://metrics.tail.${config.ogama.server.domain}" = {
     extraConfig = ''
       handle /api/v1/query* {
           reverse_proxy http://127.0.0.1:${toString config.services.prometheus.port}

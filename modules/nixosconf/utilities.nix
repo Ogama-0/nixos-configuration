@@ -1,4 +1,4 @@
-{ cfg, ... }:
+{ config, ... }:
 
 {
   nix.gc = {
@@ -19,15 +19,15 @@
     timeCritical = 30;
   };
   environment.variables = {
-    GLOBAL_TP_DIRECTORY = "${cfg.home_path}/documents/epita/prog/tp/S2";
+    GLOBAL_TP_DIRECTORY = "${config.ogama.identity.homePath}/documents/epita/prog/tp/S2";
     # Not from `cfg`: this module gets cfg-perso, which has no `login` -
     # that field only exists on cfg-epita. Reaching across profiles for it
     # would be worse than the literal.
     EPITA_LOGIN = "oscar.cornut";
-    PATH_SCRIPTS = "${cfg.home_path}/nixos-configuration/scripts";
+    PATH_SCRIPTS = "${config.ogama.identity.homePath}/nixos-configuration/scripts";
     # Stale: nothing in this config mounts here. samba-cli.nix puts the
-    # shares under `${cfg.share.path}` instead.
-    PATH_NAS = "${cfg.home_path}/documents/nas/smb_oscar";
+    # shares under `${config.ogama.share.path}` instead.
+    PATH_NAS = "${config.ogama.identity.homePath}/documents/nas/smb_oscar";
   };
   # nautilus
   services.gvfs.enable = true;

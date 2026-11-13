@@ -1,5 +1,4 @@
 {
-  cfg,
   config,
   inputs,
   upkgs,
@@ -35,8 +34,8 @@ let
   #   (0.16 added `rustical principals app-token create`), but browsing
   #   calendars and revoking tokens still happen there.
   #
-  #   It resolves through the same portal jellyfin.${cfg.server.domain} uses:
-  #   a CNAME to neskwik.portal.${cfg.server.domain}, which is an AAAA record
+  #   It resolves through the same portal jellyfin.${config.ogama.server.domain} uses:
+  #   a CNAME to neskwik.portal.${config.ogama.server.domain}, which is an AAAA record
   #   pointing at this host's global IPv6 address. ACME's HTTP-01 challenge
   #   validates over IPv6 happily — jellyfin has been running on a real cert
   #   from this path since September.
@@ -45,12 +44,12 @@ let
   #   IPv4-only clients use, since the portal is IPv6-only, and CalDAV does
   #   not care: it authenticates with HTTP Basic and keeps no cookies, so
   #   only the web frontend is affected by the lack of TLS.
-  publicHost = "rustical.${cfg.host.ipv6}";
-  tailHost = "rustical.tail.${cfg.domain}";
+  publicHost = "rustical.${config.ogama.server.ipv6Host}";
+  tailHost = "rustical.tail.${config.ogama.server.domain}";
 
   # The browser origin Calino is served from. Rustical has to hand it CORS
   # headers explicitly, because Calino talks CalDAV from the page itself.
-  calinoOrigin = "http://calino.tail.${cfg.domain}";
+  calinoOrigin = "http://calino.tail.${config.ogama.server.domain}";
 
   # Shared by both vhosts so Calino works whichever name it is pointed at.
   # Kept as one string rather than duplicated: the preflight method list is
@@ -145,7 +144,7 @@ in
 
   # Caddy would normally add this redirect itself for a site it serves over
   # HTTPS, but it skips that when another site already claims the same host
-  # on port 80 — and caddy.nix's `http://*.${cfg.server.domain}` catch-all
+  # on port 80 — and caddy.nix's `http://*.${config.ogama.server.domain}` catch-all
   # claims every subdomain. Without this block, an http:// link lands on that
   # catch-all and gets a bare 404, which looks exactly like a dead service.
   # An explicit exact-host vhost outranks the wildcard.

@@ -1,7 +1,7 @@
-{ pkgs, cfg, ... }: {
+{ config, pkgs, ... }: {
   environment.systemPackages = [ pkgs.cifs-utils pkgs.samba ];
 
-  fileSystems."${cfg.share.path}/swapsev" = {
+  fileSystems."${config.ogama.share.path}/swapsev" = {
     device = "//ogamaservhost/swapsev";
     fsType = "cifs";
     options = let
@@ -13,7 +13,7 @@
       "${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"
     ];
   };
-  fileSystems."${cfg.share.path}/public" = {
+  fileSystems."${config.ogama.share.path}/public" = {
     device = "//ogamaservhost/public";
     fsType = "cifs";
     options = let

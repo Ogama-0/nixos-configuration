@@ -1,10 +1,10 @@
-{ cfg, pkgs, config, lib, ... }:
+{ pkgs, config, lib, ... }:
 let
 
-  share = cfg.path.hdd.share;
-  public_path = cfg.path.hdd.share.public_HDD_path;
-  swapsev_path = cfg.path.ssd.share.swapsev_path;
-  time_m_path = cfg.path.hdd.share.Apple_save_HDD_path;
+  share = config.ogama.server.path.hdd.share;
+  public_path = config.ogama.server.path.hdd.share.public_HDD_path;
+  swapsev_path = config.ogama.server.path.ssd.share.swapsev_path;
+  time_m_path = config.ogama.server.path.hdd.share.Apple_save_HDD_path;
 
   # Authenticated Samba-only accounts (no shell login). Passwords live in
   # sops/oserv.yaml under "samba_<user>_password" and are pushed into
@@ -104,7 +104,7 @@ in {
         # authenticated users (leoniecornut, nicolascornut, ...) only belong
         # to their own private group, so without forcing ownership they'd
         # hit the directory's "other" bits (r-x, no write) as ogama_serv:users
-        "force user" = cfg.user;
+        "force user" = config.ogama.identity.user;
         "force group" = "users";
         "fruit:time machine" = "yes";
         "fruit:time machine max size" = "500G";
@@ -117,10 +117,10 @@ in {
   };
   services.gvfs.enable = true;
   systemd.tmpfiles.rules = [
-    "d ${share.path}      0755 ${cfg.user} users -"
-    "d ${swapsev_path}    0755 ${cfg.user} users -"
-    "d ${public_path}     0755 ${cfg.user} users -"
-    "d ${time_m_path}     0755 ${cfg.user} users -"
+    "d ${share.path}      0755 ${config.ogama.identity.user} users -"
+    "d ${swapsev_path}    0755 ${config.ogama.identity.user} users -"
+    "d ${public_path}     0755 ${config.ogama.identity.user} users -"
+    "d ${time_m_path}     0755 ${config.ogama.identity.user} users -"
     "d /var/log/samba     0755 root root -"
   ];
 }

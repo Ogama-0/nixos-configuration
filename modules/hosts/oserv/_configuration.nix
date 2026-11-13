@@ -1,4 +1,4 @@
-{ cfg, pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
   imports = [
@@ -33,20 +33,27 @@
     ../../nixosconf/nh.nix
     # ../../nixosconf/crafty.nix        # <- docker
 
-    ./users
-    ./nixosconf/network.nix
-    ./nixosconf/backup-server.nix
-    ./nixosconf/grafana.nix
+    ./_users
+    ./_nixosconf/network.nix
+    ./_nixosconf/backup-server.nix
+    ./_nixosconf/grafana.nix
 
-    ./hardware-configuration.nix
+    ./_hardware-configuration.nix
   ];
+
+  # Per-host identity, formerly host/profiles.nix's cfg-server.
+  ogama.identity = {
+    user = "ogama_serv";
+    mail = "oscar.cornut@gmail.com";
+    sshPubkey = "AAAAC3NzaC1lZDI1NTE5AAAAIHBd3Ol/Z20sasLURoDV4pHsXZ4yqmbacAYv1Uv+iyG6";
+  };
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
-  networking.hostName = "${cfg.user}host"; # Define your hostname.
+  networking.hostName = "${config.ogama.identity.user}host"; # Define your hostname.
   time.timeZone = "Europe/Paris";
 
   networking.firewall = {
@@ -72,7 +79,7 @@
 
   nix.settings.allowed-users = [
     "@wheel"
-    "${cfg.user}"
+    "${config.ogama.identity.user}"
   ];
 
   system.stateVersion = "25.05"; # Did you read the comment?

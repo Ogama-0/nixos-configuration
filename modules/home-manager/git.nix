@@ -1,4 +1,4 @@
-{ config, pkgs, cfg, ... }:
+{ config, pkgs, ... }:
 
 {
   programs.difftastic.enable = true;
@@ -8,8 +8,8 @@
     settings = {
 
       user = {
-        name = cfg.user;
-        email = cfg.mail;
+        name = config.ogama.identity.user;
+        email = config.ogama.identity.mail;
       };
       alias = {
         ui = "!lazygit";

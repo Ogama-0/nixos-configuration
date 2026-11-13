@@ -1,4 +1,4 @@
-{ cfg, config, ... }:
+{ config, ... }:
 
 let
   host = "wakapi";
@@ -20,14 +20,14 @@ in
         listen_ipv4 = "127.0.0.1";
         listen_ipv6 = "-";
         port = 3033;
-        public_url = "http://${host}.${cfg.domain}";
+        public_url = "http://${host}.${config.ogama.server.domain}";
       };
       db = {
         dialect = "sqlite3";
         name = "${config.services.wakapi.stateDir}/wakapi.db";
       };
       # We're serving over plain HTTP within the tailnet (no TLS, same as
-      # the rest of the *.tail.${cfg.domain} stack). Wakapi's real
+      # the rest of the *.tail.${config.ogama.server.domain} stack). Wakapi's real
       # code default for this is "false" despite what config.default.yml's
       # comment suggests, which sets the session cookie's Secure flag —
       # browsers then silently drop it over HTTP, so login never sticks.
@@ -35,7 +35,7 @@ in
     };
   };
 
-  services.caddy.virtualHosts."https://${host}.${cfg.host.ipv6}" = {
+  services.caddy.virtualHosts."https://${host}.${config.ogama.server.ipv6Host}" = {
     extraConfig = ''
       reverse_proxy http://127.0.0.1:3033
     '';

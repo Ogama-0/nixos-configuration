@@ -1,6 +1,6 @@
-{ cfg, ... }:
+{ config, ... }:
 let
-  path = "${cfg.home_path}/.crafty";
+  path = "${config.ogama.identity.homePath}/.crafty";
 in
 {
   virtualisation.oci-containers = {
@@ -35,12 +35,12 @@ in
     };
   };
   systemd.tmpfiles.rules = [
-    "d ${path}        0755 ${cfg.user} users -"
-    "d ${path}/backups 0755 ${cfg.user} users -"
-    "d ${path}/logs    0755 ${cfg.user} users -"
-    "d ${path}/servers 0755 ${cfg.user} users -"
-    "d ${path}/config  0755 ${cfg.user} users -"
-    "d ${path}/import  0755 ${cfg.user} users -"
+    "d ${path}        0755 ${config.ogama.identity.user} users -"
+    "d ${path}/backups 0755 ${config.ogama.identity.user} users -"
+    "d ${path}/logs    0755 ${config.ogama.identity.user} users -"
+    "d ${path}/servers 0755 ${config.ogama.identity.user} users -"
+    "d ${path}/config  0755 ${config.ogama.identity.user} users -"
+    "d ${path}/import  0755 ${config.ogama.identity.user} users -"
   ];
   networking.firewall = {
     allowedTCPPorts = [
@@ -56,7 +56,7 @@ in
     ];
   };
 
-  services.nginx.virtualHosts."crafty.${cfg.domain}" = {
+  services.nginx.virtualHosts."crafty.${config.ogama.server.domain}" = {
     enableACME = true;
     forceSSL = true;
 

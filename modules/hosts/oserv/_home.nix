@@ -1,4 +1,4 @@
-{ cfg, ... }: {
+{ config, ... }: {
   imports = [
     # global import
     ../../home-manager/sh.nix
@@ -6,17 +6,24 @@
     ../../home-manager/git.nix
     ../../home-manager/display/font.nix
     ../../home-manager/wakapi.nix
-    ./home-manager/tools.nix
+    ./_home-manager/tools.nix
   ];
 
-  sops.age.keyFile = "${cfg.home_path}/.config/sops/age/keys.txt";
+  # Per-host identity, formerly host/profiles.nix's cfg-server.
+  ogama.identity = {
+    user = "ogama_serv";
+    mail = "oscar.cornut@gmail.com";
+    sshPubkey = "AAAAC3NzaC1lZDI1NTE5AAAAIHBd3Ol/Z20sasLURoDV4pHsXZ4yqmbacAYv1Uv+iyG6";
+  };
+
+  sops.age.keyFile = "${config.ogama.identity.homePath}/.config/sops/age/keys.txt";
 
   home = {
 
-    username = cfg.user;
-    homeDirectory = cfg.home_path;
+    username = config.ogama.identity.user;
+    homeDirectory = config.ogama.identity.homePath;
     sessionVariables = {
-      swp = "${cfg.path.ssd.share.swapsev_path}";
+      swp = "${config.ogama.server.path.ssd.share.swapsev_path}";
     };
 
     stateVersion = "24.11";
