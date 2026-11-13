@@ -21,10 +21,6 @@ My personal NixOS + Home Manager flake, covering a main desktop, a home server, 
   - `flake/`: the plumbing — option declarations, package sets, and the aggregator that imports every feature
 - `lib/`: not modules — plain functions and data (the colour palette, the QML theme substitution, the swayfx package, the storage roots)
 - `qml/`: the greeter's QML, which is rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`
-
-A name starting with `_` is skipped by `import-tree`: that is how a file under `modules/` says "I am not a flake-parts module".
-
-To change what a machine runs, edit `modules/hosts/<host>/_toggles.nix`. To add something reusable, add one file under `modules/features/<domain>/`.
 - `docs/`: runbooks for the parts that bite (see below), plus `superpowers/` design specs and plans, one topic per dated file
 - `tests/`: render fixtures for the laser bar — there is no unit-test framework, so the bar is verified by screenshotting it
 - `pkgs/`: standalone package derivations exposed as flake outputs
@@ -32,6 +28,10 @@ To change what a machine runs, edit `modules/hosts/<host>/_toggles.nix`. To add 
 - `sops/`: encrypted secrets committed to the repo (via [sops-nix](https://github.com/Mic92/sops-nix))
 - `secrets/`: gitignored, expected to exist locally but empty in a fresh checkout
 - `assets/`, `scripts/`: images used by the config, and standalone shell/fish/python utility scripts
+
+A name starting with `_` is skipped by `import-tree`: that is how a file under `modules/` says "I am not a flake-parts module".
+
+To change what a machine runs, edit `modules/hosts/<host>/_toggles.nix`. To add something reusable, add one file under `modules/features/<domain>/`.
 
 ## Switching
 
