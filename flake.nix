@@ -35,21 +35,16 @@
   };
 
   # No host wiring, no package list, no specialArgs plumbing: import-tree
-  # imports every .nix under the roots below, and each of those files registers
-  # what it provides. Adding a module is adding a file.
+  # imports every .nix under ./modules, and each of those files registers what
+  # it provides. Adding a module is adding a file.
   #
-  # The roots are listed explicitly rather than as ./modules because
-  # modules/{nixosconf,home-manager} still hold unported modules, which are
-  # NixOS and Home Manager modules rather than flake-parts ones. The last
-  # porting task removes those directories and this list collapses to ./modules.
+  # Anything under ./modules that is not a flake-parts module — a host's
+  # _toggles.nix, a host-private NixOS module, a sub-module of a gated feature —
+  # is _-prefixed, which import-tree skips.
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" ];
-      imports = [
-        (inputs.import-tree ./modules/flake)
-        (inputs.import-tree ./modules/features)
-        (inputs.import-tree ./modules/hosts)
-      ];
+      imports = [ (inputs.import-tree ./modules) ];
     };
 }
