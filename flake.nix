@@ -34,147 +34,21 @@
     lsi-web-interface.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
+  # No host wiring, no package list, no specialArgs plumbing: import-tree
+  # imports every .nix under the roots below, and each of those files registers
+  # what it provides. Adding a module is adding a file.
+  #
+  # The roots are listed explicitly rather than as ./modules because
+  # modules/{nixosconf,home-manager} still hold unported modules, which are
+  # NixOS and Home Manager modules rather than flake-parts ones. The last
+  # porting task removes those directories and this list collapses to ./modules.
   outputs =
-    {
-      self,
-      nixpkgs,
-      nixpkgs-unstable,
-      home-manager,
-      nixos-hardware,
-      sops-nix,
-      ...
-    }@inputs:
-    let
-      profiles = import ./host/profiles.nix;
-      inherit (profiles) cfg-server cfg-perso cfg-epita;
-      lib = nixpkgs.lib;
-      system = "x86_64-linux";
-      pkgs = import nixpkgs {
-        inherit system;
-        config.allowUnfreePredicate = _: true;
-      };
-      lpkgs = {
-        librepods = self.packages.${system}.librepods;
-        deezer-cli = self.packages.${system}.deezer-cli;
-        corpta-font = self.packages.${system}.corpta-font;
-        orbitron-font = self.packages.${system}.orbitron-font;
-        greetd-proxy = self.packages.${system}.greetd-proxy;
-        calino = self.packages.${system}.calino;
-        quickshell-multimedia = self.packages.${system}.quickshell-multimedia;
-      };
-      upkgs = (
-        {
-          zen-browser = self.inputs.zen-browser.packages.${pkgs.system}.default;
-          quickshell = self.inputs.quickshell.packages.${pkgs.system}.default;
-        }
-        // import nixpkgs-unstable { inherit system; }
-      );
-
-    in
-    {
-      templates = import ./templates;
-
-      packages.${system} = {
-        librepods = pkgs.callPackage ./pkgs/librepods.nix { };
-        deezer-cli = pkgs.callPackage ./pkgs/deezer-cli.nix { };
-        corpta-font = pkgs.callPackage ./pkgs/corpta-font.nix { };
-        orbitron-font = pkgs.callPackage ./pkgs/orbitron-font.nix { };
-        greetd-proxy = pkgs.callPackage ./pkgs/greetd-proxy.nix { };
-        # siteUrl is baked into the build (see pkgs/calino.nix), so it has to
-        # be known here rather than in the module that serves it.
-        calino = pkgs.callPackage ./pkgs/calino.nix {
-          siteUrl = "http://calino.tail.${cfg-server.domain}";
-        };
-        # Unstable's callPackage, not the repo's default `pkgs`: `quickshell`
-        # and `qt6` have to come from the same nixpkgs that
-        # upkgs.quickshell actually resolves to, or the wrapped QtMultimedia
-        # is a version `import QtMultimedia` loads but QMediaPlayer refuses.
-        quickshell-multimedia = (import nixpkgs-unstable { inherit system; }).callPackage ./pkgs/quickshell-multimedia.nix { };
-      };
-
-      nixosConfigurations = {
-        personal = lib.nixosSystem {
-          inherit pkgs;
-          specialArgs = {
-            cfg = cfg-perso;
-            inherit lpkgs upkgs;
-          };
-          modules = [ ./modules/hosts/personal/configuration.nix ];
-        };
-        oserv = lib.nixosSystem {
-          inherit system;
-          specialArgs = {
-            cfg = cfg-server;
-            inherit inputs lpkgs upkgs;
-          };
-          modules = [
-            ./modules/hosts/oserv/configuration.nix
-            nixos-hardware.nixosModules.dell-optiplex-3050
-            sops-nix.nixosModules.sops
-          ];
-        };
-      };
-
-      homeConfigurations = {
-        personal = home-manager.lib.homeManagerConfiguration {
-          extraSpecialArgs = {
-            wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
-            cfg = cfg-perso;
-            inherit inputs;
-            inherit pkgs;
-            inherit upkgs;
-            inherit lpkgs;
-          };
-          inherit pkgs;
-          modules = [
-            ./modules/hosts/personal/home.nix
-            sops-nix.homeManagerModules.sops
-          ];
-        };
-
-        oserv = home-manager.lib.homeManagerConfiguration {
-          extraSpecialArgs = {
-            wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
-            cfg = cfg-server;
-            inherit inputs;
-            inherit pkgs;
-            inherit lpkgs;
-          };
-          inherit pkgs;
-          modules = [
-            ./modules/hosts/oserv/home.nix
-            sops-nix.homeManagerModules.sops
-          ];
-        };
-
-        epita = home-manager.lib.homeManagerConfiguration {
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit pkgs;
-            cfg = cfg-epita;
-            wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
-            inherit lpkgs;
-          };
-          inherit pkgs;
-          modules = [
-            ./modules/hosts/epita/epita.nix
-            sops-nix.homeManagerModules.sops
-          ];
-        };
-        epita-light = home-manager.lib.homeManagerConfiguration {
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit pkgs;
-            cfg = cfg-epita;
-            wakatime-ls = inputs.wakatime-ls.packages.${system}.default;
-            inherit lpkgs;
-          };
-          inherit pkgs;
-          modules = [
-            ./modules/hosts/epita/epita_light.nix
-            sops-nix.homeManagerModules.sops
-          ];
-        };
-      };
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "x86_64-linux" ];
+      imports = [
+        (inputs.import-tree ./modules/flake)
+        (inputs.import-tree ./modules/hosts)
+      ];
     };
 }
