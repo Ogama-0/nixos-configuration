@@ -26,4 +26,18 @@
   ogama.dev = {
     helix.enable = true;
   };
+
+  ogama.server = {
+    joplinServer.enable = true;
+    caddy.enable = true;
+    calendarSyncer.enable = true;
+    calino.enable = true;
+    immich.enable = true;
+    jellyfin.enable = true;
+    laSceneInterieure.enable = true;
+    rustical.enable = true;
+    statusPage.enable = true;
+    wakapi.server.enable = true;
+    wakapi.client.enable = true;
+  };
 }

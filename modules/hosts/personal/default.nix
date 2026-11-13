@@ -7,7 +7,12 @@
 {
   flake.nixosConfigurations.personal = inputs.nixpkgs.lib.nixosSystem {
     inherit pkgs;
-    specialArgs = { inherit lpkgs upkgs; };
+    # `inputs` has to be a specialArg, not just a module arg: features import
+    # modules out of flake inputs, and resolving that through _module.args
+    # would mean evaluating the module system to find the argument the module
+    # system needs in order to evaluate. oserv always passed it; personal did
+    # not, and only needs it now that every feature reaches every host.
+    specialArgs = { inherit inputs lpkgs upkgs; };
     modules = [
       config.flake.nixosModules.featuresNixos
       ./_configuration.nix

@@ -3,7 +3,6 @@
     ./_toggles.nix
     # global import
     ../../home-manager/display/font.nix
-    ../../home-manager/wakapi.nix
     ./_home-manager/tools.nix
   ];
 

@@ -42,4 +42,9 @@
     vim.enable = true;
     zed.enable = true;
   };
+
+  ogama.server = {
+    calendarSync.enable = true;
+    wakapi.client.enable = true;
+  };
 }

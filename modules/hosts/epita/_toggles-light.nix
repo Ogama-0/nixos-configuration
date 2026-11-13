@@ -18,4 +18,8 @@
   ogama.dev = {
     helix.enable = true;
   };
+
+  ogama.server = {
+    wakapi.client.enable = true;
+  };
 }

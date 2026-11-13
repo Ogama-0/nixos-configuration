@@ -7,7 +7,6 @@
     # ../../home-manager/kitty.nix
     ../../home-manager/display/gtk.nix
     ../../home-manager/alacritty.nix
-    ../../home-manager/wakapi.nix
     ./_tools.nix
   ];
 

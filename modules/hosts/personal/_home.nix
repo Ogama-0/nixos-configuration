@@ -12,8 +12,6 @@
     # ../../home-manager/joplin-desktop.nix
     ../../home-manager/firefox.nix
     ../../home-manager/darkman.nix
-    ../../home-manager/wakapi.nix
-    ../../home-manager/calendar-sync.nix
     ../../home-manager/thunderbird.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
   ];

@@ -20,4 +20,8 @@
     vim.enable = true;
     zellij.enable = true;
   };
+
+  ogama.server = {
+    wakapi.client.enable = true;
+  };
 }

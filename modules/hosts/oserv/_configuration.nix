@@ -4,26 +4,14 @@
   imports = [
     ./_toggles.nix
 
-    ../../nixosconf/caddy.nix
-
     # Must be imported wherever services.postgresql runs: it unblocks
     # ensureDatabases after a glibc bump. See the module for why.
-
-    ../../nixosconf/jellyfin.nix
-    ../../nixosconf/immich.nix
-    ../../nixosconf/wakapi.nix
     # ../../nixosconf/qbittorrent.nix
-    ../../nixosconf/status-page.nix
 
     # Calendar stack: rustical is the CalDAV server, calendar-syncer feeds it,
     # calino is the browser client for it.
-    ../../nixosconf/rustical.nix
-    ../../nixosconf/calendar-syncer.nix
-    ../../nixosconf/calino.nix
 
     # Not exposed by caddy.nix: its reverse proxy is added separately.
-    ../../nixosconf/la-scene-interieure.nix
-    ../../nixosconf/joplin-server.nix # <- docker
     # ../../nixosconf/crafty.nix        # <- docker
 
     ./_users

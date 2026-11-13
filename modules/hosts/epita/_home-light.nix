@@ -4,7 +4,6 @@
     ../../home-manager/display/font.nix
     ../../home-manager/display/i3
     ../../home-manager/kitty.nix
-    ../../home-manager/wakapi.nix
   ];
 
   # Per-host identity, formerly host/profiles.nix's cfg-epita. The school
