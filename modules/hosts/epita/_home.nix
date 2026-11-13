@@ -1,10 +1,6 @@
 { config, pkgs, ... }: {
-  imports = [
-    ./_toggles.nix
-    # ../../home-manager/joplin-desktop.nix
-    # ../../home-manager/kitty.nix
-    ./_tools.nix
-  ];
+  # The toggles file is supplied by default.nix: epita and epita-light are the
+  # same profile with a different set of flags, so they share this entry module.
 
   # Per-host identity, formerly host/profiles.nix's cfg-epita. The school
   # account name and the login happen to be the same string, but they are

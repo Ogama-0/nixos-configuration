@@ -16,6 +16,7 @@
   };
 
   ogama.dev = {
+    epitaTools.enable = true;
     helix.enable = true;
     vim.enable = true;
     zellij.enable = true;

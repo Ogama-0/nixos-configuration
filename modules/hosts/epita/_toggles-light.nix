@@ -1,31 +1,22 @@
-# What this host runs.
+# epita-light: the same machine, trimmed so it rebuilds faster.
 #
-# Imported by BOTH this host's NixOS and Home Manager entry modules, so a
-# feature is switched on in one place regardless of which side implements it.
-# That only works for options declared on both sides, which is why this file
-# carries `enable` flags and nothing else — anything side-specific (a port, a
-# subdomain, a quota) is set in that side's entry module, where it is declared.
-#
-# _-prefixed: it is a plain attrset of option values, not a flake-parts module,
-# so import-tree must not pick it up.
+# Everything epita turns on, minus the pieces that cost the most to build, plus
+# kitty in place of alacritty. This used to be a second near-identical imports
+# list, where the difference between the two profiles could only be found by
+# diffing them.
+{ lib, ... }:
 {
-  ogama.core = {
-    nh.user.enable = true;
-    sh.enable = true;
-    git.enable = true;
-  };
+  imports = [ ./_toggles.nix ];
 
   ogama.dev = {
-    helix.enable = true;
-  };
-
-  ogama.server = {
-    wakapi.client.enable = true;
+    vim.enable = lib.mkForce false;
+    zellij.enable = lib.mkForce false;
+    epitaTools.enable = lib.mkForce false;
   };
 
   ogama.desktop = {
-    i3.enable = true;
-    font.enable = true;
-    kitty.enable = true;
+    alacritty.enable = lib.mkForce false;
+    gtk.enable = lib.mkForce false;
+    kitty.enable = lib.mkForce true;
   };
 }
