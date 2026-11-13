@@ -9,15 +9,15 @@ reference for changing it. The original design rationale is in
 
 | Path | What it is |
 | --- | --- |
-| `modules/nixosconf/greetd.nix` | The whole NixOS side: substitutes the QML, installs it to `/etc/greeter/`, configures `greetd`, grants polkit rights |
-| `modules/qml/GreeterDark.qml` | Dark surface. Stencil panels, neon edge-glow, Orbitron |
-| `modules/qml/GreeterLight.qml` | Light surface. Frosted glass pills, falling snow, Nunito |
-| `modules/qml/components/GreetdSession.qml` | The auth conversation. Shared by both surfaces |
+| `modules/features/desktop/greeter.nix` | The whole NixOS side: substitutes the QML, installs it to `/etc/greeter/`, configures `greetd`, grants polkit rights |
+| `qml/GreeterDark.qml` | Dark surface. Stencil panels, neon edge-glow, Orbitron |
+| `qml/GreeterLight.qml` | Light surface. Frosted glass pills, falling snow, Nunito |
+| `qml/components/GreetdSession.qml` | The auth conversation. Shared by both surfaces |
 | `pkgs/greetd-proxy/proxy.py` | stdio↔socket bridge *and* the dark/light variant picker |
 | `pkgs/greetd-proxy/test_proxy.py` | Its tests. pytest-style functions, so `python3 -m unittest` silently runs none |
-| `modules/lib/qml-theme.nix` | The `@token@` substitution, shared with the home-manager lockscreen |
-| `modules/lib/theme-colors.nix` | The base16 palettes. No hex literals for palette colours anywhere else |
-| `modules/lib/timezone-coords.nix` | Timezone → lat/lng, for sunrise/sunset |
+| `lib/qml-theme.nix` | The `@token@` substitution, shared with the home-manager lockscreen |
+| `lib/theme-colors.nix` | The base16 palettes. No hex literals for palette colours anywhere else |
+| `lib/timezone-coords.nix` | Timezone → lat/lng, for sunrise/sunset |
 
 The two surfaces are deliberately *not* the same design recoloured. Dark is flat
 angular stencil over the Arcane artwork; light is frosted glass over a
@@ -60,10 +60,10 @@ promptly crashed as the real session took the VT.
   module passes home paths.
 - **Fonts must be in `fonts.packages`** in `greetd.nix`. The greeter sees
   nothing from home-manager. Currently Corpta, Orbitron, Nunito, Inter.
-- **`modules/lib/qml-theme.nix` is shared with the lockscreen.** Adding a
-  `@token@` there affects `modules/home-manager/display/sway/quickshell` too.
+- **`lib/qml-theme.nix` is shared with the lockscreen.** Adding a
+  `@token@` there affects `modules/features/desktop/laserbar` too.
 - **No new hex literals for palette colours.** Change
-  `modules/lib/theme-colors.nix`. Surface-specific accents (the dark greeter's
+  `lib/theme-colors.nix`. Surface-specific accents (the dark greeter's
   magenta/cyan/amber) are the exception and live at the top of their own file.
 - **`greetd-proxy` is stdlib-only Python.** No third-party imports.
 
@@ -143,7 +143,7 @@ move focus out from under the ring and leave `focusedField` stale.
 There is no committed harness; rebuild it in a scratch directory when needed.
 The approach, which works and is worth repeating:
 
-1. Render the themed QML by calling the **real** `modules/lib/qml-theme.nix` via
+1. Render the themed QML by calling the **real** `lib/qml-theme.nix` via
    `nix eval`, passing the working-tree file as `surface`. Never hand-substitute
    the `@token@` colours — the point is to preview exactly what a rebuild
    installs. Check for leftovers with `grep -oE '@[a-zA-Z]+@'`.

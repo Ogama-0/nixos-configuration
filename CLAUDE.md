@@ -14,8 +14,8 @@ Each target runs on the machine it switches (no remote `--target-host`).
 
 Switch a NixOS host (from the machine being configured), via
 [`nh`](https://github.com/nix-community/nh) (every profile installs it
-through `programs.nh`, see `modules/nixosconf/nh.nix` and
-`modules/home-manager/nh.nix`):
+through `programs.nh`, see `modules/features/core/nh.nix` and
+`modules/features/core/nh.nix`):
 ```
 nh os switch . -H personal
 nh os switch . -H oserv
@@ -26,6 +26,8 @@ Switch a Home Manager profile (used standalone for `epita`/`epita-light`, and as
 nh home switch . -c <profile>
 ```
 Valid `<profile>` values: `personal`, `oserv`, `epita`, `epita-light`.
+
+To change what a machine runs, edit `modules/hosts/<host>/_toggles.nix`. To add something reusable, add one file under `modules/features/<domain>/`.
 
 Check the flake evaluates without switching:
 ```
@@ -53,19 +55,25 @@ nix eval --raw .#homeConfigurations.<profile>.activationPackage.drvPath
 
 And stage before you believe any result: flakes copy only tracked files into the store, so an un-`git add`ed `.nix` file is simply absent from the evaluation and the check passes against the tree without it. Add files by name — this tree habitually holds unrelated in-progress work, so `git add -A` sweeps in more than you meant.
 
-Two trees are **not** reachable from `flake.nix` and therefore never checked by anything: `modules/home-manager/display/hyprland/` (commented out of `host/personal/home.nix`) and `modules/nixosconf/headscale.nix`. Both are kept on purpose as unfinished projects. Assume they are stale until evaluated.
+Every module in the tree is reachable from `flake.nix` and evaluated on every check, including the unfinished ones: `modules/features/desktop/hyprland/` and `modules/features/server/headscale.nix` are imported with their flags off. Evaluating while disabled is weaker than working — enabling hyprland today still hits a `home.pointerCursor.name` conflict with `modules/hosts/personal/_home.nix` — but they can no longer rot silently.
 
 ## Architecture
 
-**Entry point (`flake.nix`)** wires everything together: it imports `host/profiles.nix` for per-user config data, then defines `nixosConfigurations.{personal,oserv}` and `homeConfigurations.{personal,oserv,epita,epita-light}`. Every configuration receives a `cfg` value (the profile record from `host/profiles.nix`) via `specialArgs`/`extraSpecialArgs`, and `pkgs`/`lpkgs`/`upkgs` (local packages from `pkgs/`, and flake-input packages like `zen-browser`) via the same mechanism — modules pull these out of their function arguments (`{ cfg, pkgs, ... }:`) rather than hardcoding values.
+**Entry point (`flake.nix`)** is inputs plus `flake-parts.lib.mkFlake` with a single `imports = [ (import-tree ./modules) ]`. It wires nothing: every `.nix` under `modules/` is imported automatically and registers what it provides. Adding a module is adding a file.
 
-**`host/profiles.nix`** is the single source of per-user truth: username, home directory, mail, SSH pubkey, server domain, and profile-specific extras (e.g. server storage paths under `SSD`/`HDD`/`BACKUP`, or the `epita` login name). `mkProfile` builds a base record and merges in an `extra` function's output. `cfg-perso` embeds `cfg-server` under `.server` so the personal profile can reference server paths (e.g. for backups/shares). Changing a username, path, or key happens here, not in the individual host files.
+**Nothing is selected by an imports list.** Every feature is imported into every host of its kind by `modules/flake/aggregate.nix`, and each one gates its body on an `ogama.<domain>.<feature>.enable` option. What a machine runs is its `_toggles.nix`, not which files it imports. A module nobody enables still evaluates, which is what stops one rotting unnoticed.
 
-**`host/<profile>/`** holds the actual NixOS (`configuration.nix`) and Home Manager (`home.nix` / `<profile>.nix`) entry modules for that host, plus `hardware-configuration.nix` and a `nixosconf/`/`home-manager/` subfolder for config that's genuinely specific to that one machine (e.g. `host/serveur/nixosconf/backup-server.nix`, `host/personal/nixosconf/backup-laptop.nix`). Each entry module is mostly an `imports` list pulling in shared modules plus a handful of host-only settings (hostname, firewall, boot loader, `stateVersion`).
+**`modules/flake/`** is the plumbing: `options.nix` declares `featureModules.{nixos,home}` plus the Home Manager outputs flake-parts does not know about; `pkg-sets.nix` builds `pkgs`/`upkgs`/`localPackages` once and hands them round via `_module.args`; `aggregate.nix` is the two-line module that imports every feature; `packages.nix` and `templates.nix` expose the corresponding outputs.
 
-**`modules/nixosconf/`** and **`modules/home-manager/`** are the shared, reusable building blocks — one file (or subfolder with `default.nix`) per concern (`tailscale.nix`, `docker.nix`, `jellyfin.nix`, `darkman.nix`, `display/sway`, etc.). New reusable functionality should live here and get imported from the relevant `host/<profile>/*.nix` entry file(s) rather than being duplicated per host. Server-only services (`jellyfin.nix`, `immich.nix`, `caddy.nix`, `rustical.nix`, ...) live alongside desktop-only ones (`display/*`, `firefox.nix`, `kitty.nix`, ...) in the same two directories — only the host's `imports` list determines what actually applies.
+**`modules/features/{core,system,desktop,dev,server}/`** are the building blocks, one file per concern — and one file holds *both* sides of a concern where it has two (`nh`, `wakapi`). Each declares its options once and registers that declaration to both the NixOS and the Home Manager side, so a host's `_toggles.nix` can set a flag regardless of which side implements it. See `docs/superpowers/specs/2026-11-13-example-service-module.nix` for the shape.
 
-**`modules/lib/`** is not modules. It is plain functions and data `import`ed directly by modules: the colour palette (`palette.nix`, the single source for every colour on the desktop), the QML `@token@` substitution (`qml-theme.nix`), per-app theme renderers, and the `swayfx` package both sway and greetd need by absolute store path. **`modules/qml/`** holds the greeter's QML, rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`.
+**`modules/hosts/<host>/`** holds `default.nix` — the only flake-parts module in the directory, which calls `nixosSystem`/`homeManagerConfiguration` — plus `_toggles.nix` (what this host runs) and `_`-prefixed entry modules and host-private config. `epita` and `epita-light` share one entry module and differ only in which toggles file they are handed.
+
+**The `_` prefix is load-bearing.** `import-tree` imports every `.nix` under `modules/` and skips any path whose basename starts with `_`. Anything there that is not a flake-parts module — a host's toggles, a host-private NixOS module, a sub-module of a gated feature — must be `_`-prefixed. A sub-module of a gated feature also carries its own `mkIf`: the import that pulls it in cannot be conditional.
+
+**Per-host data is declared options**, not an attrset: `ogama.identity.*`, `ogama.server.{domain,paths,path}` in `modules/features/core/shared-options.nix`, registered on both sides and set by the host they describe. `ogama.server.path` is a read-only tree derived from three root options.
+
+**`lib/`** is not modules. It is plain functions and data `import`ed directly: the colour palette (`palette.nix`, the single source for every colour on the desktop), the QML `@token@` substitution (`qml-theme.nix`), per-app theme renderers, the `swayfx` package both sway and greetd need by absolute store path, and `constants.nix` (the domain and storage roots, needed by `packages.calino` before any module exists). **`qml/`** holds the greeter's QML, rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`. Both sit at the repo root, outside the import root.
 
 **`pkgs/`** contains standalone package derivations (`librepods.nix`) exposed as flake outputs under `packages.${system}`, consumed elsewhere via the `lpkgs` set built in `flake.nix`.
 

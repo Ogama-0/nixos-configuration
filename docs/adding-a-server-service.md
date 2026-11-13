@@ -7,15 +7,17 @@ verified against the running machine rather than inferred from the modules.
 
 ## The shape of a service
 
-A service is normally **one file** in `modules/nixosconf/<name>.nix`, added to
-the `imports` list in `host/serveur/configuration.nix`. The file owns
+A service is normally **one file** in `modules/features/server/<name>.nix`,
+switched on with one line in `modules/hosts/oserv/_toggles.nix`. There is no
+imports list to add it to: every feature is imported into every host already,
+and the flag is what decides whether it does anything. The file owns
 everything about that service — the `services.<name>` block, its Caddy vhost,
 its `systemd.tmpfiles.rules`, its sops secrets. Resist splitting the vhost out
 into `caddy.nix`: NixOS merges `services.caddy.virtualHosts` across modules, so
 keeping it next to the service is both possible and the existing convention
 (`jellyfin.nix`, `wakapi.nix`, `qbittorrent.nix`, `status-page.nix` all do it).
 
-Put it in `host/serveur/nixosconf/` instead only if it is genuinely
+Put it in `modules/hosts/oserv/_nixosconf/` instead only if it is genuinely
 unshareable with the `personal` host — `backup-server.nix` and `grafana.nix`
 are the examples.
 
@@ -43,21 +45,26 @@ in {
 ```
 
 Never hardcode the domain, the username, or a storage path — they come from
-`cfg` (`host/profiles.nix`), which is passed to every module via `specialArgs`.
+`cfg` (`modules/features/core/shared-options.nix`), which is passed to every module via `specialArgs`.
 Reference the port through `config.services.<name>.<portOption>` where the
 module exposes one, so the vhost cannot drift from the service.
 
 ## Checklist
 
-1. `modules/nixosconf/<name>.nix` with the service + its Caddy vhost.
-2. Import it from `host/serveur/configuration.nix`.
+1. `modules/features/server/<name>.nix` with the service + its Caddy vhost,
+   declaring `ogama.server.<name>.enable` on both sides and wrapping its body
+   in `lib.mkIf`. See
+   `docs/superpowers/specs/2026-11-13-example-service-module.nix` for the exact
+   shape, including the two traps: options must be declared on both the NixOS
+   and the Home Manager side, and `imports` cannot live inside `mkIf`.
+2. `ogama.server.<name>.enable = true;` in `modules/hosts/oserv/_toggles.nix`.
 3. **`git add` the new file** — Nix reads the flake through git, and an
    untracked file fails evaluation with "is not tracked by Git", not with a
    missing-import error.
 4. **Add the DNS CNAME** (see below). This is the step with no trace in the
    repo and is the one that gets forgotten.
-5. Add a Gatus endpoint in `modules/nixosconf/status-page.nix`.
-6. Add a process-exporter matcher in `host/serveur/nixosconf/grafana.nix`.
+5. Add a Gatus endpoint in `modules/features/server/status-page.nix`.
+6. Add a process-exporter matcher in `modules/hosts/oserv/_nixosconf/grafana.nix`.
 7. sops secret, if it needs one.
 8. `nix flake check`, then build the closure, then switch.
 
@@ -133,7 +140,7 @@ reason) unless the service must be reachable off the tailnet.
 
 ## Monitoring: the Gatus endpoint
 
-Add to `endpoints` in `modules/nixosconf/status-page.nix`:
+Add to `endpoints` in `modules/features/server/status-page.nix`:
 
 ```nix
 {
@@ -174,7 +181,7 @@ backend. Probe loopback only for things with no vhost.
 ## Monitoring: the process-exporter matcher
 
 Add to `exporters.process.settings.process_names` in
-`host/serveur/nixosconf/grafana.nix`, otherwise the service's row in Grafana
+`modules/hosts/oserv/_nixosconf/grafana.nix`, otherwise the service's row in Grafana
 and in the status widget has no CPU/RAM:
 
 ```nix

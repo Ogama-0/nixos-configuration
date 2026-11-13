@@ -5,9 +5,9 @@ Three services, added 2026-10-15, modelled on
 
 | Service | Module | Port | Host | What it is |
 |---|---|---|---|---|
-| RustiCal 0.16 | `modules/nixosconf/rustical.nix` | 4000 | `rustical.ogama.me` (HTTPS) + `rustical.tail.ogama.me` | The CalDAV/CardDAV server. Everything else points at it. |
-| calendar_syncer | `modules/nixosconf/calendar-syncer.nix` | 8020 | `calsync.tail.ogama.me` | Mirrors ICS subscriptions into RustiCal, and keeps two CalDAV calendars in sync. |
-| Calino | `modules/nixosconf/calino.nix` | 8081 (proxy) | `calino.tail.ogama.me` | A CalDAV client that runs in the browser, talking to RustiCal directly. |
+| RustiCal 0.16 | `modules/features/server/rustical.nix` | 4000 | `rustical.ogama.me` (HTTPS) + `rustical.tail.ogama.me` | The CalDAV/CardDAV server. Everything else points at it. |
+| calendar_syncer | `modules/features/server/calendar-syncer.nix` | 8020 | `calsync.tail.ogama.me` | Mirrors ICS subscriptions into RustiCal, and keeps two CalDAV calendars in sync. |
+| Calino | `modules/features/server/calino.nix` | 8081 (proxy) | `calino.tail.ogama.me` | A CalDAV client that runs in the browser, talking to RustiCal directly. |
 
 They follow every convention in `adding-a-server-service.md`: loopback
 binds, a Gatus endpoint each (group `calendar`), a process-exporter
@@ -202,7 +202,7 @@ against being used as an open relay, so extend it, don't empty it.
 
 ## Overlap with the laptop's own calendar sync
 
-`modules/home-manager/calendar-sync.nix` already pulls ICS feeds straight
+`modules/features/server/calendar-sync.nix` already pulls ICS feeds straight
 onto the `personal` laptop with `vdirsyncer` for `khal` and the
 `Calendar.qml` widget. Both are kept: this stack is server-side and feeds
 every device through RustiCal, that one is a local read-only copy that

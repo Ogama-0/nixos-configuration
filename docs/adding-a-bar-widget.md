@@ -5,7 +5,7 @@ button. Read this before writing the QML; several of the constraints below are
 non-obvious and two of them fail *silently*.
 
 All paths are relative to
-`modules/home-manager/display/sway/quickshell/components/` unless stated.
+`modules/features/desktop/laserbar/components/` unless stated.
 
 ## What the bar is
 
@@ -91,7 +91,7 @@ orders widgets within the group; the numbers need not be contiguous.
 
 ### 3. Register the file in `treeFor`
 
-In `modules/home-manager/display/sway/quickshell/default.nix`:
+In `modules/features/desktop/laserbar/default.nix`:
 
 ```nix
 "${d}/components/DndWidget.qml" = themedQmlFile variant ./components/DndWidget.qml;
@@ -246,13 +246,13 @@ scripts/laserbar-preview.sh tests/laserbar/current-bar.qml /tmp/4k.png 0.5 3840x
 
 ## Theming
 
-Colours come from `@token@` substitution — see `modules/lib/qml-theme.nix` for
+Colours come from `@token@` substitution — see `lib/qml-theme.nix` for
 the table and `quickshell/default.nix` for the per-variant values. Use
 `@capsuleInk@` for marks on the plate. Never hardcode a colour that should
 follow the theme; there are two variants (dark and light) and they are
 generated into two separate trees.
 
-If you add a token, default it in `qml-theme.nix`. `modules/nixosconf/greetd.nix`
+If you add a token, default it in `qml-theme.nix`. `modules/features/desktop/greeter.nix`
 and the lock-screen variant call the same function and render none of these
 components, so a required argument there breaks both.
 

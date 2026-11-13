@@ -53,7 +53,7 @@ nh home switch . -c <profile>   # epita, epita-light
 ## Desktop shell
 
 The `personal` profile's Sway session runs [Quickshell](https://quickshell.org)
-(`modules/home-manager/display/sway/quickshell/`) instead of a traditional bar:
+(`modules/features/desktop/laserbar/`) instead of a traditional bar:
 
 - the **laser bar** — a top bar drawn as two beams that collide at a point
   driven by battery charge, carrying workspace, wifi, clock and media modules;
@@ -125,7 +125,7 @@ Sway started. Three real bugs behind that are fixed (see `docs/greeter.md`):
 
 The TTY flash is gone and logins are much cleaner, but it has not yet been
 confirmed that the first-login rejection is gone for good. While that stays
-open, `debugTrace = true` in `modules/nixosconf/greetd.nix` writes
+open, `debugTrace = true` in `modules/features/desktop/greeter.nix` writes
 `/tmp/greeter-trace.log` (message types, timings and password *lengths* -
 never a password) and `/tmp/greeter-quickshell.log`. Set it to `false` and
 rebuild to turn both off.

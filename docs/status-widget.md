@@ -11,7 +11,7 @@ planned in `docs/superpowers/plans/2026-10-09-oserv-status-widget.md`.
 
 ## Where everything lives
 
-- `modules/home-manager/display/sway/quickshell/components/StatusModel.qml` —
+- `modules/features/desktop/laserbar/components/StatusModel.qml` —
   non-visual. Owns both pollers, all JSON parsing, state derivation, and the
   key→label map. Exposes `services`, `online`, `verdictText`, `verdictCount`,
   `hostLoad`, `hostRam`, `hostDisk`.
@@ -21,14 +21,14 @@ planned in `docs/superpowers/plans/2026-10-09-oserv-status-widget.md`.
 - `.../components/Sparkline.qml` — per-row recent history.
 - `.../quickshell/default.nix` — derives the polarity-correct semantic colours
   and the API URLs, registers the three files.
-- `modules/lib/qml-theme.nix` — the `@token@` substitution. Shared with
-  `modules/nixosconf/greetd.nix` and the lock surfaces.
+- `lib/qml-theme.nix` — the `@token@` substitution. Shared with
+  `modules/features/desktop/greeter.nix` and the lock surfaces.
 
 Server side lives in the `oserv` checkout and is **not merged into this
 branch**: the Gatus module (port 8085 — not Gatus's default 8080, which
 `services.qbittorrent.webuiPort` already uses) and the path-restricted
 Prometheus read vhost alongside the existing Grafana one in
-`host/serveur/nixosconf/grafana.nix`. Merge it here before treating this repo
+`modules/hosts/oserv/_nixosconf/grafana.nix`. Merge it here before treating this repo
 as the whole picture.
 
 ## The data path
@@ -160,7 +160,7 @@ centre off its row's centre, which is the one thing the spine has to get right.
   both after editing. Every new argument needs a default — `greetd.nix` and the
   `lockVariant` helper call the same function.
 - From the **personal** profile the server domain is `cfg.server.server.domain`,
-  not `cfg.server.domain`. `host/profiles.nix` builds `base // (extra base)`,
+  not `cfg.server.domain`. `modules/features/core/shared-options.nix` builds `base // (extra base)`,
   and `cfg-perso`'s extra sets `server = cfg-server`, replacing base's `server`
   attrset rather than merging into it. Every other consumer in the repo is
   server-only, where `cfg` is already `cfg-server`.
@@ -187,7 +187,7 @@ for the worst case rather than the current image.
 ## Previewing without a switch
 
 Same approach as `docs/greeter.md`: render the QML by calling the **real**
-`modules/lib/qml-theme.nix` via `nix eval`, passing the working-tree file, so
+`lib/qml-theme.nix` via `nix eval`, passing the working-tree file, so
 the preview is exactly what a rebuild installs. Point `statusApiUrl` at a local
 fixture (`python3 -m http.server` over a directory containing
 `api/v1/endpoints/statuses`) to exercise `down`/`degraded`/`unknown`, which

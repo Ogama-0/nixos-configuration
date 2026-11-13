@@ -141,10 +141,10 @@ There are now two `quickshell` binaries in the flake, and only one of them
 needs to know about any of the above. `lpkgs.quickshell-multimedia` — wrapped
 with the QtMultimedia/ffmpeg environment `MessageAudio` needs — runs the
 widgets service and is the one on `PATH`. `upkgs.quickshell`, unwrapped, is
-still what `modules/home-manager/display/sway/idle.nix` and
-`modules/nixosconf/greetd.nix` reference, and that is deliberate: `idle.nix`
+still what `modules/features/desktop/sway-idle.nix` and
+`modules/features/desktop/greeter.nix` reference, and that is deliberate: `idle.nix`
 only uses it as an IPC *client* (no QtMultimedia import, nothing to wrap),
-and `greetd.nix` launches the greeter, whose QML tree (`modules/qml/`)
+and `greetd.nix` launches the greeter, whose QML tree (`qml/`)
 imports no QtMultimedia either. If either of those surfaces ever grows a
 QtMultimedia import, it will die with "module not installed" against the
 unwrapped binary — swap it for `lpkgs.quickshell-multimedia` at that point,

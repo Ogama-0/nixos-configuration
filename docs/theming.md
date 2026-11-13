@@ -1,7 +1,7 @@
 # Theming: one palette, two variants, darkman
 
 Every colour on the `personal` desktop comes from **one file**,
-`modules/lib/palette.nix`, and gets rendered twice — once dark, once light.
+`lib/palette.nix`, and gets rendered twice — once dark, once light.
 `darkman` picks which rendering is live and swaps it at sunrise and sunset.
 
 There is no Stylix. It used to generate all of this from a wallpaper; it was
@@ -13,16 +13,16 @@ colour you want changed is a colour you edit by hand, in one place.
 
 | File | Job |
 |---|---|
-| `modules/lib/palette.nix` | **THE place to change colours.** Plain `#RRGGBB`, three groups per variant: `ui`, `terminal`, `status` |
-| `modules/lib/theme-colors.nix` | Shim that strips the leading `#` from `ui`, because QML wants `#AARRGGBB` and consumers prepend their own alpha byte |
-| `modules/lib/qml-theme.nix` | The `@token@` → colour substitution table for all Quickshell QML |
-| `modules/lib/alacritty-colors.nix` | Renders `terminal` as the two `colors.toml` files |
-| `modules/lib/helix-auto-theme.nix` | The two `auto.toml` bodies — helix is the one app that does *not* follow ANSI |
-| `modules/lib/zellij-theme.nix` | The two zellij themes, which need true colour rather than ANSI slots |
-| `modules/lib/quickshell-tree-link.nix` | Repoints `~/.config/quickshell/widgets` at one of the two trees |
-| `modules/home-manager/darkman.nix` | The switch itself: five dark/light script pairs, plus the timezone sync |
-| `modules/home-manager/display/gtk.nix` | GTK plumbing, with the keys darkman owns deliberately left unset |
-| `modules/lib/timezone-coords.nix` | Lat/lng per timezone, shared with the greeter |
+| `lib/palette.nix` | **THE place to change colours.** Plain `#RRGGBB`, three groups per variant: `ui`, `terminal`, `status` |
+| `lib/theme-colors.nix` | Shim that strips the leading `#` from `ui`, because QML wants `#AARRGGBB` and consumers prepend their own alpha byte |
+| `lib/qml-theme.nix` | The `@token@` → colour substitution table for all Quickshell QML |
+| `lib/alacritty-colors.nix` | Renders `terminal` as the two `colors.toml` files |
+| `lib/helix-auto-theme.nix` | The two `auto.toml` bodies — helix is the one app that does *not* follow ANSI |
+| `lib/zellij-theme.nix` | The two zellij themes, which need true colour rather than ANSI slots |
+| `lib/quickshell-tree-link.nix` | Repoints `~/.config/quickshell/widgets` at one of the two trees |
+| `modules/features/desktop/darkman.nix` | The switch itself: five dark/light script pairs, plus the timezone sync |
+| `modules/features/desktop/gtk.nix` | GTK plumbing, with the keys darkman owns deliberately left unset |
+| `lib/timezone-coords.nix` | Lat/lng per timezone, shared with the greeter |
 
 ## Who follows what
 
@@ -104,14 +104,14 @@ dark theme on every `switch` until darkman's next run corrects it.
 
 ## Changing a colour
 
-1. Edit `modules/lib/palette.nix`. Nothing else.
+1. Edit `lib/palette.nix`. Nothing else.
 2. `nix flake check` — then see *Validating a change* below, because that
    check is much weaker than it looks.
 3. `home-manager switch`, then `darkman toggle` twice to see both variants.
 
 ## Adding a new app to the theme
 
-1. Render its colour file from `palette.nix` in a new `modules/lib/<app>-*.nix`.
+1. Render its colour file from `palette.nix` in a new `lib/<app>-*.nix`.
    Take the values from the palette; never re-type a hex code.
 2. Seed it from the app's own module with an activation script, **only if the
    file is missing**, and leave the path unmanaged.
@@ -122,8 +122,8 @@ dark theme on every `switch` until darkman's next run corrects it.
 
 ## Adding a QML token
 
-Add it to **both** lists in `modules/lib/qml-theme.nix`, and give it a
-default. `modules/nixosconf/greetd.nix` and the lockscreen variant call the
+Add it to **both** lists in `lib/qml-theme.nix`, and give it a
+default. `modules/features/desktop/greeter.nix` and the lockscreen variant call the
 same function and render almost none of these components, so a *required*
 argument breaks both callers.
 
@@ -152,7 +152,7 @@ nix eval --raw .#homeConfigurations.personal.activationPackage.drvPath
 ```
 
 **An un-`git add`ed file makes that check green against a tree without it.**
-Flakes copy only tracked files into the store. A new `modules/lib/*.nix` you
+Flakes copy only tracked files into the store. A new `lib/*.nix` you
 have not staged is simply absent from the evaluation, so the check passes by
 testing the old tree. `git add` before you believe a result.
 
@@ -212,7 +212,7 @@ floating in space.
 # 1. stage the files you touched - flakes ignore untracked ones.
 #    Name them; this tree usually holds unrelated in-progress work,
 #    so `git add -A` would sweep that in too.
-git add modules/lib/palette.nix
+git add lib/palette.nix
 
 # 2. the real check: forces the generated configFile text
 nix eval --raw .#homeConfigurations.personal.activationPackage.drvPath
