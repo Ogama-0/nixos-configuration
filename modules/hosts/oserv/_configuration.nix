@@ -45,19 +45,6 @@
 
   };
 
-  # I have to delet this very quickly ...
-  security.sudo.extraRules = [
-    {
-      users = [ "ogama_serv" ];
-      commands = [
-        {
-          command = "ALL";
-          options = [ "NOPASSWD" ];
-        }
-      ];
-    }
-  ];
-
   environment.systemPackages = with pkgs; [
     nano
     alsa-utils
