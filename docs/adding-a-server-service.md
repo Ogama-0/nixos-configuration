@@ -63,7 +63,9 @@ module exposes one, so the vhost cannot drift from the service.
    missing-import error.
 4. **Add the DNS CNAME** (see below). This is the step with no trace in the
    repo and is the one that gets forgotten.
-5. Add a Gatus endpoint in `modules/features/server/status-page.nix`.
+5. Add a Gatus endpoint in `modules/features/server/status-page.nix`. For a
+   borg job rather than an HTTP service, use the `mkBorgEndpoint` helper there:
+   it queries Prometheus for the unit's failed state instead of probing a URL.
 6. Add a process-exporter matcher in `modules/hosts/oserv/_nixosconf/grafana.nix`.
 7. sops secret, if it needs one.
 8. `nix flake check`, then build the closure, then switch.

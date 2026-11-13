@@ -71,7 +71,9 @@ Every module in the tree is reachable from `flake.nix` and evaluated on every ch
 
 **The `_` prefix is load-bearing.** `import-tree` imports every `.nix` under `modules/` and skips any path whose basename starts with `_`. Anything there that is not a flake-parts module — a host's toggles, a host-private NixOS module, a sub-module of a gated feature — must be `_`-prefixed. A sub-module of a gated feature also carries its own `mkIf`: the import that pulls it in cannot be conditional.
 
-**Per-host data is declared options**, not an attrset: `ogama.identity.*`, `ogama.server.{domain,paths,path}` in `modules/features/core/shared-options.nix`, registered on both sides and set by the host they describe. `ogama.server.path` is a read-only tree derived from three root options.
+**Per-host data is declared options**, not an attrset: `ogama.identity.*`, `ogama.server.{domain,paths,path}` in `modules/features/core/shared-options.nix`, registered on both sides and set by the host they describe. `ogama.server.path` is a read-only tree derived from three root options — `ogama.server.paths.{ssd,hdd,backup}`, defaulting to `/mnt/ssd`, `/mnt/hdd` and `/mnt/backup` from `lib/constants.nix`. Change a storage root there, not at the thirty-odd leaves that hang off it.
+
+**oserv runs ZFS** (`ogama.system.zfs.enable`), which is why it pins `boot.kernelPackages = pkgs.linuxPackages` — the ZFS kernel module does not build against `linuxPackages_latest` on this nixpkgs pin. The same LTS constraint independently applies to `personal` through `nvidia-open`.
 
 **`lib/`** is not modules. It is plain functions and data `import`ed directly: the colour palette (`palette.nix`, the single source for every colour on the desktop), the QML `@token@` substitution (`qml-theme.nix`), per-app theme renderers, the `swayfx` package both sway and greetd need by absolute store path, and `constants.nix` (the domain and storage roots, needed by `packages.calino` before any module exists). **`qml/`** holds the greeter's QML, rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`. Both sit at the repo root, outside the import root.
 

@@ -13,14 +13,18 @@ My personal NixOS + Home Manager flake, covering a main desktop, a home server, 
 
 ## Structure
 
-- `host/`: per-profile entry points
-  - `profiles.nix`: single source of truth for usernames, paths, SSH keys, and other per-profile data
-  - `<profile>/`: `configuration.nix` (NixOS) and `home.nix`/`<profile>.nix` (Home Manager) for that machine, plus `hardware-configuration.nix` and any machine-specific extras
-- `modules/`: reusable building blocks, one file (or folder) per concern
-  - `home-manager/`: user-level config (shell, editors, `display/` for window managers, etc.)
-  - `nixosconf/`: system-level config (services, networking, etc.)
-  - `lib/`: not modules — plain functions and data shared between them (the colour palette, the QML theme substitution, the swayfx package)
-  - `qml/`: the greeter's QML, which is rendered by a NixOS module rather than a Home Manager one
+`flake.nix` is inputs plus one line — [`import-tree`](https://github.com/vic/import-tree) imports every `.nix` under `modules/`, and each file registers what it provides. Nothing is selected by an imports list: every feature is imported into every host and gated behind an `ogama.<domain>.<feature>.enable` option, so **what a machine runs is its `_toggles.nix`**. A module nobody enables still gets evaluated, which is what stops one rotting unnoticed.
+
+- `modules/`: everything the module system sees
+  - `features/{core,system,desktop,dev,server}/`: the building blocks, one file per concern — and one file holds *both* the NixOS and the Home Manager half where a concern has two
+  - `hosts/<host>/`: `default.nix` (the only flake-parts module there, which builds that host's configurations), `_toggles.nix` (what this host runs), and `_`-prefixed entry modules and machine-specific extras
+  - `flake/`: the plumbing — option declarations, package sets, and the aggregator that imports every feature
+- `lib/`: not modules — plain functions and data (the colour palette, the QML theme substitution, the swayfx package, the storage roots)
+- `qml/`: the greeter's QML, which is rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`
+
+A name starting with `_` is skipped by `import-tree`: that is how a file under `modules/` says "I am not a flake-parts module".
+
+To change what a machine runs, edit `modules/hosts/<host>/_toggles.nix`. To add something reusable, add one file under `modules/features/<domain>/`.
 - `docs/`: runbooks for the parts that bite (see below), plus `superpowers/` design specs and plans, one topic per dated file
 - `tests/`: render fixtures for the laser bar — there is no unit-test framework, so the bar is verified by screenshotting it
 - `pkgs/`: standalone package derivations exposed as flake outputs
