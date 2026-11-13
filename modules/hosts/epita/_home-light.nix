@@ -1,7 +1,6 @@
 { config, pkgs, ... }: {
   imports = [
     ./_toggles-light.nix
-    ../../home-manager/helix.nix
     ../../home-manager/display/font.nix
     ../../home-manager/display/i3
     ../../home-manager/kitty.nix

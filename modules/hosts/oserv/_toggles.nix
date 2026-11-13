@@ -22,4 +22,8 @@
     samba.enable = true;
     tailscale.enable = true;
   };
+
+  ogama.dev = {
+    helix.enable = true;
+  };
 }

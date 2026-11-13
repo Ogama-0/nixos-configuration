@@ -14,4 +14,10 @@
     sh.enable = true;
     git.enable = true;
   };
+
+  ogama.dev = {
+    helix.enable = true;
+    vim.enable = true;
+    zellij.enable = true;
+  };
 }

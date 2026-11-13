@@ -34,4 +34,12 @@
     tailscale.enable = true;
     vm.enable = true;
   };
+
+  ogama.dev = {
+    zellij.enable = true;
+    gns3.enable = true;
+    helix.enable = true;
+    vim.enable = true;
+    zed.enable = true;
+  };
 }

@@ -1,15 +1,12 @@
 { config, pkgs, ... }: {
   imports = [
     ./_toggles.nix
-    ../../home-manager/helix.nix
-    ../../home-manager/vim.nix
     ../../home-manager/display/font.nix
     ../../home-manager/display/i3
     # ../../home-manager/joplin-desktop.nix
     # ../../home-manager/kitty.nix
     ../../home-manager/display/gtk.nix
     ../../home-manager/alacritty.nix
-    ../../home-manager/zellij/default.nix
     ../../home-manager/wakapi.nix
     ./_tools.nix
   ];

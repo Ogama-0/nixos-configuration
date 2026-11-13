@@ -14,4 +14,8 @@
     sh.enable = true;
     git.enable = true;
   };
+
+  ogama.dev = {
+    helix.enable = true;
+  };
 }
