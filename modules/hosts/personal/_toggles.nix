@@ -22,7 +22,6 @@
     docker.enable = true;
     earlyoom.enable = true;
     geoclue.enable = true;
-    gns3Root.enable = true;
     kdeconnect.enable = true;
     localsend.enable = true;
     mounting.enable = true;
