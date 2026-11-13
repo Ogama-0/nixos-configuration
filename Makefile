@@ -4,9 +4,9 @@ NIX_FLAGS := --extra-experimental-features "nix-command flakes"
 .PHONY: help personal personal-hm oserv oserv-hm epita epita-light check update
 
 help:
-	@echo "make personal     NixOS + Home Manager switch, sudo (main desktop)"
+	@echo "make personal     NixOS switch only, sudo (main desktop) -- does NOT switch Home Manager"
 	@echo "make personal-hm  Home Manager switch only, no sudo (main desktop)"
-	@echo "make oserv        NixOS + Home Manager switch, sudo (home server, run on oserv itself)"
+	@echo "make oserv        NixOS switch only, sudo (home server, run on oserv itself) -- does NOT switch Home Manager"
 	@echo "make oserv-hm     Home Manager switch only, no sudo (home server, run on oserv itself)"
 	@echo "make epita        Home Manager switch (EPITA computer)"
 	@echo "make epita-light  Home Manager switch (EPITA computer, trimmed down)"

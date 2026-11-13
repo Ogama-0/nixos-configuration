@@ -21,11 +21,21 @@ nh os switch . -H personal
 nh os switch . -H oserv
 ```
 
-Switch a Home Manager profile (used standalone for `epita`/`epita-light`, and as part of the NixOS switch for `personal`/`oserv`):
+Switch a Home Manager profile — **always standalone, on every profile**:
 ```
 nh home switch . -c <profile>
 ```
 Valid `<profile>` values: `personal`, `oserv`, `epita`, `epita-light`.
+
+**The NixOS switch does not carry Home Manager with it.** `personal` and `oserv`
+build their home side with `inputs.home-manager.lib.homeManagerConfiguration`
+(see `modules/hosts/personal/default.nix`), not with
+`home-manager.nixosModules.home-manager`, so the two are independent
+derivations with independent activations. `make personal` runs only
+`nh os switch`; the home half needs `make personal-hm` as a second command.
+A change to a feature's home side will silently not take effect until you run
+it — the NixOS switch succeeds and reports no error, because nothing in the
+system closure ever referenced that module.
 
 To change what a machine runs, edit `modules/hosts/<host>/_toggles.nix`. To add something reusable, add one file under `modules/features/<domain>/`.
 
