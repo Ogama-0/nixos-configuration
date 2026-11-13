@@ -137,7 +137,7 @@ in
                 {
                   name = "qBittorrent";
                   group = "files";
-                  url = "http://qbittorrent.${config.ogama.server.domain}";
+                  url = "http://qbittorrent.tail.${config.ogama.server.domain}";
                   interval = "15s";
                   conditions = [
                     "[STATUS] == 200"

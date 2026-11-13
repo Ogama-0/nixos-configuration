@@ -10,7 +10,13 @@ let
 in
 {
   flake.featureModules.nixos.qbittorrent =
-    { cfg, config, pkgs, lib, ... }:
+    {
+      cfg,
+      config,
+      pkgs,
+      lib,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
@@ -171,7 +177,7 @@ in
             };
           };
 
-          services.caddy.virtualHosts."http://qbittorrent.${config.ogama.server.ipv6Host}" = {
+          services.caddy.virtualHosts."http://qbittorrent.tail.${config.ogama.server.domain}" = {
             extraConfig = ''
               reverse_proxy http://127.0.0.1:${toString config.services.qbittorrent.webuiPort}
             '';

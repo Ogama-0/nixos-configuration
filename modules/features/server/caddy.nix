@@ -31,7 +31,17 @@ in
             '';
 
             virtualHosts = {
-              "${config.ogama.server.domain}".extraConfig = ''
+              # Plain HTTP for the same reason as the wildcard below, plus one
+              # of its own: the apex A record is OVH's redirect.ovh.net
+              # (213.186.33.5) and its AAAA is elsewhere again - neither is this
+              # host. Left bare, Caddy turns on automatic HTTPS and retries ACME
+              # forever: http-01 follows OVH's redirect to
+              # www.${config.ogama.server.domain}, which has no record at all
+              # (NXDOMAIN), and tls-alpn-01 is refused outright. That loop
+              # re-fired on every reload until it earned a Let's Encrypt 429.
+              # The block only ever answers 404, so it loses nothing by never
+              # holding a certificate.
+              "http://${config.ogama.server.domain}".extraConfig = ''
                 respond 404
               '';
 
