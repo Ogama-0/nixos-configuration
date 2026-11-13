@@ -4,15 +4,7 @@
     ./_toggles.nix
     ./_home-manager/tool.nix
     ./_home-manager/default-app.nix
-    ../../home-manager/alacritty.nix
-    ../../home-manager/display/sway
-    # ../../home-manager/display/hyprland
-    ../../home-manager/display/font.nix
-    ../../home-manager/display/gtk.nix
     # ../../home-manager/joplin-desktop.nix
-    ../../home-manager/firefox.nix
-    ../../home-manager/darkman.nix
-    ../../home-manager/thunderbird.nix
     # "${inputs.home-manager}/modules/programs/xcompose.nix"
   ];
 

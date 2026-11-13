@@ -2,7 +2,6 @@
   imports = [
     ./_toggles.nix
     # global import
-    ../../home-manager/display/font.nix
     ./_home-manager/tools.nix
   ];
 

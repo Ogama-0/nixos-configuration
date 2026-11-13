@@ -1,12 +1,8 @@
 { config, pkgs, ... }: {
   imports = [
     ./_toggles.nix
-    ../../home-manager/display/font.nix
-    ../../home-manager/display/i3
     # ../../home-manager/joplin-desktop.nix
     # ../../home-manager/kitty.nix
-    ../../home-manager/display/gtk.nix
-    ../../home-manager/alacritty.nix
     ./_tools.nix
   ];
 

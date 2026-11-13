@@ -22,4 +22,10 @@
   ogama.server = {
     wakapi.client.enable = true;
   };
+
+  ogama.desktop = {
+    i3.enable = true;
+    font.enable = true;
+    kitty.enable = true;
+  };
 }

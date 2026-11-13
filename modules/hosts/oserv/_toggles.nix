@@ -40,4 +40,8 @@
     wakapi.server.enable = true;
     wakapi.client.enable = true;
   };
+
+  ogama.desktop = {
+    font.enable = true;
+  };
 }

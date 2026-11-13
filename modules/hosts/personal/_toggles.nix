@@ -47,4 +47,19 @@
     calendarSync.enable = true;
     wakapi.client.enable = true;
   };
+
+  ogama.desktop = {
+    # The compositor. Turning it on brings the whole rig with it: sway-effects,
+    # sway-idle, laserbar, gammastep, vicinae and swaylock each default to this
+    # flag, so dropping any one of them is one `false` rather than an edit to an
+    # imports list.
+    sway.enable = true;
+
+    alacritty.enable = true;
+    darkman.enable = true;
+    firefox.enable = true;
+    font.enable = true;
+    gtk.enable = true;
+    thunderbird.enable = true;
+  };
 }

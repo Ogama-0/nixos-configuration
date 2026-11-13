@@ -1,0 +1,339 @@
+{ ... }:
+# ogama.desktop.sway.enable is declared by compositor.nix, which owns the
+# compositor choice and the assertion that only one is on at a time.
+{
+  flake.featureModules.home.sway =
+    { config, lib, pkgs, ... }:
+    {
+      config = lib.mkIf config.ogama.desktop.sway.enable (
+        let
+          modifier = "Mod4";
+          up = "k";
+          down = "j";
+          left = "h";
+          right = "l";
+          # Shift+volume keys drive the phone instead of this machine. kdeconnect-cli
+          # has no volume command; the only desktop -> phone path is the mprisremote
+          # plugin, whose `volume` property is writable and maps to the phone's media
+          # stream. Every failure here is a silent exit 0: this runs under a keybind,
+          # where an unpaired phone or a phone with no media app loaded is normal and
+          # must not surface as an error.
+          kdeconnectVolume = pkgs.writeShellScript "kdeconnect-volume" ''
+            set -eu
+            STEP=$1
+            SVC=org.kde.kdeconnect
+            IFACE=org.kde.kdeconnect.device.mprisremote
+
+            # First paired-and-reachable device, rather than a hardcoded id, so this
+            # survives a re-pair.
+            DEVICE=$(${pkgs.kdePackages.kdeconnect-kde}/bin/kdeconnect-cli -a --id-only | ${pkgs.coreutils}/bin/head -n1)
+            if [ -z "$DEVICE" ]; then exit 0; fi
+            OBJ=/modules/kdeconnect/devices/$DEVICE/mprisremote
+
+            # busctl prints a list like: as 1 Deezer -- or just: as 0 -- for none; with
+            # no player there is no volume to set. The player stays registered while
+            # paused, so this only trips when no media app is loaded at all.
+            PLAYERS=$(${pkgs.systemd}/bin/busctl --user get-property $SVC "$OBJ" $IFACE playerList 2>/dev/null || true)
+            set -- $PLAYERS
+            if [ "$#" -lt 3 ]; then exit 0; fi
+
+            # "i 46" -> 46
+            CURRENT=$(${pkgs.systemd}/bin/busctl --user get-property $SVC "$OBJ" $IFACE volume 2>/dev/null || true)
+            set -- $CURRENT
+            if [ "$#" -lt 2 ] || [ "$1" != "i" ]; then exit 0; fi
+
+            NEXT=$(($2 + $STEP))
+            if [ "$NEXT" -lt 0 ]; then NEXT=0; fi
+            if [ "$NEXT" -gt 100 ]; then NEXT=100; fi
+
+            ${pkgs.systemd}/bin/busctl --user set-property $SVC "$OBJ" $IFACE volume i "$NEXT"
+            # Fixed replaces-id so holding the key repaints one toast instead of stacking.
+            ${pkgs.notify-desktop}/bin/notify-desktop -r 7311 -a kdeconnect "Phone Volume" "Volume: $NEXT%" >/dev/null
+          '';
+
+          # wpctl is silent, and this laptop has no volume LED: a keypress that
+          # changed nothing looks exactly like one that did not register. So the
+          # audio keys say what they did.
+          #
+          # Sent transient (`boolean:transient:true`): the laser bar's notification
+          # server shows a transient as a toast and does NOT keep it, because a
+          # reading you wanted at the instant you pressed a key is not a message,
+          # and twenty of them would push the real ones out of the centre.
+          #
+          # One script for all four keys so the reading is parsed in one place -
+          # mute and volume share an output line, and the mic's is the same shape.
+          audioOsd = pkgs.writeShellScript "audio-osd" ''
+            set -eu
+
+            wpctl=${pkgs.wireplumber}/bin/wpctl
+
+            # "Volume: 0.45 [MUTED]" -> "45 [MUTED]", the tag absent when unmuted.
+            reading() {
+              $wpctl get-volume "$1" \
+                | ${pkgs.gawk}/bin/awk '{ printf "%.0f %s", $2 * 100, $3 }'
+            }
+
+            # One app name per device, because the toasts pack by app: the volume
+            # and the mic each keep a toast of their own rather than fighting over
+            # one.
+            osd() {
+              ${pkgs.libnotify}/bin/notify-send \
+                -a "$1" -i "$2" -h boolean:transient:true "$3"
+            }
+
+            case "$1" in
+              up) $wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+              down) $wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- ;;
+              mute) $wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+              mic) $wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
+            esac
+
+            if [ "$1" = mic ]; then
+              set -- $(reading @DEFAULT_AUDIO_SOURCE@)
+              if [ "''${2-}" = "[MUTED]" ]; then
+                osd Microphone microphone-sensitivity-muted "Mic muted"
+              else
+                osd Microphone microphone-sensitivity-high "Mic live"
+              fi
+            else
+              set -- $(reading @DEFAULT_AUDIO_SINK@)
+              if [ "''${2-}" = "[MUTED]" ]; then
+                osd Volume audio-volume-muted "Muted"
+              elif [ "$1" -ge 66 ]; then
+                osd Volume audio-volume-high "$1%"
+              elif [ "$1" -ge 33 ]; then
+                osd Volume audio-volume-medium "$1%"
+              else
+                osd Volume audio-volume-low "$1%"
+              fi
+            fi
+          '';
+        in
+        {
+          # What sway used to import is registered separately now:
+          # sway-effects, sway-idle, laserbar, gammastep, vicinae and swaylock
+          # each default to ogama.desktop.sway.enable, so turning sway on still
+          # brings the whole rig, and any one piece can be dropped with a flag.
+          home.packages = with pkgs; [
+            grim
+            slurp
+            wlroots
+          ];
+          services.autotiling.enable = true;
+          wayland.windowManager.sway = {
+            enable = true;
+            xwayland = true;
+            # SwayFX: sway plus rounded corners / shadows / blur, configured in
+            # ./effects.nix. Defined in lib/swayfx.nix because greetd execs
+            # the very same binary to start the session.
+            package = import ../../../../lib/swayfx.nix pkgs;
+            # Sway initialises a renderer even for `--validate` (swaywm/sway#4691),
+            # and swayfx's fx_renderer is GLES2-only: in the Nix sandbox it dies on
+            # "Cannot create GLES2 renderer: no DRM FD available" before it ever
+            # reads the config. Plain sway passed only because wlr_renderer falls
+            # back to pixman. Validate by hand instead:
+            #   swayfx --validate --config ~/.config/sway/config
+            checkConfig = false;
+            config = {
+              modifier = "${modifier}";
+              terminal = "alacritty";
+
+              up = "${up}";
+              down = "${down}";
+              left = "${left}";
+              right = "${right}";
+              defaultWorkspace = "workspace 10";
+
+              # No swaybar from the typed option - home-manager would otherwise ship
+              # its default one. The bar block in extraConfig below is not a bar: it
+              # exists only to make sway track the modifier for us.
+              bars = [ ];
+
+              startup = [
+                { command = "alacritty"; }
+                {
+                  command = "systemctl --user restart quickshell-widgets";
+                  always = true;
+                }
+              ];
+
+              fonts = {
+                names = [ "Noto Sans" ];
+                size = 12.0;
+              };
+
+              window = {
+                titlebar = false;
+                border = 0;
+
+                commands = [
+                  # The file picker the panel opens for "Send file". zenity hands
+                  # the job to the XDG portal, so the window to catch is the
+                  # portal's and not zenity's - matching app_id="zenity" catches
+                  # nothing at all.
+                  #
+                  # Tiled it took the whole screen for a dialog whose job is to
+                  # pick one path.
+                  {
+                    criteria.all = true;
+                    command = "inhibit_idle fullscreen";
+                  }
+                  {
+                    criteria.app_id = "xdg-desktop-portal-gtk";
+                    command = "floating enable, resize set 760 480, move position center";
+                  }
+
+                  # Just the SMS window. Each KDE Connect binary gets its own
+                  # app_id off its desktop file - org.kde.kdeconnect.sms, .app,
+                  # .handler - so an unanchored "^org\\.kde\\.kdeconnect" prefix
+                  # grabbed the whole family. Anchor both ends: the device list and
+                  # the share handler are better off with the default tiling.
+                  {
+                    criteria.app_id = "^org\\.kde\\.kdeconnect\\.sms$";
+                    command = "floating enable, resize set 480 320, move position 24 24";
+                  }
+                  {
+                    criteria = {
+                      app_id = "firefox";
+                      title = "^Extension ?: \\(Bitwarden";
+                    };
+                    command = "floating enable, resize set 420 px 700 px, move position center";
+                  }
+                ];
+              };
+
+              # A sway mode that exists for exactly one key.
+              #
+              # The panel must not hold keyboard focus - you are meant to carry on
+              # typing into whatever is underneath it - but Escape still has to
+              # dismiss it, and a layer surface cannot receive a key it does not
+              # have focus for. A mode is the only mechanism in sway that intercepts
+              # ONE key and lets every other one through to the focused window.
+              #
+              # Every normal binding is copied in, so nothing stops working while
+              # the panel is up. ControlPanel.qml enters this mode when the panel
+              # opens and returns to default when it closes, by any route - so a
+              # click outside or a workspace change leaves the mode too.
+              modes.panel = config.wayland.windowManager.sway.config.keybindings // {
+                "Escape" = "mode default; exec quickshell ipc -c widgets call panel dismiss";
+                # Deleting the selected notification, by the same route and for the
+                # same reason: the panel never holds keyboard focus, so sway has to
+                # intercept the key. Unlike Escape this one does NOT leave the mode
+                # - you are usually deleting several.
+                "Delete" = "exec quickshell ipc -c widgets call panel deleteSelected";
+              };
+
+              keybindings = lib.mkOptionDefault {
+                "${modifier}+Shift+Return" = "exec zen-beta";
+                "${modifier}+Shift+o" = "exec reboot";
+                "${modifier}+Shift+p" = "exec shutdown -h now";
+                "${modifier}+Shift+r" = "exec swaymsg reload";
+                "${modifier}+${left}" = "focus left";
+                "${modifier}+${right}" = "focus right";
+                "${modifier}+${up}" = "focus up";
+                "${modifier}+${down}" = "focus down";
+                "${modifier}+Escape" = "exec quickshell ipc -c widgets call lock lock";
+                "${modifier}+Shift+Escape" = "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
+                # Was: "${modifier}" = "exec swaymsg bar mode toggle";
+                # Commented out because the laser bar now binds the same key (see
+                # extraConfig). Two bindings on the bare modifier compete, and the
+                # second one is the likely reason sway stopped firing the --release
+                # that collapses the bar. Restore it if you still want the swaybar
+                # toggle and would rather move the laser bar to another key.
+                "${modifier}+Shift+z" = "exec quickshell ipc -c widgets call panel clearNotifications";
+                # "${modifier}+Shift+d" = "exec vesktop";
+                "${modifier}+space" = "exec nautilus";
+                "${modifier}+Shift+s" = "exec spotify";
+                "${modifier}+Shift+b" = "exec blueman-manager";
+                "${modifier}+Shift+a" = "exec pavucontrol";
+                "${modifier}+p" = "exec wl-color-picker";
+                "${modifier}+w" = "exec quickshell ipc -c widgets call wallpaper togglePicker";
+                # Hold mod (which raises the bar), then n. A normal binding works
+                # here where a bare-modifier one would not: sway only stops firing
+                # the --release of the modifier ITSELF once it has been used as one.
+                "${modifier}+n" = "exec quickshell ipc -c widgets call panel toggle";
+                # Messages, from anywhere, panel open or not. Unlike every other
+                # binding here this one leaves the panel holding the keyboard - the
+                # compose field needs it - so ControlPanel drops out of modes.panel
+                # while it is up and handles Escape itself.
+                "${modifier}+m" = "exec quickshell ipc -c widgets call panel messages";
+
+                # Workspace related keys
+                "${modifier}+grave" = "workspace 10";
+                "${modifier}+1" = "workspace 1";
+                "${modifier}+2" = "workspace 2";
+                "${modifier}+3" = "workspace 3";
+                "${modifier}+4" = "workspace 4";
+                "${modifier}+5" = "workspace 5";
+                "${modifier}+6" = "workspace 6";
+                "${modifier}+7" = "workspace 7";
+                "${modifier}+8" = "workspace 8";
+                "${modifier}+9" = "workspace 9";
+                "${modifier}+0" = "workspace 10";
+
+                "${modifier}+Shift+grave" = "move container to workspace 10";
+                "${modifier}+Shift+1" = "move container to workspace 1";
+                "${modifier}+Shift+2" = "move container to workspace 2";
+                "${modifier}+Shift+3" = "move container to workspace 3";
+                "${modifier}+Shift+4" = "move container to workspace 4";
+                "${modifier}+Shift+5" = "move container to workspace 5";
+                "${modifier}+Shift+6" = "move container to workspace 6";
+                "${modifier}+Shift+7" = "move container to workspace 7";
+                "${modifier}+Shift+8" = "move container to workspace 8";
+                "${modifier}+Shift+9" = "move container to workspace 9";
+                "${modifier}+Shift+0" = "move container to workspace 10";
+
+                "${modifier}+r" = "mode resize";
+
+                # Control keys
+
+                "XF86AudioPrev" = "exec playerctl previous";
+                "XF86AudioNext" = "exec playerctl next";
+                "XF86AudioPlay" = "exec playerctl play-pause";
+
+                "XF86AudioRaiseVolume" = "exec ${audioOsd} up";
+
+                "XF86AudioLowerVolume" = "exec ${audioOsd} down";
+
+                # Same keys with Shift, aimed at the phone over KDE Connect.
+                "Shift+XF86AudioRaiseVolume" = "exec ${kdeconnectVolume} 5";
+                "Shift+XF86AudioLowerVolume" = "exec ${kdeconnectVolume} -5";
+                "XF86AudioMute" = "exec ${audioOsd} mute";
+                "XF86AudioMicMute" = "exec ${audioOsd} mic";
+
+                "XF86MonBrightnessUp" = "exec brightnessctl --exponent=2 s +10%";
+                "XF86MonBrightnessDown" = "exec brightnessctl --exponent=2 s 10%-";
+
+                "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
+              };
+            };
+
+            extraConfig = ''
+              # Not a bar. swaybar_command is a no-op, so no bar process ever starts
+              # and nothing is drawn.
+              #
+              # It exists because `mode hide` + `modifier` is the only thing in sway
+              # that gives an exact correspondence between the modifier being held and
+              # a bar being shown: sway tracks the key in the compositor and
+              # broadcasts the result as the bar_state_update IPC event. Key bindings
+              # cannot do this - sway stops firing a modifier's --release binding once
+              # it has been used as a modifier, so mod+key leaves the hide unsent.
+              #
+              # The modifier is the only way in: no key binding reveals the bar. If
+              # the subscription ever dies LaserBar.qml relaunches it with backoff,
+              # which is what makes a fallback binding unnecessary.
+              #
+              # LaserBar.qml subscribes to bar_state_update and follows
+              # visible_by_modifier.
+              bar {
+                  swaybar_command ${pkgs.coreutils}/bin/true
+                  mode hide
+                  hidden_state hide
+                  modifier ${modifier}
+              }
+            '';
+          };
+        }
+      );
+    };
+}

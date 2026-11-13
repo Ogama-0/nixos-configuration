@@ -10,8 +10,6 @@
   imports = [
     ./_toggles.nix
     ./_hardware-configuration.nix
-    ../../nixosconf/gtklock
-    ../../nixosconf/greetd.nix
 
     ./_nixosconf/backup-laptop.nix
     ./_nixosconf/volumes.nix

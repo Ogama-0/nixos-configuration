@@ -1,9 +1,6 @@
 { config, pkgs, ... }: {
   imports = [
     ./_toggles-light.nix
-    ../../home-manager/display/font.nix
-    ../../home-manager/display/i3
-    ../../home-manager/kitty.nix
   ];
 
   # Per-host identity, formerly host/profiles.nix's cfg-epita. The school
