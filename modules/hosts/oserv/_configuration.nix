@@ -3,7 +3,6 @@
 {
   imports = [
     ./_toggles.nix
-    ../../nixosconf/ssh.nix
     ../../nixosconf/tailscale.nix
     ../../nixosconf/samba.nix
     ../../nixosconf/avahi.nix
@@ -31,7 +30,6 @@
 
     ../../nixosconf/docker.nix
     ../../nixosconf/joplin-server.nix # <- docker
-    ../../nixosconf/nh.nix
     # ../../nixosconf/crafty.nix        # <- docker
 
     ./_users

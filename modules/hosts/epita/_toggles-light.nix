@@ -9,4 +9,9 @@
 # _-prefixed: it is a plain attrset of option values, not a flake-parts module,
 # so import-tree must not pick it up.
 {
+  ogama.core = {
+    nh.user.enable = true;
+    sh.enable = true;
+    git.enable = true;
+  };
 }

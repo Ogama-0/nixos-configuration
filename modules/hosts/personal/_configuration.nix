@@ -11,7 +11,6 @@
     ./_toggles.nix
     ./_hardware-configuration.nix
     ../../nixosconf/stream.nix
-    ../../nixosconf/utilities.nix
     ../../nixosconf/nvidia.nix
     ../../nixosconf/geoclue.nix
     ../../nixosconf/kdeconnect.nix
@@ -27,7 +26,6 @@
     ../../nixosconf/localsend.nix
     ../../nixosconf/earlyoom.nix
     ../../nixosconf/gns3-root.nix
-    ../../nixosconf/nh.nix
 
     ./_nixosconf/backup-laptop.nix
     ./_nixosconf/volumes.nix

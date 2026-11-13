@@ -2,9 +2,7 @@
   imports = [
     ./_toggles.nix
     # global import
-    ../../home-manager/sh.nix
     ../../home-manager/helix.nix
-    ../../home-manager/git.nix
     ../../home-manager/display/font.nix
     ../../home-manager/wakapi.nix
     ./_home-manager/tools.nix

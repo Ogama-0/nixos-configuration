@@ -1,9 +1,7 @@
 { config, pkgs, ... }: {
   imports = [
     ./_toggles.nix
-    ../../home-manager/git.nix
     ../../home-manager/helix.nix
-    ../../home-manager/sh.nix
     ../../home-manager/vim.nix
     ../../home-manager/display/font.nix
     ../../home-manager/display/i3
@@ -13,7 +11,6 @@
     ../../home-manager/alacritty.nix
     ../../home-manager/zellij/default.nix
     ../../home-manager/wakapi.nix
-    ../../home-manager/nh.nix
     ./_tools.nix
   ];
 

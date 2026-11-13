@@ -87,18 +87,21 @@ for i in "${!ATTRS[@]}"; do
   fi
 
   # drvPath moved. Name what actually changed in the graph.
-  bad "$name drvPath changed:"
-  note "    was $(cat "$base_file")"
-  note "    now $drv"
   new_set="$W/$name.drvs.new"
   nix-store --query --requisites "$drv" 2>>"$LOG" | grep '\.drv$' | sort > "$new_set"
-  added="$(comm -13 "$BASE_DRVS/$name.drvs" "$new_set" | wc -l)"
-  removed="$(comm -23 "$BASE_DRVS/$name.drvs" "$new_set" | wc -l)"
-  note "    derivations added: $added, removed: $removed"
-  note "    first 20 added:"
-  comm -13 "$BASE_DRVS/$name.drvs" "$new_set" | head -20 | sed 's/^/      + /'
-  note "    first 20 removed:"
-  comm -23 "$BASE_DRVS/$name.drvs" "$new_set" | head -20 | sed 's/^/      - /'
+  comm -13 "$BASE_DRVS/$name.drvs" "$new_set" > "$W/$name.added"
+  comm -23 "$BASE_DRVS/$name.drvs" "$new_set" > "$W/$name.removed"
+
+  # A different drvPath is not automatically a behaviour change: features now
+  # reach a host through the aggregator rather than interleaved in its imports
+  # list, which reorders home.packages. Classify before judging.
+  if python3 "$REPO/scripts/migration-drvdiff.py" "$W/$name.removed" "$W/$name.added"; then
+    note "  ok   $name (drvPath moved; every difference is ordering or a downstream rehash)"
+  else
+    bad "$name changed for real:"
+    note "    was $(cat "$base_file")"
+    note "    now $drv"
+  fi
 done
 
 note ""
