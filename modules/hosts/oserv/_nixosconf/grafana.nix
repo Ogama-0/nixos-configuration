@@ -122,6 +122,31 @@ in
       ]
       (builtins.readFile ./grafana-dashboard-lsi.json);
 
+  # Backups get their own dashboard for the same reason La Scène intérieure
+  # does: "is the backup fine" is not a question the per-service UP/DOWN grid
+  # can answer. A borg job that exits 0 having written nothing is green there.
+  # The metrics behind the borg and Time Machine panels come from
+  # backup-metrics.nix, via node-exporter's textfile collector.
+  #
+  # The four substituted paths are `mountpoint` label values and a share path
+  # in a panel description, so they must track ogama.server.path for the same
+  # reason @HDD_PATH@ above does.
+  environment.etc."grafana-dashboards/oserv-backups.json".text =
+    builtins.replaceStrings
+      [
+        "@SSD_PATH@"
+        "@HDD_PATH@"
+        "@BACKUP_PATH@"
+        "@TM_PATH@"
+      ]
+      [
+        config.ogama.server.path.SSD_path
+        config.ogama.server.path.HDD_path
+        config.ogama.server.path.backup.path
+        config.ogama.server.path.hdd.share.Apple_save_HDD_path
+      ]
+      (builtins.readFile ./grafana-dashboard-backups.json);
+
   services.caddy.virtualHosts."http://grafana.tail.${config.ogama.server.domain}" = {
     extraConfig = ''
       reverse_proxy http://127.0.0.1:3000

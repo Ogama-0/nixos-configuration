@@ -16,6 +16,7 @@
     ./_users
     ./_nixosconf/network.nix
     ./_nixosconf/backup-server.nix
+    ./_nixosconf/backup-metrics.nix
     ./_nixosconf/grafana.nix
 
     ./_hardware-configuration.nix
