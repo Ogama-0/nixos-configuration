@@ -27,7 +27,17 @@ in {
   systemd.tmpfiles.rules = [
     "d ${SSD_path} 0755 ${config.ogama.identity.user} users -"
     "d ${HDD_path} 0755 ${config.ogama.identity.user} users -"
-    "d ${backup} 0755 ${config.ogama.identity.user} users -"
+    # root, not the login user, and that is load-bearing. systemd-tmpfiles
+    # refuses to resolve a path through a directory owned by a *different*
+    # non-root user and silently skips the rule — so while this was owned by the
+    # login user, every borg-owned rule under it in
+    # backup-server.nix was a no-op ("Detected unsafe path transition
+    # /mnt/backup (owned by ...) -> /mnt/backup/hdd-backup (owned by borg)").
+    # The repository tree survived only because the directories already
+    # existed; the day one did not, the job died at 226/NAMESPACE instead of
+    # being recreated, which is exactly what happened on 11 November 2026 when
+    # a switch tore down the pool import. A root parent is safe for any owner.
+    "d ${backup} 0755 root root -"
   ];
 
 }
