@@ -785,6 +785,22 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 20,
+      "type": "text",
+      "title": "Running commit",
+      "description": "The lsi-web-interface commit baked into whatever is currently activated — read out of flake.lock at build time, so this only ever changes when a real deploy (or rebuild) happens, never on its own.",
+      "gridPos": {
+        "x": 0,
+        "y": 46,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Tracking **@LSI_BRANCH@** at commit `@LSI_COMMIT@`"
+      }
     }
   ]
 }

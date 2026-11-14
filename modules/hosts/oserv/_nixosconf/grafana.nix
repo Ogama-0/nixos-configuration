@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   ...
 }:
@@ -25,6 +26,14 @@ let
   # no process and no unit, so a probe is the only thing that can say it is up.
   lsiProbeApp = "https://app.lsi.${config.ogama.server.domain}/";
   lsiProbeVitrine = "https://lsi.${config.ogama.server.domain}/";
+
+  # Same flake.lock la-scene-interieure.nix pins the running package to (see
+  # its "verrou"/"entree" comment) — read again here, directly, so the
+  # dashboard always names whatever commit is actually activated rather than
+  # a value that could drift out of step with it.
+  lsiLocked = (builtins.fromJSON (builtins.readFile ../../../../flake.lock)).nodes.lsi-web-interface.locked;
+  lsiCommit = lsiLocked.rev;
+  lsiBranch = lib.removePrefix "refs/heads/" (lsiLocked.ref or "main");
 in
 
 {
@@ -112,6 +121,8 @@ in
         "@CONTENUS_URL@"
         "@APP_URL@"
         "@VITRINE_URL@"
+        "@LSI_COMMIT@"
+        "@LSI_BRANCH@"
       ]
       [
         lsiUpstream
@@ -119,6 +130,8 @@ in
         lsiProbeContenus
         lsiProbeApp
         lsiProbeVitrine
+        lsiCommit
+        lsiBranch
       ]
       (builtins.readFile ./grafana-dashboard-lsi.json);
 
