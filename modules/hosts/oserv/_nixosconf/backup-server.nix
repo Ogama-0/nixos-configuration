@@ -1,15 +1,34 @@
 { config,
+  lib,
   ... }:
 
 let
   mkBasicJob = { paths, repo }: {
     inherit paths;
-    patterns = [
-      "- ${config.ogama.server.path.SSD_path}/.Trash-1000" # don't backup trash
-      "- ${config.ogama.server.path.SSD_path}/lost+found"
-    ];
+
+    # Derived from `paths`, not from a fixed root. These two were hardcoded to
+    # SSD_path, so every hdd-* job carried a pair of patterns that could never
+    # match anything under its own source while the HDD's own trash was
+    # archived unnoticed. Deriving them means a new job cannot reintroduce
+    # that by copying the block.
+    patterns = lib.concatMap (p: [
+      "- ${p}/.Trash-1000" # don't backup trash
+      "- ${p}/lost+found"
+    ]) (lib.toList paths);
+
     startAt = "daily";
     compression = "auto,zstd";
+
+    # A healthy run is otherwise completely silent: nixpkgs invokes borg with
+    # no --stats/--list/--verbose, so the dashboard's log panels have nothing
+    # to show between failures and "the backup ran but wrote nothing" is
+    # invisible. --stats adds one summary block per archive (original/
+    # compressed/deduplicated size, number of files) and prune's reports the
+    # space it reclaimed. Deliberately not --list: that is one line per file,
+    # which for the 469 G jellyfin tree would be the whole journal.
+    extraCreateArgs = [ "--stats" ];
+    extraPruneArgs = [ "--stats" ];
+
     environment.BORG_RSH = "ssh -i ${config.ogama.identity.sshKeyPath.pub}";
     inherit repo;
     encryption.mode = "none";
