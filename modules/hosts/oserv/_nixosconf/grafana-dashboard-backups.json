@@ -852,6 +852,31 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 36,
+      "type": "logs",
+      "title": "Time Machine logs",
+      "description": "Two disjoint sources. The first is smbd's connect/disconnect audit for the timemachine share (share|user|ip|op), which is the only record of a Mac actually showing up: a backup that never ran leaves nothing anywhere else, since the panels above read the sparsebundle on @TM_PATH@ and a bundle that is not written simply keeps its old mtime. A connect immediately followed by a disconnect means the Mac mounted the share and gave up without writing. The second is smbd's own sparsebundle-level complaints (fruit_* and anything naming a sparsebundle) — those lines carry no share label, because the journal pipeline only extracts one from the pipe-prefixed audit format, so they need a selector of their own. What is deliberately *not* here is smbd's unpack_canon_ace chatter: macOS sets an ACL per file and smbd logs one pair of level-0 lines for each, which would bury everything above — read samba-smbd.service directly for that.",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "x": 0, "y": 65, "w": 24, "h": 9 },
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{share=\"timemachine\"}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{unit=\"samba-smbd.service\"} |~ \"sparsebundle|fruit_\"",
+          "refId": "B"
+        }
+      ]
     }
   ]
 }
