@@ -4,12 +4,19 @@ let
   sharedOptions =
     { lib, ... }:
     {
-      options.ogama.server.laSceneInterieure.enable = lib.mkEnableOption "the la-scene-interieure site and its deploy job";
+      options.ogama.server.laSceneInterieure.enable =
+        lib.mkEnableOption "the la-scene-interieure site and its deploy job";
     };
 in
 {
   flake.featureModules.nixos.laSceneInterieure =
-    { config, lib, pkgs, inputs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      inputs,
+      ...
+    }:
     {
       # The extra entries instruct the module system and cannot live inside
       # mkIf, so they apply whether or not the feature is enabled. What they
@@ -107,18 +114,32 @@ in
             vitrine.enable = true;
 
             environment.ORIGINE_SITE = "https://${pubVitrineHost}";
-
-            #   sops.templates."lsi.env".content = "BREVO_API_KEY=${...placeholder...}";
-            #   systemd.services.la-scene-interieure.serviceConfig.EnvironmentFile =
-            #     config.sops.templates."lsi.env".path;
           };
 
-          sops.secrets = lib.optionalAttrs autoFollow {
-            "lsi_deploy_key" = {
-              sopsFile = ../../../sops/oserv.yaml;
-              owner = config.ogama.identity.user;
-              mode = "0400";
-            };
+          # services.laSceneInterieure.environment is attrsOf str, merged straight into
+          # systemd's `Environment=` — a value there becomes a literal string in the
+          # unit, not a file to read. Pointing it at config.sops.secrets.*.path handed
+          # Brevo the secret's *path* as the key, which is why it answered 401 "Key not
+          # found". The fix is the same template-then-EnvironmentFile indirection
+          # calendar-syncer.nix uses: the secret itself never sits in a world-readable
+          # unit file, only the rendered template does, and systemd (root) reads that
+          # file itself before dropping to the service's user.
+          sops.secrets."lsi_brevo_api_key".sopsFile = ../../../sops/oserv.yaml;
+
+          sops.templates."la-scene-interieure.env" = {
+            content = ''
+              BREVO_API_KEY=${config.sops.placeholder.lsi_brevo_api_key}
+            '';
+            restartUnits = [ "la-scene-interieure.service" ];
+          };
+
+          systemd.services.la-scene-interieure.serviceConfig.EnvironmentFile =
+            config.sops.templates."la-scene-interieure.env".path;
+
+          sops.secrets."lsi_deploy_key" = lib.mkIf autoFollow {
+            sopsFile = ../../../sops/oserv.yaml;
+            owner = config.ogama.identity.user;
+            mode = "0400";
           };
 
           # ---------------------------------------------------------------------------
@@ -311,17 +332,6 @@ in
 
           services.caddy.virtualHosts."https://${appHost}" = {
             extraConfig = ''
-              # Milo (an external Caddy relay on another machine, not managed here)
-              # fronts the public name and forwards here with Host rewritten to
-              # ${appHost} so it matches this vhost — the app never sees the
-              # browser's real Host. @sveltejs/adapter-node's CSRF check computes
-              # its own "self" origin from that raw Host header (there is no ORIGIN
-              # env var in this adapter-node version to override it), so a request
-              # whose Origin is https://${pubAppHost} but whose Host says
-              # ${appHost} gets rejected as cross-site on every POST — login
-              # included. Overwriting Host here pins the app's self-origin to the
-              # one name it should ever answer to, regardless of which name or
-              # relay got the request here.
               reverse_proxy http://127.0.0.1:${toString web-port} {
                 header_up Host ${pubAppHost}
               }
