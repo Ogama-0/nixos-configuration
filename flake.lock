@@ -102,11 +102,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1794727886,
-        "narHash": "sha256-Ok5rI1hc1LMzQLzdCTAFVZtX8a3k84jJYVz9N4/iS1Y=",
+        "lastModified": 1794728147,
+        "narHash": "sha256-hjddxoayYVd02SkMe9yjVfDODK+T1OhvQDdxrliByjA=",
         "ref": "refs/heads/main",
-        "rev": "847351a911faef955251839e64491046d83d375f",
-        "revCount": 244,
+        "rev": "cbad8f777890d0835b9f93a17c08c5cf40528655",
+        "revCount": 245,
         "type": "git",
         "url": "ssh://git@github.com/Ogama-0/lsi-web-interface"
       },
