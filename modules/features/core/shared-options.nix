@@ -50,6 +50,7 @@ let
               jellyfin = "${HDD_app}/jellyfin";
               immich = "${HDD_app}/immich";
               qbittorrent = "${HDD_app}/qbittorrent";
+              opencloud = "${HDD_app}/opencloud";
             };
             document = "${HDD_path}/document";
             photo = "${HDD_path}/photo";
@@ -79,6 +80,7 @@ let
               app = {
                 jellyfin = "${HDD_app}/jellyfin";
                 immich = "${HDD_app}/immich";
+                opencloud = "${HDD_app}/opencloud";
               };
               document = "${HDD_path}/document";
               photo = "${HDD_path}/photo";

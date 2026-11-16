@@ -131,7 +131,41 @@ server is the authority. Ports currently in use include 2019 (Caddy admin),
 2283/2281 (Immich), 3000 (Grafana), 3003 (Immich ML), 3030 (Loki), 3033
 (Wakapi), 4000 (RustiCal), 8020 (calendar_syncer), 8080 (qBittorrent), 8081
 (Calino's CORS proxy), 8085 (Gatus), 8096 (Jellyfin), 9001 (Prometheus),
-9002 (node-exporter), 9256 (process-exporter).
+9002 (node-exporter), 9116 (blackbox exporter), 9256 (process-exporter).
+OpenCloud's "fullstack" mode alone opens ~30 more, scattered through
+9100-9300 plus a few five-digit ones — see `services.opencloud.*`'s module
+doc for the full table.
+
+A package can claim a port you never set yourself: OpenCloud's internal
+`webdav` microservice defaults to `127.0.0.1:9115`, which collided with this
+host's blackbox exporter (moved to 9116) — neither side's Nix option
+mentions the other, so `nix build` can't catch it, only `ss -ltnp` on the
+running system or reading the package's own default-config source can.
+
+## Never `rm -rf` an app's whole state directory, only its contents
+
+Every `ogama.server.path.hdd.app.<name>` directory lives under
+`/mnt/hdd/appdata`, owned by `ogama_serv`, with each service's directory a
+different, more-privileged owner hanging off it. `systemd-tmpfiles` treats
+that shape as a symlink-attack risk and silently refuses to recreate a
+missing one: `--create` prints "Detected unsafe path transition ... during
+canonicalization" and leaves nothing behind. The service then fails outright
+on its next start with `226/NAMESPACE`, since `ReadWritePaths`/
+`WorkingDirectory` need the path to exist and systemd won't create it either.
+
+Recreate it by hand if this happens:
+
+```
+mkdir -p /mnt/hdd/appdata/<name>
+chown -R <serviceuser>:<servicegroup> /mnt/hdd/appdata/<name>
+chmod 0750 /mnt/hdd/appdata/<name>
+```
+
+`rm -rf /mnt/hdd/appdata/<name>/*` (contents only, directory left in place)
+never triggers this — tmpfiles only re-checks ownership when creating the
+directory from scratch. This is why Immich's directory still works despite
+showing the same "unsafe path transition" warning on every
+`systemd-tmpfiles --create`: it predates this ever mattering.
 
 ## Firewall
 

@@ -64,6 +64,11 @@ in {
         repo = config.ogama.server.path.backup.hdd.app.jellyfin;
       };
 
+      "hdd-app-opencloud-backup" = mkBasicJob {
+        paths = config.ogama.server.path.hdd.app.opencloud;
+        repo = config.ogama.server.path.backup.hdd.app.opencloud;
+      };
+
       "hdd-document-backup" = mkBasicJob {
         paths = config.ogama.server.path.hdd.document;
         repo = config.ogama.server.path.backup.hdd.document;
@@ -104,6 +109,11 @@ in {
         path = config.ogama.server.path.backup.hdd.app.jellyfin;
       };
 
+      "hdd-app-opencloud-backup" = {
+        authorizedKeys = [ config.ogama.identity.sshPubkey ];
+        path = config.ogama.server.path.backup.hdd.app.opencloud;
+      };
+
       "hdd-document-backup" = {
         authorizedKeys = [ config.ogama.identity.sshPubkey ];
         path = config.ogama.server.path.backup.hdd.document;
@@ -138,6 +148,7 @@ in {
     "d ${config.ogama.server.path.backup.HDD_app}                    0755 borg users -"
     "d ${config.ogama.server.path.backup.hdd.app.immich}             0755 borg users -"
     "d ${config.ogama.server.path.backup.hdd.app.jellyfin}           0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.app.opencloud}          0755 borg users -"
 
     "d ${config.ogama.server.path.backup.laptop.path}                0755 borg users -"
     "d ${config.ogama.server.path.backup.laptop.document}            0755 borg users -"

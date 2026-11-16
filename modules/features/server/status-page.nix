@@ -239,6 +239,18 @@ in
                   ];
                 }
                 {
+                  # Probed on the VPS-fronted public name, like the other
+                  # internet-facing services here.
+                  name = "OpenCloud";
+                  group = "files";
+                  url = "https://cloud.${config.ogama.server.domain}";
+                  interval = "15s";
+                  conditions = [
+                    "[STATUS] == 200"
+                    "[RESPONSE_TIME] < 300"
+                  ];
+                }
+                {
                   name = "LSI vitrine";
                   group = "web";
                   url = "https://lsi.${config.ogama.server.domain}";
@@ -274,6 +286,7 @@ in
                 (mkBorgEndpoint "Borg HDD share" "borgbackup-job-hdd-share-public-backup")
                 (mkBorgEndpoint "Borg Immich" "borgbackup-job-hdd-app-immich-backup")
                 (mkBorgEndpoint "Borg Jellyfin" "borgbackup-job-hdd-app-jellyfin-backup")
+                (mkBorgEndpoint "Borg OpenCloud" "borgbackup-job-hdd-app-opencloud-backup")
                 (mkBorgEndpoint "Borg Document" "borgbackup-job-hdd-document-backup")
                 (mkBorgEndpoint "Borg Photo" "borgbackup-job-hdd-photo-backup")
                 (mkBorgEndpoint "Borg Photo 1" "borgbackup-job-hdd-photo-1-backup")

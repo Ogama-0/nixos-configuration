@@ -29,7 +29,7 @@
   };
 
   ogama.server = {
-    qbittorrent.enable = true;
+    # qbittorrent.enable = true;
     joplinServer.enable = true;
     caddy.enable = true;
     calendarSyncer.enable = true;
@@ -37,6 +37,7 @@
     immich.enable = true;
     jellyfin.enable = true;
     laSceneInterieure.enable = true;
+    opencloud.enable = true;
     rustical.enable = true;
     statusPage.enable = true;
     wakapi.server.enable = true;

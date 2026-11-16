@@ -335,6 +335,13 @@ in
           comm = [ "rustical" ];
         }
         {
+          # Fullstack mode runs every microservice as goroutines in one
+          # process, so a single comm match covers all of it; "opencloud" is
+          # short enough to survive the kernel's 15-char comm truncation.
+          name = "opencloud";
+          comm = [ "opencloud" ];
+        }
+        {
           # "calendar_syncer" is exactly 15 characters, so the kernel's comm
           # truncation leaves it intact — one more character upstream and this
           # would have to move to cmdline.
@@ -368,7 +375,9 @@ in
     # files with no process at all — probing is the only way to see either.
     exporters.blackbox = {
       enable = true;
-      port = 9115;
+      # Not 9115 (its usual default): OpenCloud's internal "webdav"
+      # microservice already binds that port (see opencloud.nix).
+      port = 9116;
       configFile = (pkgs.formats.yaml { }).generate "blackbox.yml" {
         modules.http_2xx = {
           prober = "http";
