@@ -1,19 +1,25 @@
 { ... }:
 let
-  # Declared on both sides so a host's _toggles.nix can set it from either.
+  # Both halves in one file, but two switches: oserv runs the sync server,
+  # while any machine with the desktop client just points at it. One flag
+  # would have started a Joplin server on the laptop. Declared on both sides
+  # so a host's _toggles.nix can set it from either.
   sharedOptions =
     { lib, ... }:
     {
-      options.ogama.server.joplinServer.enable = lib.mkEnableOption "the Joplin sync server (needs docker)";
+      options.ogama.server.joplin = {
+        server.enable = lib.mkEnableOption "the Joplin sync server (needs docker)";
+        client.enable = lib.mkEnableOption "the Joplin desktop client";
+      };
     };
 in
 {
-  flake.featureModules.nixos.joplinServer =
+  flake.featureModules.nixos.joplin =
     { lib, config, pkgs, ... }:
     {
       imports = [ sharedOptions ];
 
-      config = lib.mkIf config.ogama.server.joplinServer.enable (
+      config = lib.mkIf config.ogama.server.joplin.server.enable (
         let
           path = "${config.ogama.identity.homePath}/.joplin";
           subdomain = "joplin";
@@ -129,5 +135,22 @@ in
       );
     };
 
-  flake.featureModules.home.joplinServer = sharedOptions;
+  flake.featureModules.home.joplin =
+    { lib, config, ... }:
+    {
+      imports = [ sharedOptions ];
+
+      config = lib.mkIf config.ogama.server.joplin.client.enable (
+        {
+          programs.joplin-desktop = {
+            enable = true;
+
+            general.editor = "helix";
+            # extra-Config = {
+            #  https://mynixos.com/home-manager/option/programs.joplin-desktop.extraConfig
+            # };
+          };
+        }
+      );
+    };
 }

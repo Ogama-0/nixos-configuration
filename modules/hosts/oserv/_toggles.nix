@@ -30,7 +30,7 @@
 
   ogama.server = {
     # qbittorrent.enable = true;
-    joplinServer.enable = true;
+    joplin.server.enable = true;
     caddy.enable = true;
     calendarSyncer.enable = true;
     calino.enable = true;

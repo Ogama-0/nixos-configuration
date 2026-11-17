@@ -168,7 +168,7 @@ in
                   ];
                 }
                 {
-                  # Joplin Server runs in docker (see joplin-server.nix). /api/ping
+                  # Joplin Server runs in docker (see joplin.nix). /api/ping
                   # is its health endpoint and answers 200 {"status":"ok"}; "/"
                   # redirects to /login, which would fail [STATUS] == 200.
                   name = "Joplin";
