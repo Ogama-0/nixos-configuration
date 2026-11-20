@@ -236,8 +236,8 @@ let
         share = {
           path = mkOption {
             type = types.str;
-            default = "${identity.homePath}/Server/share";
-            defaultText = ''"''${config.ogama.identity.homePath}/Server/share"'';
+            default = "/mnt/Server/share";
+            defaultText = "/mnt/Server/share";
             description = "Where this host mounts the server's share.";
           };
           swapsevPath = mkOption {
