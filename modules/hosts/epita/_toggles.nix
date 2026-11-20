@@ -10,7 +10,6 @@
 # so import-tree must not pick it up.
 {
   ogama.core = {
-    nh.user.enable = true;
     sh.enable = true;
     git.enable = true;
   };

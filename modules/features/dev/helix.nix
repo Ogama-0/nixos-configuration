@@ -11,20 +11,18 @@ in
   flake.featureModules.nixos.helix = sharedOptions;
 
   flake.featureModules.home.helix =
-    { pkgs, inputs, config, lib, ... }:
+    {
+      pkgs,
+      inputs,
+      config,
+      lib,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
       config = lib.mkIf config.ogama.dev.helix.enable (
         let
-          # helix has no runtime theme switch and its config.toml is a read-only store
-          # symlink, so the theme NAME is pinned here and the theme BODY is swapped at
-          # runtime. themes/auto.toml just inherits one of helix's two terminal
-          # themes, which are built from the terminal's own 16 ANSI colours - so helix
-          # follows alacritty, which darkman already switches.
-          #
-          # Same unmanaged-path rule as alacritty/colors.toml: darkman rewrites this,
-          # so it must not be an xdg.configFile entry.
           autoThemePath = "${config.xdg.configHome}/helix/themes/auto.toml";
         in
         {
@@ -32,32 +30,35 @@ in
             enable = true;
             defaultEditor = true;
 
-            extraPackages = with pkgs; [
-              wakatime-cli
-              inputs.wakatime-ls.packages."x86_64-linux".wakatime-ls
-              # Nix Related
-              nil
-              nixfmt
+            extraPackages =
+              with pkgs;
+              [
+                wakatime-cli
+                inputs.wakatime-ls.packages.${pkgs.system}.wakatime-ls
 
-              # Markdown
-              marksman
+                # Nix Related
+                nil
+                nixfmt
 
-              # C related
-              clang-tools
+                # Markdown
+                marksman
+              ]
+              ++ lib.optionals (!config.ogama.identity.isEpita) [
+                # Python
+                ruff
+                python312Packages.jedi-language-server
+                python312Packages.python-lsp-server
 
-              # Web related
-              vscode-langservers-extracted
-              typescript-language-server
-              svelte-language-server
+                # Web related
+                vscode-langservers-extracted
+                typescript-language-server
+                svelte-language-server
 
-              # Python
-              ruff
-              python312Packages.jedi-language-server
-              python312Packages.python-lsp-server
-
-              # erlang
-              erlang-language-platform
-            ];
+                # C related
+                clang-tools
+                # assembly
+                asm-lsp
+              ];
             ignores = [
               "*.gif"
               "*.mcmeta"
@@ -101,6 +102,9 @@ in
                 };
                 lsp = {
                   display-inlay-hints = true;
+                };
+                search = {
+                  smart-case = false;
                 };
               };
 
@@ -264,11 +268,29 @@ in
                   ];
                 }
                 {
+                  name = "gas";
+                  auto-format = false;
+                  file-types = [ "S" ];
+                  language-servers = [
+                    {
+                      name = "asm-lsp";
+                      except-features = [
+                        "completion"
+                        "diagnostics"
+                        "signature-help"
+                      ];
+                    }
+                    "wakatime"
+                  ];
+                }
+                {
                   name = "nasm";
-                  #   #   file-types = [ "s" "asm" ];
-                  #   #   scope = "source.asm";
+                  file-types = [
+
+                    "asm"
+                  ];
+                  # scope = "source.asm";
                   # comment-tokens = ";";
-                  #   #   auto-format = false;
                   language-servers = [ "wakatime" ];
                 }
               ];
