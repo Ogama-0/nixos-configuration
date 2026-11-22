@@ -15,7 +15,12 @@ let
 in
 {
   flake.featureModules.nixos.joplin =
-    { lib, config, pkgs, ... }:
+    {
+      lib,
+      config,
+      pkgs,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
@@ -140,17 +145,15 @@ in
     {
       imports = [ sharedOptions ];
 
-      config = lib.mkIf config.ogama.server.joplin.client.enable (
-        {
-          programs.joplin-desktop = {
-            enable = true;
+      config = lib.mkIf config.ogama.server.joplin.client.enable ({
+        programs.joplin-desktop = {
+          enable = true;
 
-            general.editor = "helix";
-            # extra-Config = {
-            #  https://mynixos.com/home-manager/option/programs.joplin-desktop.extraConfig
-            # };
-          };
-        }
-      );
+          general.editor = "helix";
+          # extra-Config = {
+          #  https://mynixos.com/home-manager/option/programs.joplin-desktop.extraConfig
+          # };
+        };
+      });
     };
 }

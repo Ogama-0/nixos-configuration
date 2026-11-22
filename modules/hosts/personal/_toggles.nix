@@ -31,12 +31,12 @@
     steam.enable = true;
     stream.enable = true;
     tailscale.enable = true;
-    vm.enable = true;
+    vm.enable = false;
   };
 
   ogama.dev = {
     zellij.enable = true;
-    gns3.enable = true;
+    gns3.enable = false;
     helix.enable = true;
     vim.enable = true;
     zed.enable = true;
@@ -45,6 +45,7 @@
   ogama.server = {
     calendarSync.enable = true;
     wakapi.client.enable = true;
+    opencloud.client.enable = true;
   };
 
   ogama.desktop = {

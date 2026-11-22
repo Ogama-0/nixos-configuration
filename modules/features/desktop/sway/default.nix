@@ -3,7 +3,12 @@
 # compositor choice and the assertion that only one is on at a time.
 {
   flake.featureModules.home.sway =
-    { config, lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       config = lib.mkIf config.ogama.desktop.sway.enable (
         let
@@ -118,6 +123,7 @@
             grim
             slurp
             wlroots
+            satty
           ];
           services.autotiling.enable = true;
           wayland.windowManager.sway = {
@@ -142,7 +148,7 @@
               down = "${down}";
               left = "${left}";
               right = "${right}";
-              defaultWorkspace = "workspace 10";
+              defaultWorkspace = "workspace 1";
 
               # No swaybar from the typed option - home-manager would otherwise ship
               # its default one. The bar block in extraConfig below is not a bar: it
@@ -194,10 +200,14 @@
                   }
                   {
                     criteria = {
-                      app_id = "firefox";
+                      app_id = "zen-beta";
                       title = "^Extension ?: \\(Bitwarden";
                     };
                     command = "floating enable, resize set 420 px 700 px, move position center";
+                  }
+                  {
+                    criteria.app_id = "com.gabm.satty";
+                    command = "floating enable";
                   }
                 ];
               };
@@ -304,7 +314,7 @@
                 "XF86MonBrightnessUp" = "exec brightnessctl --exponent=2 s +10%";
                 "XF86MonBrightnessDown" = "exec brightnessctl --exponent=2 s 10%-";
 
-                "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
+                "Print" = ''exec grim -g "$(slurp)" - | satty -f - --action-on-enter save-to-clipboard'';
               };
             };
 

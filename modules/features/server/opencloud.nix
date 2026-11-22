@@ -4,7 +4,9 @@ let
   sharedOptions =
     { lib, ... }:
     {
-      options.ogama.server.opencloud.enable = lib.mkEnableOption "the OpenCloud file-sync/share server";
+      options.ogama.server.opencloud.server.enable =
+        lib.mkEnableOption "the OpenCloud file-sync/share server";
+      options.ogama.server.opencloud.client.enable = lib.mkEnableOption "the OpenCloud desktop app ";
     };
 in
 {
@@ -13,7 +15,7 @@ in
     {
       imports = [ sharedOptions ];
 
-      config = lib.mkIf config.ogama.server.opencloud.enable (
+      config = lib.mkIf config.ogama.server.opencloud.server.enable (
         let
           # "cloud.ipv6.ogama.me" (bare, ACME) for the public path,
           # "cloud.tail.ogama.me" for IPv4-only tailnet clients, and
@@ -112,5 +114,17 @@ in
       );
     };
 
-  flake.featureModules.home.opencloud = sharedOptions;
+  flake.featureModules.home.opencloud =
+    {
+      lib,
+      config,
+      upkgs,
+      ...
+    }:
+    {
+      imports = [ sharedOptions ];
+      config = lib.mkIf config.ogama.server.opencloud.client.enable ({
+        home.packages = with upkgs; [ opencloud-desktop ];
+      });
+    };
 }

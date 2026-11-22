@@ -63,6 +63,7 @@ Item {
     readonly property var serviceList: [
         { key: "media_jellyfin",    label: "Jellyfin",    promGroup: "jellyfin" },
         { key: "media_immich",      label: "Immich",      promGroup: "immich-server" },
+        { key: "files_opencloud",   label: "OpenCloud",   promGroup: "opencloud" },
         // { key: "media_immich-ml",   label: "Immich ML",   promGroup: "immich-machine-learning" },
         // { key: "files_samba",       label: "Samba",       promGroup: "samba-smbd" },
         { key: "web_caddy",         label: "Caddy",       promGroup: "caddy" },

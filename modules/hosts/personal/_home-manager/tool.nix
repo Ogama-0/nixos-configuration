@@ -16,13 +16,12 @@
   home.packages = with pkgs; [
 
     # Main pkgs
-    # upkgs.zen-browser
     firefox
-    google-chrome
-    vesktop
+    # google-chrome
+    discord
+    # vesktop
     # spotify
     deezer-enhanced
-    # lpkgs.deezer-cli
     gimp
     # bitwarden-desktop elecron issue : https://github.com/NixOS/nixpkgs/issues/528213
     nautilus
@@ -58,7 +57,6 @@
     imv # image viewer for Wayland
     xdg-utils # don't know why this is here Kappa
     playerctl # audio flux controler
-    mcrcon # rcon for minecraft
     fuse-overlayfs # sandbox
     bubblewrap # ...
     psmisc
@@ -68,10 +66,10 @@
     steam
     heroic
     prismlauncher
+    mcrcon # rcon for minecraft
     steam-run
     sc-controller
     supertuxkart
-    # upkgs.
     mindustry
     wineWow64Packages.full
     gamescope
@@ -83,10 +81,7 @@
     rustup # rust
     python3 # Python
     dotnetCorePackages.sdk_9_0 # C#
-
     R
-
-    qemu # vm
 
     # Troll
     cmatrix
