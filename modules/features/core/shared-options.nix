@@ -53,8 +53,7 @@ let
               opencloud = "${HDD_app}/opencloud";
             };
             document = "${HDD_path}/document";
-            photo = "${HDD_path}/photo";
-            photo_1 = "${HDD_path}/photo-1";
+            immichExternalLibrary = "${HDD_path}/document/media/photos/immich_external_library";
             share = rec {
               path = "${HDD_path}/share";
               public_HDD_path = "${path}/public";
@@ -83,8 +82,7 @@ let
                 opencloud = "${HDD_app}/opencloud";
               };
               document = "${HDD_path}/document";
-              photo = "${HDD_path}/photo";
-              photo_1 = "${HDD_path}/photo-1";
+              immichExternalLibrary = "${HDD_path}/document/media/photos/immich_external_library";
               share = rec {
                 path = "${HDD_path}/share";
                 public_HDD_path = "${path}/public";
