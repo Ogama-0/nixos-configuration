@@ -12,7 +12,6 @@
     ./_hardware-configuration.nix
 
     ./_nixosconf/backup-laptop.nix
-    ./_nixosconf/volumes.nix
   ];
 
   # Per-host identity. These were entries in host/profiles.nix, reached through
@@ -26,11 +25,6 @@
 
   # Use the systemd-boot EFI boot loader.
   boot = {
-    # Keep amdgpu's post-resume register-retry warnings (a known upstream
-    # bug on Cezanne/Renoir APUs) out of the framebuffer during lid-open;
-    # they still land in `journalctl -k` at this level.
-    consoleLogLevel = 3;
-
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
@@ -46,7 +40,7 @@
   };
   services.blueman.enable = true;
 
-  networking.hostName = "ogamaNixOs"; # Define your hostname
+  networking.hostName = "ogamaNixOs-zenbook"; # Define your hostname
 
   networking.firewall = {
     enable = false;

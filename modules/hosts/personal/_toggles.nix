@@ -25,7 +25,7 @@
     kdeconnect.enable = true;
     localsend.enable = true;
     mounting.enable = true;
-    nvidia.enable = true;
+    nvidia.enable = false;
     printer.enable = true;
     sambaCli.enable = true;
     steam.enable = true;

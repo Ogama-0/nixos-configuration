@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Personal NixOS + Home Manager flake configuration for three profiles: `personal` (main desktop), `oserv` (home server, hostname `oserv`, domain `ogama.me`), and `epita` / `epita-light` (school computer, home-manager only, faster-building variant). Also vends reusable `nix flake init` templates and a couple of standalone packages.
+Personal NixOS + Home Manager flake configuration for four profiles: `personal` (main desktop, ASUS ZenBook 14 OLED UX3405CA), `personal-lenovo` (the previous main desktop, kept running but no longer actively backed up), `oserv` (home server, hostname `oserv`, domain `ogama.me`), and `epita` / `epita-light` (school computer, home-manager only, faster-building variant). Also vends reusable `nix flake init` templates and a couple of standalone packages.
 
 ## Commands
 
 A `Makefile` at the repo root wraps the switches below in `make personal`,
-`make oserv`, `make epita`, `make epita-light`, `make check`, `make update`.
+`make personal-lenovo`, `make oserv`, `make epita`, `make epita-light`, `make check`, `make update`.
 Each target runs on the machine it switches (no remote `--target-host`).
 
 Switch a NixOS host (from the machine being configured), via
@@ -18,6 +18,7 @@ through `programs.nh`, see `modules/features/core/nh.nix` and
 `modules/features/core/nh.nix`):
 ```
 nh os switch . -H personal
+nh os switch . -H personal-lenovo
 nh os switch . -H oserv
 ```
 
@@ -25,7 +26,12 @@ Switch a Home Manager profile — **always standalone, on every profile**:
 ```
 nh home switch . -c <profile>
 ```
-Valid `<profile>` values: `personal`, `oserv`, `epita`, `epita-light`.
+Valid `<profile>` values: `personal`, `personal-lenovo`, `oserv`, `epita`, `epita-light`.
+
+`modules/hosts/personal/_hardware-configuration.nix` is a placeholder (see
+its header comment) until it's overwritten with real `nixos-generate-config`
+output from the ZenBook — that's the one file a fresh clone onto that machine
+needs replaced before `make personal` builds for real.
 
 **The NixOS switch does not carry Home Manager with it.** `personal` and `oserv`
 build their home side with `inputs.home-manager.lib.homeManagerConfiguration`
@@ -83,7 +89,7 @@ Every module in the tree is reachable from `flake.nix` and evaluated on every ch
 
 **Per-host data is declared options**, not an attrset: `ogama.identity.*`, `ogama.server.{domain,paths,path}` in `modules/features/core/shared-options.nix`, registered on both sides and set by the host they describe. `ogama.server.path` is a read-only tree derived from three root options — `ogama.server.paths.{ssd,hdd,backup}`, defaulting to `/mnt/ssd`, `/mnt/hdd` and `/mnt/backup` from `lib/constants.nix`. Change a storage root there, not at the thirty-odd leaves that hang off it.
 
-**oserv runs ZFS** (`ogama.system.zfs.enable`), which is why it pins `boot.kernelPackages = pkgs.linuxPackages` — the ZFS kernel module does not build against `linuxPackages_latest` on this nixpkgs pin. The same LTS constraint independently applies to `personal` through `nvidia-open`.
+**oserv runs ZFS** (`ogama.system.zfs.enable`), which is why it pins `boot.kernelPackages = pkgs.linuxPackages` — the ZFS kernel module does not build against `linuxPackages_latest` on this nixpkgs pin. The same LTS constraint independently applies to `personal-lenovo` through `nvidia-open`; `personal` has no Nvidia GPU and carries no such pin.
 
 **`lib/`** is not modules. It is plain functions and data `import`ed directly: the colour palette (`palette.nix`, the single source for every colour on the desktop), the QML `@token@` substitution (`qml-theme.nix`), per-app theme renderers, the `swayfx` package both sway and greetd need by absolute store path, and `constants.nix` (the domain and storage roots, needed by `packages.calino` before any module exists). **`qml/`** holds the greeter's QML, rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`. Both sit at the repo root, outside the import root.
 

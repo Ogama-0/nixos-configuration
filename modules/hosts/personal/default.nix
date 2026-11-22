@@ -1,9 +1,17 @@
-# The personal profile: main desktop, NixOS + Home Manager.
+# The personal profile: main desktop (ASUS ZenBook 14 OLED UX3405CA), NixOS +
+# Home Manager. The previous main desktop (Lenovo) lives on as `personal-lenovo`.
 #
 # This is the only flake-parts module in the directory. Everything else here is
 # a plain NixOS or Home Manager module in a _-prefixed file, invisible to
 # import-tree and referenced by path below.
-{ config, inputs, pkgs, upkgs, lpkgs, ... }:
+{
+  config,
+  inputs,
+  pkgs,
+  upkgs,
+  lpkgs,
+  ...
+}:
 {
   flake.nixosConfigurations.personal = inputs.nixpkgs.lib.nixosSystem {
     inherit pkgs;
@@ -28,7 +36,12 @@
     inherit pkgs;
     extraSpecialArgs = {
       wakatime-ls = inputs.wakatime-ls.packages.${pkgs.system}.default;
-      inherit inputs pkgs upkgs lpkgs;
+      inherit
+        inputs
+        pkgs
+        upkgs
+        lpkgs
+        ;
     };
     modules = [
       config.flake.homeModules.featuresHome

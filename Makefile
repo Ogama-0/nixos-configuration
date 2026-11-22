@@ -1,11 +1,13 @@
 NIX_FLAGS := --extra-experimental-features "nix-command flakes"
 
 .DEFAULT_GOAL := help
-.PHONY: help personal personal-hm oserv oserv-hm epita epita-light check update
+.PHONY: help personal personal-hm personal-lenovo personal-lenovo-hm oserv oserv-hm epita epita-light check update
 
 help:
-	@echo "make personal     NixOS switch only, sudo (main desktop) -- does NOT switch Home Manager"
-	@echo "make personal-hm  Home Manager switch only, no sudo (main desktop)"
+	@echo "make personal          NixOS switch only, sudo (main desktop, ZenBook) -- does NOT switch Home Manager"
+	@echo "make personal-hm       Home Manager switch only, no sudo (main desktop, ZenBook)"
+	@echo "make personal-lenovo    NixOS switch only, sudo (old main desktop, Lenovo) -- does NOT switch Home Manager"
+	@echo "make personal-lenovo-hm Home Manager switch only, no sudo (old main desktop, Lenovo)"
 	@echo "make oserv        NixOS switch only, sudo (home server, run on oserv itself) -- does NOT switch Home Manager"
 	@echo "make oserv-hm     Home Manager switch only, no sudo (home server, run on oserv itself)"
 	@echo "make epita        Home Manager switch (EPITA computer)"
@@ -18,6 +20,13 @@ personal:
 
 personal-hm:
 	nh home switch . -c personal
+	systemctl --user restart quickshell-widgets
+
+personal-lenovo:
+	nh os switch . -H personal-lenovo
+
+personal-lenovo-hm:
+	nh home switch . -c personal-lenovo
 	systemctl --user restart quickshell-widgets
 
 oserv:
