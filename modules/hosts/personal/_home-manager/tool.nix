@@ -75,13 +75,13 @@
     gamescope
 
     # Dev
-    jetbrains-toolbox
-    octaveFull
+    # jetbrains-toolbox
+    # octaveFull
     gnumake
     rustup # rust
-    python3 # Python
-    dotnetCorePackages.sdk_9_0 # C#
-    R
+    # python3 # Python
+    # dotnetCorePackages.sdk_9_0 # C#
+    # R
 
     # Troll
     cmatrix
