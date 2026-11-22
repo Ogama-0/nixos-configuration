@@ -1,6 +1,8 @@
-{ config,
+{
+  config,
   lib,
-  ... }:
+  ...
+}:
 
 let
   mkBasicJob = { paths, repo }: {
@@ -40,7 +42,8 @@ let
     };
   };
 
-in {
+in
+{
   services.borgbackup = {
 
     jobs = {
@@ -74,14 +77,9 @@ in {
         repo = config.ogama.server.path.backup.hdd.document;
       };
 
-      "hdd-photo-backup" = mkBasicJob {
-        paths = config.ogama.server.path.hdd.photo;
-        repo = config.ogama.server.path.backup.hdd.photo;
-      };
-
-      "hdd-photo-1-backup" = mkBasicJob {
-        paths = config.ogama.server.path.hdd.photo_1;
-        repo = config.ogama.server.path.backup.hdd.photo_1;
+      "hdd-immich-external-library-backup" = mkBasicJob {
+        paths = config.ogama.server.path.hdd.immichExternalLibrary;
+        repo = config.ogama.server.path.backup.hdd.immichExternalLibrary;
       };
     };
 
@@ -119,14 +117,9 @@ in {
         path = config.ogama.server.path.backup.hdd.document;
       };
 
-      "hdd-photo-backup" = {
+      "hdd-immich-external-library-backup" = {
         authorizedKeys = [ config.ogama.identity.sshPubkey ];
-        path = config.ogama.server.path.backup.hdd.photo;
-      };
-
-      "hdd-photo-1-backup" = {
-        authorizedKeys = [ config.ogama.identity.sshPubkey ];
-        path = config.ogama.server.path.backup.hdd.photo_1;
+        path = config.ogama.server.path.backup.hdd.immichExternalLibrary;
       };
       # --------- REMOTE --------- #
       "laptop-document-backup" = {
@@ -141,8 +134,7 @@ in {
 
     "d ${config.ogama.server.path.backup.HDD_path}                   0755 borg users -"
     "d ${config.ogama.server.path.backup.hdd.document}              0755 borg users -"
-    "d ${config.ogama.server.path.backup.hdd.photo}                 0755 borg users -"
-    "d ${config.ogama.server.path.backup.hdd.photo_1}               0755 borg users -"
+    "d ${config.ogama.server.path.backup.hdd.immichExternalLibrary} 0755 borg users -"
     "d ${config.ogama.server.path.backup.hdd.share.path}             0755 borg users -"
     "d ${config.ogama.server.path.backup.hdd.share.public_HDD_path}  0755 borg users -"
     "d ${config.ogama.server.path.backup.HDD_app}                    0755 borg users -"

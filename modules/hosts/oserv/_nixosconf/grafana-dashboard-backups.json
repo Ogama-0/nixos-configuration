@@ -97,7 +97,7 @@
       "id": 3,
       "type": "stat",
       "title": "Oldest borg archive",
-      "description": "Age of the newest archive in whichever repository is furthest behind. Amber past 36h, red past 48h — the jobs run daily.",
+      "description": "Age of the newest archive in whichever repository is furthest behind. Amber past 1days, red past one week — the jobs run daily.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -130,11 +130,11 @@
               },
               {
                 "color": "orange",
-                "value": 129600
+                "value": 86400
               },
               {
                 "color": "red",
-                "value": 172800
+                "value": 604800
               }
             ]
           }
@@ -156,7 +156,7 @@
       "id": 4,
       "type": "stat",
       "title": "Oldest Time Machine",
-      "description": "Age of the newest write into whichever Mac's sparsebundle is furthest behind. Time Machine backs up hourly; amber past 12h, red past 48h to allow for a laptop simply being away.",
+      "description": "Age of the newest write into whichever Mac's sparsebundle is furthest behind. Time Machine backs up hourly; amber past 7days, red past 4 weeks to allow for a laptop simply being away.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -189,11 +189,11 @@
               },
               {
                 "color": "orange",
-                "value": 43200
+                "value": 604800
               },
               {
                 "color": "red",
-                "value": 172800
+                "value": 2419200
               }
             ]
           }
