@@ -61,7 +61,12 @@ nix flake init --template github:Ogama-0/nixos-configuration#<template>
 ```
 Templates: `python`, `c`, `epita-c`, `asm68k`.
 
-There is no linter/formatter/test suite wired into this repo. Validate with `nix flake check` and, when touching a specific profile, a real `switch` run.
+There is no test suite wired into this repo. Validate with `nix flake check` and, when touching a specific profile, a real `switch` run.
+
+**Run `nixfmt` on every `.nix` file you touch before committing.** It's the formatter Helix is configured to auto-format with (`modules/features/dev/helix.nix`), so an unformatted file is a diff against what the user's own editor would produce on save:
+```
+nixfmt <file>...
+```
 
 **`nix flake check` is weaker than it looks.** It only shallow-checks `homeConfigurations`, so it never forces the generated `xdg.configFile` *text* — which is exactly where the `@token@` substitution that themes every QML file happens. A green check is compatible with QML that does not evaluate. Force the real thing:
 
