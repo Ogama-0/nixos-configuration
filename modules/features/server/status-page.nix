@@ -9,7 +9,12 @@ let
 in
 {
   flake.featureModules.nixos.statusPage =
-    { lib, cfg, config, ... }:
+    {
+      lib,
+      cfg,
+      config,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
@@ -92,7 +97,10 @@ in
                   group = "media";
                   # "/" answers 302 (redirect to /web/), which would fail
                   # [STATUS] == 200 even on a perfectly healthy Jellyfin.
-                  url = "http://jellyfin.${config.ogama.server.domain}/health";
+                  # https, not http: the public vhost is https-only (see
+                  # jellyfin.nix) — plain http falls through to caddy.nix's
+                  # wildcard catch-all and 404s.
+                  url = "https://jellyfin.${config.ogama.server.domain}/health";
                   interval = "15s";
                   conditions = [
                     "[STATUS] == 200"
@@ -102,7 +110,10 @@ in
                 {
                   name = "Immich";
                   group = "media";
-                  url = "http://immich.${config.ogama.server.domain}";
+                  # https, not http: the public vhost is https-only (see
+                  # immich.nix) — plain http falls through to caddy.nix's
+                  # wildcard catch-all and 404s.
+                  url = "https://immich.${config.ogama.server.domain}";
                   interval = "15s";
                   conditions = [
                     "[STATUS] == 200"
@@ -183,7 +194,10 @@ in
                 {
                   name = "Wakapi";
                   group = "dev";
-                  url = "http://wakapi.${config.ogama.server.domain}";
+                  # https, not http: the public vhost is https-only (see
+                  # wakapi.nix) — plain http falls through to caddy.nix's
+                  # wildcard catch-all and 404s.
+                  url = "https://wakapi.${config.ogama.server.domain}";
                   interval = "15s";
                   conditions = [
                     "[STATUS] == 200"
@@ -194,15 +208,16 @@ in
                   # Rustical answers 200 "Pong!" on /ping with no auth. "/" is the web
                   # frontend, which redirects to /frontend/login.
                   #
-                  # Probed on the tail name, not the public https:// one, matching
-                  # what Jellyfin does with its two names. The public vhost depends on
-                  # the ISP's IPv6 prefix still matching the portal's AAAA record, so
-                  # probing it would make this row red for a DNS problem outside the
-                  # service. The cost is that a failed certificate renewal does not
-                  # show up here — for that, `journalctl -u caddy | grep -i acme`.
+                  # https, not http: the public vhost is https-only (see rustical.nix)
+                  # — plain http falls through to caddy.nix's wildcard catch-all and
+                  # 404s. A tailnet-only probe would dodge that, but
+                  # "rustical.tail.${config.ogama.server.domain}" has no DNS record at
+                  # all (confirmed with `dig` against both the local resolver and
+                  # 1.1.1.1) — jellyfin.tail has the same gap, just unprobed — so this
+                  # goes through the public name like Immich/Jellyfin do.
                   name = "Rustical";
                   group = "calendar";
-                  url = "http://rustical.${config.ogama.server.domain}/ping";
+                  url = "https://rustical.${config.ogama.server.domain}/ping";
                   interval = "15s";
                   conditions = [
                     "[STATUS] == 200"
@@ -210,34 +225,35 @@ in
                   ];
                 }
                 {
-                  # 401 is the *healthy* answer here: calendar-syncer puts HTTP basic
-                  # auth in front of every route including "/", and the probe sends no
-                  # credentials. Expecting 200 would leave a correctly secured service
-                  # looking permanently down; 401 still fails on a dead or wedged one,
-                  # which is what the row is for.
+                  # calendar_syncer's `guard` middleware no longer answers plain 401:
+                  # an unauthenticated GET gets a 303 to /login, which Gatus's client
+                  # follows, landing on the login page itself (200). Confirmed live —
+                  # `curl -sv` shows the 303/Location, Gatus's recorded status is 200.
+                  # A dead or wedged service still fails this; a correctly secured one
+                  # does not look down just because the probe sends no credentials.
                   name = "Calsync";
                   group = "calendar";
                   url = "http://calsync.tail.${config.ogama.server.domain}";
                   interval = "15s";
                   conditions = [
-                    "[STATUS] == 401"
-                    "[RESPONSE_TIME] < 300"
-                  ];
-                }
-                {
-                  # Probes the CORS proxy, not the static site: Caddy serves the site
-                  # from the nix store and would answer 200 with the proxy unit dead,
-                  # and the proxy is the half that can actually break. handle_path
-                  # strips /proxy, so this lands on the proxy's own /health.
-                  name = "Calino";
-                  group = "calendar";
-                  url = "http://calino.${config.ogama.server.domain}/proxy/health";
-                  interval = "15s";
-                  conditions = [
                     "[STATUS] == 200"
                     "[RESPONSE_TIME] < 300"
                   ];
                 }
+                # {
+                #   # Probes the CORS proxy, not the static site: Caddy serves the site
+                #   # from the nix store and would answer 200 with the proxy unit dead,
+                #   # and the proxy is the half that can actually break. handle_path
+                #   # strips /proxy, so this lands on the proxy's own /health.
+                #   name = "Calino";
+                #   group = "calendar";
+                #   url = "http://calino.${config.ogama.server.domain}/proxy/health";
+                #   interval = "15s";
+                #   conditions = [
+                #     "[STATUS] == 200"
+                #     "[RESPONSE_TIME] < 300"
+                #   ];
+                # }
                 {
                   # Probed on the VPS-fronted public name, like the other
                   # internet-facing services here.
@@ -288,8 +304,7 @@ in
                 (mkBorgEndpoint "Borg Jellyfin" "borgbackup-job-hdd-app-jellyfin-backup")
                 (mkBorgEndpoint "Borg OpenCloud" "borgbackup-job-hdd-app-opencloud-backup")
                 (mkBorgEndpoint "Borg Document" "borgbackup-job-hdd-document-backup")
-                (mkBorgEndpoint "Borg Photo" "borgbackup-job-hdd-photo-backup")
-                (mkBorgEndpoint "Borg Photo 1" "borgbackup-job-hdd-photo-1-backup")
+                (mkBorgEndpoint "Borg Immich External Library" "borgbackup-job-hdd-immich-external-library-backup")
               ];
             };
           };
