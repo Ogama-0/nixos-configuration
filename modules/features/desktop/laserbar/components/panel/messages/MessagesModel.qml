@@ -454,10 +454,23 @@ Item {
 
     // ---- opening a thread ----
 
+    // Reassigning `activeMessages` feeds a ListView (ConversationView's
+    // `river`) through a plain `property var` array. QML has no way to diff
+    // a JS array by identity, so every reassignment - even to byte-identical
+    // content - makes the view discard and rebuild every delegate: avatars,
+    // voice-note canvases, images, the lot. refreshActive() is called from
+    // several short timers (120ms coalesce, 180ms open-settle, 1.2s page-
+    // settle) and fires in bursts, so without this guard opening a thread
+    // with any backlog rebuilt its whole bubble list several times a second.
     function refreshActive(): void {
-        if (!root.store || !root.activeId) { root.activeMessages = []; return; }
-        root.activeMessages = root.store.messages(
+        if (!root.store || !root.activeId) {
+            if (root.activeMessages.length > 0) root.activeMessages = [];
+            return;
+        }
+        const next = root.store.messages(
             root.activeId, Math.max(root.pageLimit, root.store.pageSize), 0);
+        if (JSON.stringify(next) !== JSON.stringify(root.activeMessages))
+            root.activeMessages = next;
     }
 
     function openConversation(convId: string): void {
