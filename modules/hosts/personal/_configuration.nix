@@ -71,7 +71,7 @@
   };
 
   environment.systemPackages = with pkgs; [
-    nano
+    helix
     alsa-utils
   ];
 
@@ -97,7 +97,7 @@
     "ogama"
   ];
 
-  system.stateVersion = "24.11"; # Did you read the comment?
+  system.stateVersion = "26.05"; # Did you read the comment?
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
