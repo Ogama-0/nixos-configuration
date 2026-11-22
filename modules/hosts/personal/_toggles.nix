@@ -31,7 +31,9 @@
     steam.enable = true;
     stream.enable = true;
     tailscale.enable = true;
+    howdy.enable = false; # broken
     vm.enable = false;
+
   };
 
   ogama.dev = {
