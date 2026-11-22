@@ -4,12 +4,19 @@ let
   sharedOptions =
     { lib, ... }:
     {
-      options.ogama.server.rustical.enable = lib.mkEnableOption "the CalDAV server behind the calendar stack";
+      options.ogama.server.rustical.enable =
+        lib.mkEnableOption "the CalDAV server behind the calendar stack";
     };
 in
 {
   flake.featureModules.nixos.rustical =
-    { lib, config, inputs, upkgs, ... }:
+    {
+      lib,
+      config,
+      inputs,
+      upkgs,
+      ...
+    }:
     {
       # The extra entries instruct the module system and cannot live inside
       # mkIf, so they apply whether or not the feature is enabled. What they
@@ -40,28 +47,32 @@ in
           # working without poking holes in either unit.
           bind = "127.0.0.1:4000";
 
-          # Two names on purpose, for two different jobs:
+          # Three names on purpose, for three different jobs:
           #
-          # - publicHost is a bare hostname, so Caddy gets it a real Let's Encrypt
-          #   certificate. The frontend needs it: rustical builds its session cookie
-          #   with `.with_secure(true)` hardcoded in src/app.rs (still so in 0.16.0),
-          #   with no config option, so over plain HTTP the browser drops the cookie
-          #   and the login silently never sticks — no server-side error, the form
-          #   just comes back. Minting an app token no longer *requires* the browser
-          #   (0.16 added `rustical principals app-token create`), but browsing
-          #   calendars and revoking tokens still happen there.
+          # - ipv6Host's AAAA points straight at oserv, so Caddy can win ACME
+          #   for it directly over IPv6 regardless of how publicHost itself
+          #   resolves. The frontend needs *some* name with a real cert:
+          #   rustical builds its session cookie with `.with_secure(true)`
+          #   hardcoded in src/app.rs (still so in 0.16.0), with no config
+          #   option, so over plain HTTP the browser drops the cookie and the
+          #   login silently never sticks — no server-side error, the form
+          #   just comes back. Minting an app token no longer *requires* the
+          #   browser (0.16 added `rustical principals app-token create`),
+          #   but browsing calendars and revoking tokens still happen there.
           #
-          #   It resolves through the same portal jellyfin.${config.ogama.server.domain} uses:
-          #   a CNAME to neskwik.portal.${config.ogama.server.domain}, which is an AAAA record
-          #   pointing at this host's global IPv6 address. ACME's HTTP-01 challenge
-          #   validates over IPv6 happily — jellyfin has been running on a real cert
-          #   from this path since September.
+          # - publicHost is the bare public name. Its AAAA now also points
+          #   directly at oserv (its A still goes through the friend's VPS,
+          #   which re-dials oserv), so it gets its own vhost/cert too —
+          #   same split as opencloud.nix/immich.nix/jellyfin.nix. Both
+          #   vhosts force the Host header to publicHost via `proxy` below,
+          #   so the frontend only ever sees the one canonical name.
           #
-          # - tailHost stays plain HTTP like the rest of the tailnet. It is what
-          #   IPv4-only clients use, since the portal is IPv6-only, and CalDAV does
-          #   not care: it authenticates with HTTP Basic and keeps no cookies, so
-          #   only the web frontend is affected by the lack of TLS.
-          publicHost = "rustical.${config.ogama.server.ipv6Host}";
+          # - tailHost stays plain HTTP like the rest of the tailnet. It is
+          #   what IPv4-only clients use, and CalDAV does not care: it
+          #   authenticates with HTTP Basic and keeps no cookies, so only the
+          #   web frontend is affected by the lack of TLS.
+          ipv6Host = "rustical.${config.ogama.server.ipv6Host}";
+          publicHost = "rustical.${config.ogama.server.domain}";
           tailHost = "rustical.tail.${config.ogama.server.domain}";
 
           # The browser origin Calino is served from. Rustical has to hand it CORS
@@ -102,7 +113,9 @@ in
           '';
 
           proxy = ''
-            reverse_proxy http://${config.services.rustical.settings.http.bind}
+            reverse_proxy http://${config.services.rustical.settings.http.bind} {
+              header_up Host "${publicHost}"
+            }
           '';
         in
         {
@@ -146,10 +159,16 @@ in
           # principal's password, and rustical does no rate limiting. Use a long
           # random password for the principal, and revoke app tokens per client
           # rather than sharing one.
-          services.caddy.virtualHosts."${publicHost}" = {
+          services.caddy.virtualHosts."https://${ipv6Host}" = {
             extraConfig = ''
               encode zstd gzip
-
+              ${calinoCors}
+              ${proxy}
+            '';
+          };
+          services.caddy.virtualHosts."https://${publicHost}" = {
+            extraConfig = ''
+              encode zstd gzip
               ${calinoCors}
               ${proxy}
             '';
@@ -161,7 +180,7 @@ in
           # claims every subdomain. Without this block, an http:// link lands on that
           # catch-all and gets a bare 404, which looks exactly like a dead service.
           # An explicit exact-host vhost outranks the wildcard.
-          services.caddy.virtualHosts."http://${publicHost}" = {
+          services.caddy.virtualHosts."http://${ipv6Host}" = {
             extraConfig = ''
               redir https://{host}{uri} permanent
             '';

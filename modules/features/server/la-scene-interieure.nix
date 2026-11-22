@@ -33,10 +33,29 @@ in
           # Caddy upgrades WebSockets by itself.
           web-port = 3500;
 
+          # Two names for each of the vitrine and app, same split as
+          # opencloud.nix/immich.nix/jellyfin.nix/rustical.nix: vitrineHost/
+          # appHost's AAAA points straight at oserv, so Caddy can win ACME
+          # for them directly; pubVitrineHost/pubAppHost are the bare public
+          # names (AAAA now also direct, A still VPS-fronted). Both app
+          # vhosts force the Host header to pubAppHost, below.
           pubVitrineHost = "lsi.${config.ogama.server.domain}";
           pubAppHost = "app.${pubVitrineHost}";
           vitrineHost = "lsi.ipv6.${config.ogama.server.domain}";
           appHost = "app.${vitrineHost}";
+
+          appProxy = ''
+            reverse_proxy http://127.0.0.1:${toString web-port} {
+              header_up Host ${pubAppHost}
+            }
+          '';
+          vitrineProxy = ''
+            encode zstd gzip
+
+            root * ${config.services.laSceneInterieure.vitrine.root}
+            try_files {path} {path}/index.html {path}.html
+            file_server
+          '';
 
           configuration = "${config.ogama.identity.homePath}/nixos-configuration";
 
@@ -331,20 +350,16 @@ in
           };
 
           services.caddy.virtualHosts."https://${appHost}" = {
-            extraConfig = ''
-              reverse_proxy http://127.0.0.1:${toString web-port} {
-                header_up Host ${pubAppHost}
-              }
-            '';
+            extraConfig = appProxy;
+          };
+          services.caddy.virtualHosts."https://${pubAppHost}" = {
+            extraConfig = appProxy;
           };
           services.caddy.virtualHosts."https://${vitrineHost}" = {
-            extraConfig = ''
-              encode zstd gzip
-
-              root * ${config.services.laSceneInterieure.vitrine.root}
-              try_files {path} {path}/index.html {path}.html
-              file_server
-            '';
+            extraConfig = vitrineProxy;
+          };
+          services.caddy.virtualHosts."https://${pubVitrineHost}" = {
+            extraConfig = vitrineProxy;
           };
 
           # Caddy would normally add this redirect itself, but it skips it when another

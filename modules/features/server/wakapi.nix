@@ -22,6 +22,19 @@ in
       config = lib.mkIf config.ogama.server.wakapi.server.enable (
         let
           host = "wakapi";
+          # Two names for the same backend: ipv6Host's AAAA points straight at
+          # oserv, so Caddy can win ACME for it directly; publicHost is the
+          # bare public name (AAAA now also direct, A still VPS-fronted). The
+          # home-manager client config already points at the bare name's
+          # https endpoint (see featureModules.home.wakapi below), so this
+          # vhost was the missing half. Same split as
+          # opencloud.nix/immich.nix/jellyfin.nix/rustical.nix.
+          publicHost = "${host}.${config.ogama.server.domain}";
+          ipv6Host = "${host}.${config.ogama.server.ipv6Host}";
+
+          proxy = ''
+            reverse_proxy http://127.0.0.1:3033
+          '';
         in
         {
           sops.secrets."wakapi_password_salt" = {
@@ -55,9 +68,18 @@ in
             };
           };
 
-          services.caddy.virtualHosts."https://${host}.${config.ogama.server.ipv6Host}" = {
+          services.caddy.virtualHosts."https://${ipv6Host}" = {
+            extraConfig = proxy;
+          };
+          services.caddy.virtualHosts."https://${publicHost}" = {
+            extraConfig = proxy;
+          };
+
+          # caddy.nix's "http://*.${domain}" catch-all claims port 80 for
+          # every subdomain, so Caddy won't add this redirect on its own.
+          services.caddy.virtualHosts."http://${ipv6Host}" = {
             extraConfig = ''
-              reverse_proxy http://127.0.0.1:3033
+              redir https://{host}{uri} permanent
             '';
           };
         }
@@ -69,19 +91,17 @@ in
     {
       imports = [ sharedOptions ];
 
-      config = lib.mkIf config.ogama.server.wakapi.client.enable (
-        {
+      config = lib.mkIf config.ogama.server.wakapi.client.enable ({
 
-          sops.secrets.wakatime_api_key.sopsFile = ../../../sops/wakatime.yaml;
+        sops.secrets.wakatime_api_key.sopsFile = ../../../sops/wakatime.yaml;
 
-          home.activation.wakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                run cat > "$HOME/.wakatime.cfg" <<EOF
-            [settings]  
-            api_url = https://wakapi.${config.ogama.server.domain}/api/v1
-            api_key = $(cat ${config.sops.secrets.wakatime_api_key.path})
-            EOF
-          '';
-        }
-      );
+        home.activation.wakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              run cat > "$HOME/.wakatime.cfg" <<EOF
+          [settings]  
+          api_url = https://wakapi.${config.ogama.server.domain}/api/v1
+          api_key = $(cat ${config.sops.secrets.wakatime_api_key.path})
+          EOF
+        '';
+      });
     };
 }

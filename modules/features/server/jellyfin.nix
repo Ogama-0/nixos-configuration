@@ -16,6 +16,19 @@ in
       config = lib.mkIf config.ogama.server.jellyfin.enable (
         let
           path = "${config.ogama.identity.homePath}/.jellyfin";
+          # Two names for the same backend: ipv6Host's AAAA points straight at
+          # oserv, so Caddy can win ACME for it directly; publicHost is the
+          # bare public name (AAAA now also direct, A still VPS-fronted).
+          # Both vhosts force the Host header to publicHost, same as
+          # opencloud.nix/immich.nix.
+          publicHost = "jellyfin.${config.ogama.server.domain}";
+          ipv6Host = "jellyfin.${config.ogama.server.ipv6Host}";
+
+          proxy = ''
+            reverse_proxy http://127.0.0.1:8096 {
+              header_up Host "${publicHost}"
+            }
+          '';
         in
         {
           services.jellyfin = {
@@ -51,9 +64,18 @@ in
             "d ${config.ogama.server.path.hdd.app.jellyfin}/SHOWS                  0775 ${config.ogama.identity.user} users -"
           ];
 
-          services.caddy.virtualHosts."jellyfin.${config.ogama.server.ipv6Host}" = {
+          services.caddy.virtualHosts."https://${ipv6Host}" = {
+            extraConfig = proxy;
+          };
+          services.caddy.virtualHosts."https://${publicHost}" = {
+            extraConfig = proxy;
+          };
+
+          # caddy.nix's "http://*.${domain}" catch-all claims port 80 for
+          # every subdomain, so Caddy won't add this redirect on its own.
+          services.caddy.virtualHosts."http://${ipv6Host}" = {
             extraConfig = ''
-              reverse_proxy http://127.0.0.1:8096
+              redir https://{host}{uri} permanent
             '';
           };
           # to bypass ipv6 limitation at least for device in tailnet

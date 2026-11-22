@@ -17,23 +17,24 @@ in
 
       config = lib.mkIf config.ogama.server.opencloud.server.enable (
         let
-          # "cloud.ipv6.ogama.me" (bare, ACME) for the public path,
-          # "cloud.tail.ogama.me" for IPv4-only tailnet clients, and
-          # "cloud.ogama.me" (VPS-fronted) for everyone else — the CNAME and
-          # VPS registration for that last one are outside this repo.
+          # One public-facing name: "cloud.ogama.me", VPS-fronted, no tailnet
+          # fallback. oserv is IPv6-only at home, so that name's own AAAA
+          # record points at the VPS, not here — oserv can never win an ACME
+          # challenge for it directly (confirmed: both tls-alpn-01 and
+          # http-01 fail against the VPS). Caddy here instead holds the cert
+          # on "cloud.ipv6.ogama.me", whose AAAA does point at oserv; the VPS
+          # terminates TLS for the public name and re-dials oserv over HTTPS
+          # on this ipv6 name, same as jellyfin/immich/rustical/lsi/wakapi.
+          # Registering "cloud" on the VPS side is manual, per-name, and
+          # outside this repo — ask for it, same as every other public name.
           host = "cloud";
-          publicHost = "${host}.${config.ogama.server.ipv6Host}";
-          tailHost = "${host}.tail.${config.ogama.server.domain}";
+          publicHost = "${host}.${config.ogama.server.domain}";
+          ipv6Host = "${host}.${config.ogama.server.ipv6Host}";
           port = 9200; # services.opencloud.port's own default; free on this host.
 
           proxy = ''
             reverse_proxy http://127.0.0.1:${toString port} {
-              # OpenCloud 308s to https when X-Forwarded-Proto doesn't match
-              # `url`'s scheme below; Caddy sets that header from the
-              # client's own connection, which is plain HTTP on the tailnet
-              # vhost. Pin it so that vhost isn't redirected to a scheme it
-              # never serves.
-              header_up X-Forwarded-Proto https
+              header_up Host "${publicHost}"
               transport http {
                 read_timeout  600s
                 write_timeout 600s
@@ -57,12 +58,6 @@ in
             address = "127.0.0.1";
             inherit port;
 
-            # Baked verbatim into config.json's server/theme/oidc URLs for
-            # every vhost alike, so only the name below gets a working
-            # browser UI until the VPS leg lands (others 404 the SPA's
-            # config fetch with "missing or invalid config"). Switch to
-            # "https://${host}.${config.ogama.server.domain}" once the VPS
-            # registers that name, matching immich.nix's externalDomain.
             url = "https://${publicHost}";
 
             # If every internal LDAP bind (uid=idp/reva/libregraph,
@@ -80,7 +75,7 @@ in
             environmentFile = config.sops.templates."opencloud.env".path;
 
             environment = {
-              # Caddy already terminates TLS on both vhosts; no need for
+              # Caddy already terminates TLS on the vhost; no need for
               # OpenCloud's own self-signed cert on the loopback hop.
               PROXY_TLS = "false";
             };
@@ -88,7 +83,13 @@ in
 
           # Public, with ACME — deliberately internet-facing, like jellyfin
           # and rustical.
-          services.caddy.virtualHosts."${publicHost}" = {
+          services.caddy.virtualHosts."https://${ipv6Host}" = {
+            extraConfig = ''
+              encode zstd gzip
+              ${proxy}
+            '';
+          };
+          services.caddy.virtualHosts."https://${publicHost}" = {
             extraConfig = ''
               encode zstd gzip
               ${proxy}
@@ -97,17 +98,9 @@ in
 
           # caddy.nix's "http://*.${domain}" catch-all claims port 80 for
           # every subdomain, so Caddy won't add this redirect on its own.
-          services.caddy.virtualHosts."http://${publicHost}" = {
+          services.caddy.virtualHosts."http://${ipv6Host}" = {
             extraConfig = ''
               redir https://{host}{uri} permanent
-            '';
-          };
-
-          # IPv4-only tailnet clients can't reach the IPv6 public name.
-          services.caddy.virtualHosts."http://${tailHost}" = {
-            extraConfig = ''
-              encode zstd gzip
-              ${proxy}
             '';
           };
         }
