@@ -16,7 +16,12 @@ in
   flake.featureModules.nixos.vicinae = sharedOptions;
 
   flake.featureModules.home.vicinae =
-    { config, lib, upkgs, ... }:
+    {
+      config,
+      lib,
+      upkgs,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
@@ -67,6 +72,7 @@ in
           };
         in
         {
+          xdg.configFile."vicinae/settings.json".force = true;
           wayland.windowManager.sway.config.keybindings = lib.mkOptionDefault {
             "Mod4+d" = "exec vicinae toggle";
           };
