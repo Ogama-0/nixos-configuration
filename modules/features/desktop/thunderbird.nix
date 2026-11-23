@@ -65,7 +65,7 @@ in
             };
             thunderbird = {
               enable = true;
-              # color = "#333399";
+              color = "#333399";
             };
           };
 
@@ -77,7 +77,7 @@ in
             };
             thunderbird = {
               enable = true;
-              # color = "#33FFFF";
+              color = "#33FFFF";
             };
           };
 
@@ -89,7 +89,7 @@ in
             };
             thunderbird = {
               enable = true;
-              # color = "#33FFFF";
+              color = "#33FFFF";
             };
           };
 
@@ -101,7 +101,7 @@ in
             };
             thunderbird = {
               enable = true;
-              # color = "#33CC00";
+              color = "#33CC00";
             };
           };
           birthdays = {
@@ -112,7 +112,7 @@ in
             };
             thunderbird = {
               enable = true;
-              # color = "#33CC00";
+              color = "#33CC00";
             };
           };
         };
