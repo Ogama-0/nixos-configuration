@@ -27,10 +27,10 @@
     mounting.enable = true;
     nvidia.enable = true;
     printer.enable = true;
-    sambaCli.enable = true;
     steam.enable = true;
     stream.enable = true;
     tailscale.enable = true;
+    samba.client.enable = true;
     vm.enable = false;
   };
 

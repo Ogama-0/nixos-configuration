@@ -20,7 +20,7 @@
     zfs.enable = true;
     avahi.enable = true;
     docker.enable = true;
-    samba.enable = true;
+    samba.server.enable = true;
     tailscale.enable = true;
   };
 

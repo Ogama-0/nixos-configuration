@@ -27,9 +27,9 @@
     mounting.enable = true;
     nvidia.enable = false;
     printer.enable = true;
-    sambaCli.enable = true;
     steam.enable = true;
     stream.enable = true;
+    samba.client.enable = true;
     tailscale.enable = true;
     howdy.enable = false; # broken
     vm.enable = false;

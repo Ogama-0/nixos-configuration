@@ -41,7 +41,6 @@
   services.blueman.enable = true;
 
   networking.hostName = "ogamaNixOs-zenbook"; # Define your hostname
-
   networking.firewall = {
     enable = false;
     extraCommands = "iptables -t raw -A OUTPUT -p udp -m udp --dport 137 -j CT --helper netbios-ns";
