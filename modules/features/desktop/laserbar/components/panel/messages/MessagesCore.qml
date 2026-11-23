@@ -1,4 +1,6 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 
 // Everything Messages knows, owned once.
 //
@@ -134,6 +136,14 @@ Item {
         model.activeId = was;
     }
 
+    // contacts-sync.nix's own vdirsyncer pair and config file - never
+    // calendar-sync.nix's, which writes a config of its own and would be
+    // clobbered by a second activation script sharing the same path.
+    readonly property string contactsDir:
+        Quickshell.env("HOME") + "/.local/share/contacts/rustical"
+    readonly property string contactsSyncConfig:
+        Quickshell.env("HOME") + "/.config/vdirsyncer/contacts-config"
+
     ContactsModel { id: contacts }
     MessageHue { id: hues }
     MessageStore { id: store; Component.onCompleted: init() }
@@ -162,10 +172,28 @@ Item {
         onFetchAsked: (partId, uid) => model.fetchAttachment(partId, uid)
     }
 
+    // The RustiCal address book, same pattern as Calendar.qml's own
+    // vdirsyncer sync: pull on an interval, reload the parser once the pull
+    // finishes rather than racing it. Pointed at contacts-sync.nix's own
+    // config file, so this never touches calendar-sync.nix's pairs.
+    Process {
+        id: contactsSyncProc
+        running: false
+        command: ["vdirsyncer", "--config", root.contactsSyncConfig, "sync", "contacts"]
+        onExited: contacts.loadFrom(root.contactsDir)
+    }
+
+    Timer {
+        interval: 15 * 60 * 1000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: contactsSyncProc.running = true
+    }
+
     // Read even with every pane shut, or a toast names the sender by their
     // phone number.
-    Component.onCompleted: contacts.load(root.deviceId)
-    onDeviceIdChanged: contacts.load(root.deviceId)
+    Component.onCompleted: contacts.loadFrom(root.contactsDir)
 
     // The vCards finish loading after the first conversations have landed,
     // so threads get built titled by their numbers. Without this they keep

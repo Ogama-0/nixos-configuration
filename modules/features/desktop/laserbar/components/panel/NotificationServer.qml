@@ -111,6 +111,13 @@ Item {
     // at all is only less wrong.
     property var relayApps: ["KDE Connect"]
 
+    // Through the KDE Connect relay, the phone's own default SMS app
+    // announces itself as "Messages" - and every text it shows up for is
+    // the exact same message the Messages panel's own MessageToast just
+    // raised from the conversations DBus interface. Without this, every
+    // incoming text arrived as two toasts for one event.
+    property var suppressedRelaySenders: ["Messages"]
+
     // Grouped by the app that sent them, newest group first, and each
     // group's items newest first. Five notifications from one chat app is
     // one thing that happened, not five - and a flood from one sender
@@ -212,6 +219,16 @@ Item {
         imageSupported: true
 
         onNotification: notification => {
+            // The Messages panel already raised its own toast for this exact
+            // text, off the conversations DBus interface - letting this one
+            // through too means reacting to it in neither `tracked` nor
+            // `posted` at all, so it just expires on its own, unseen, the
+            // same as any notification this handler ignores.
+            if ((notification.appName || "") === "KDE Connect"
+                && root.suppressedRelaySenders.indexOf(notification.summary || "") >= 0) {
+                return;
+            }
+
             // Transient means "show it, do not keep it": one per volume
             // keypress. Tracking those would walk a 50-entry centre full of
             // readings you only wanted at the moment you pressed the key,

@@ -4,14 +4,20 @@ let
   sharedOptions =
     { lib, ... }:
     {
-      options.ogama.desktop.alacritty.enable = lib.mkEnableOption "the alacritty terminal, themed by darkman";
+      options.ogama.desktop.alacritty.enable =
+        lib.mkEnableOption "the alacritty terminal, themed by darkman";
     };
 in
 {
   flake.featureModules.nixos.alacritty = sharedOptions;
 
   flake.featureModules.home.alacritty =
-    { pkgs, lib, config, ... }:
+    {
+      pkgs,
+      lib,
+      config,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
@@ -34,16 +40,20 @@ in
                 live_config_reload = true;
               };
 
-              window = { decorations = "buttonless"; };
+              window = {
+                decorations = "buttonless";
+              };
 
               font = {
-                size = 13.5;
+                size = 12;
                 normal.family = "JetBrainsMonoNerdFont";
                 bold.family = "JetBrainsMonoNerdFont";
                 italic.family = "JetBrainsMonoNerdFont";
               };
 
-              terminal.shell = { program = "fish"; };
+              terminal.shell = {
+                program = "fish";
+              };
             };
           };
 
@@ -51,13 +61,12 @@ in
           # unconditional write here would force dark on every activation - flipping a
           # daytime desktop to dark until darkman's restart corrected it, and leaving
           # it dark for good if that restart ever failed (it is `|| true`).
-          home.activation.alacrittyColorsDefault =
-            lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-              run ${pkgs.coreutils}/bin/mkdir -p "${config.xdg.configHome}/alacritty"
-              if [ ! -e "${colorsPath}" ]; then
-                run ${pkgs.coreutils}/bin/install -m 644 ${alacrittyColors.dark} "${colorsPath}"
-              fi
-            '';
+          home.activation.alacrittyColorsDefault = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+            run ${pkgs.coreutils}/bin/mkdir -p "${config.xdg.configHome}/alacritty"
+            if [ ! -e "${colorsPath}" ]; then
+              run ${pkgs.coreutils}/bin/install -m 644 ${alacrittyColors.dark} "${colorsPath}"
+            fi
+          '';
         }
       );
     };

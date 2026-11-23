@@ -9,19 +9,26 @@ let
 in
 {
   flake.featureModules.nixos.mounting =
-    { lib, config, pkgs, ... }:
+    {
+      lib,
+      config,
+      pkgs,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
-      config = lib.mkIf config.ogama.system.mounting.enable (
-        {
-          services.usbmuxd.enable = true;
+      config = lib.mkIf config.ogama.system.mounting.enable ({
+        services.usbmuxd.enable = true;
 
-          environment.systemPackages = with pkgs; [
-            libimobiledevice
-            ifuse # optional, to mount using 'ifuse'
-          ];
-        }
+        environment.systemPackages = with pkgs; [
+          libimobiledevice
+          ifuse # optional, to mount using 'ifuse'
+        ];
+      }
+      # auto smb mounts from my server :
+      # - swp
+      # - public
       );
     };
 

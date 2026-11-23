@@ -1,25 +1,23 @@
 import QtQuick
-// Quickshell, not just Quickshell.Io: load() reads Quickshell.env, and
-// without this it is a ReferenceError the first time a real device id is
-// passed. The fixture used loadFrom() and never touched it.
-import Quickshell
 import Quickshell.Io
 
 // Who a phone number belongs to. Non-visual.
 //
-// KDE Connect's contacts plugin already syncs the phone's address book to
-// disk as vCards, under ~/.local/share/kpeoplevcard/kdeconnect-<device>/ -
-// 229 of them here. So turning a number into a name is a local file read and
-// not a round-trip to a phone that may be asleep.
+// The address book lives on rustical.ogama.me's CardDAV, not on the phone:
+// contacts-sync.nix's vdirsyncer pair mirrors it to
+// ~/.local/share/contacts/rustical/*.vcf, and this reads that directory the
+// same way it would read any other - KDE Connect's own vCard sync
+// (kpeoplevcard) is not used at all, so a number it cannot place there is
+// simply one nobody has filed under a name in that address book.
 //
-// What those cards do NOT carry is a single PHOTO field. Every one of them is
-// a name and a number. That is the whole reason the avatars in this panel are
+// What a card does NOT carry is a single PHOTO field. Every one of them is a
+// name and a number. That is the whole reason the avatars in this panel are
 // colour and letterform instead of faces: there are no faces to draw.
 //
-// Nothing here is required to succeed. No contacts plugin, a device that was
-// never paired, an empty directory: `ready` still turns true and every number
-// resolves to itself with `known` false. A number with no card is not an
-// error, it is a number you have not saved - which is most of them.
+// Nothing here is required to succeed. An empty directory, a sync that has
+// not run yet: `ready` still turns true and every number resolves to itself
+// with `known` false. A number with no card is not an error, it is a number
+// you have not saved - which is most of them.
 Item {
     id: root
 
@@ -31,34 +29,20 @@ Item {
     // number -> { name, initials }, keyed by normalize().
     property var byNumber: ({})
 
-    // The directory actually read. Set it directly to point at a different
-    // set - the fixtures do - or go through load() for the usual one.
+    // The directory actually read. Set directly, or go through loadFrom().
     property string vcardDir: ""
-
-    function load(deviceId: string): void {
-        if (!deviceId) {
-            // MobileModel's pairedId can read back empty on a retry even for
-            // an already-paired phone (a slow or momentarily-empty
-            // `kdeconnect-cli -l`), and MessagesCore.onDeviceIdChanged calls
-            // load() on every such blip. Wiping byNumber here would flip
-            // `ready` true->false->true with an empty map and relabel() would
-            // stamp every thread's title back to its raw number - the names
-            // vanishing a moment after the panel opens. Only the very first
-            // call, before any device has ever been known, has nothing to
-            // lose by going empty.
-            if (root.vcardDir === "") { root.byNumber = ({}); root.ready = true; }
-            return;
-        }
-        root.loadFrom(Quickshell.env("HOME")
-            + "/.local/share/kpeoplevcard/kdeconnect-" + deviceId);
-    }
 
     function loadFrom(dir: string): void {
         root.vcardDir = dir;
         root.ready = false;
-        // One `cat` over the glob, not one Process per file. At 229 cards the
-        // per-process cost is the whole cost; the parse is nothing.
-        readProc.command = ["sh", "-c", "cat " + dir + "/*.vcf 2>/dev/null || true"];
+        // find, not a *.vcf glob: contacts-sync.nix's vdirsyncer pair nests
+        // the synced cards one level down, in a subfolder named after
+        // RustiCal's own collection UUID, so a flat glob here would read
+        // zero cards against a directory that genuinely has hundreds. One
+        // `cat` over all of them either way, not one Process per file - at
+        // several hundred cards the per-process cost is the whole cost.
+        readProc.command = ["sh", "-c",
+            "find " + dir + " -name '*.vcf' -exec cat {} + 2>/dev/null || true"];
         readProc.running = true;
     }
 
@@ -87,6 +71,21 @@ Item {
         return digits.length > 9 ? digits.slice(-9) : digits;
     }
 
+    // No vCard carries this number, so there is no name - only the digits
+    // the phone sent. +33 mobiles/landlines are grouped the way a French
+    // phone dial pad shows them, so the fallback reads as a number rather
+    // than a password. Shortcodes ("38984") and alphanumeric sender ids
+    // ("Uber", "SIGNAL") do not match and pass through untouched - there is
+    // nothing in them to group.
+    function prettyNumber(number: string): string {
+        const s = String(number || "");
+        const m = s.match(/^\+33(\d{9})$/);
+        if (!m) return s;
+        const d = m[1];
+        return "+33 " + d[0] + " " + d.slice(1, 3) + " " + d.slice(3, 5)
+               + " " + d.slice(5, 7) + " " + d.slice(7, 9);
+    }
+
     // Always an object, never null: every call site renders something, and a
     // null here would make each of them write the same guard.
     function resolve(number: string): var {
@@ -95,8 +94,8 @@ Item {
         if (hit === undefined) {
             // The number stands in for the name. A shortcode has no better
             // label, and an unsaved mobile is still recognisable as itself.
-            return { name: number || "", initials: "", number: number || "",
-                     known: false };
+            return { name: root.prettyNumber(number), initials: "",
+                     number: number || "", known: false };
         }
         return { name: hit.name, initials: hit.initials, number: number,
                  known: true };

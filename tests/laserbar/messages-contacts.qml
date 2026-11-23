@@ -5,12 +5,12 @@ import "components/panel/messages"
 
 // ContactsModel, against vCards this fixture writes itself.
 //
-// Not the user's real ~/.local/share/kpeoplevcard set: that is 229 cards that
-// change whenever the phone syncs, so an assertion against a name in it would
-// start failing for reasons that have nothing to do with this code.
+// Not the user's real ~/.local/share/contacts/rustical set: that changes
+// whenever the address book is edited, so an assertion against a name in it
+// would start failing for reasons that have nothing to do with this code.
 //
-// The two Benjamin cases are the whole point of normalize(). KDE Connect hands
-// back whatever string the SMS arrived with, and the contact card stores
+// The two Benjamin cases are the whole point of normalize(). An SMS hands
+// back whatever string the number arrived with, and the contact card stores
 // whatever the user typed - a French mobile reaches you as +33767248570 and
 // sits in the address book as 076-724-8570. They are one person.
 //
@@ -21,14 +21,16 @@ ShellRoot {
 
     readonly property string dir: "/tmp/qs-messages-contacts-test"
 
-    property bool probed: false
-
     readonly property var cases: [
         { number: "076-724-8570", name: "Benjamin Poussart", initials: "BP", known: true },
         { number: "+33767248570", name: "Benjamin Poussart", initials: "BP", known: true },
         { number: "0760000001",   name: "Zoe",               initials: "Z",  known: true },
         { number: "32665",        name: "32665",             initials: "",   known: false },
         { number: "",             name: "",                  initials: "",   known: false },
+        // No card for this one either, but it IS a full +33 mobile, so the
+        // fallback groups it like a dial pad rather than printing one long
+        // run of digits.
+        { number: "+33611223344", name: "+33 6 11 22 33 44", initials: "",   known: false },
         // Alphanumeric sender IDs. Real traffic on this phone is full of them
         // - Uber, SIGNAL, "imagine R", LBPCF - and they contain NO DIGITS, so
         // a normaliser that strips to digits folds every one of them onto the
@@ -65,13 +67,6 @@ ShellRoot {
                     + " number=" + got.number);
             }
         }
-        // load() is the path the panel actually uses - loadFrom() is what
-        // the fixture needs. Nothing exercised load() until this, and it was
-        // reaching for Quickshell.env with only Quickshell.Io imported, which
-        // is a ReferenceError the moment a real device id is passed.
-        //
-        // Guarded by `probed` because load() resets `ready` and would
-        // re-enter check() against an empty map.
         // The collision itself, not just the rendering: two different sender
         // IDs must not normalise to the same key.
         const keys = ["Uber", "SIGNAL", "imagine R", "LBPCF"].map(n => contacts.normalize(n));
@@ -79,15 +74,6 @@ ShellRoot {
             bad.push("sender IDs collided: " + JSON.stringify(keys));
         if (keys.indexOf("") >= 0)
             bad.push("a sender ID normalised to the empty key");
-
-        if (!root.probed) {
-            root.probed = true;
-            try {
-                contacts.load("no-such-device-id");
-            } catch (e) {
-                bad.push("load() threw: " + e);
-            }
-        }
 
         if (bad.length > 0) {
             console.log("CONTACTS_FAIL " + bad.join(" | "));

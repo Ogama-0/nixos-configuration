@@ -46,6 +46,7 @@
 
   ogama.server = {
     calendarSync.enable = true;
+    contactsSync.enable = true;
     wakapi.client.enable = true;
     opencloud.client.enable = true;
   };

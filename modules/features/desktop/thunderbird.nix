@@ -104,6 +104,17 @@ in
               # color = "#33CC00";
             };
           };
+          birthdays = {
+            remote = {
+              type = "caldav";
+              url = "https://rustical.ogama.me/caldav/principal/ogama/6cc6ae98-8613-4ae3-a3ca-0b35d84a9e8b/";
+              userName = "ogama";
+            };
+            thunderbird = {
+              enable = true;
+              # color = "#33CC00";
+            };
+          };
         };
 
         # No CardDAV address book exists on RustiCal yet — it has to be created

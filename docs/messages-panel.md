@@ -11,7 +11,7 @@ Approved visual reference: `docs/previews/messages-panel.html`.
 
 ```
 MessagesCore          one per shell: contacts, hues, store, the DBus model
-├── ContactsModel     number -> name, out of the synced vCards
+├── ContactsModel     number -> name, out of RustiCal's CardDAV address book
 ├── MessageHue        number -> one palette colour, forever
 ├── MessageStore      SQLite cache: pages, retention, FTS5 search
 ├── MessagesModel     the KDE Connect bridge
@@ -30,7 +30,7 @@ PictureViewer         its own layer surface; grown from a tapped photo
 a style preference. `ControlPanel`'s window is inside a `Variants` over
 `Quickshell.screens`, so anything declared in the pane exists once per
 monitor — the first version gave a two-screen session two SQLite
-connections, two reads of the 229 vCards, and two `busctl monitor` processes
+connections, two reads of the address book, and two `busctl monitor` processes
 both ingesting every message.
 
 ## Two DBus objects, and the useful one is not the obvious one
@@ -195,18 +195,21 @@ waiting for reachability would miss the first message every time.
   `MessageStore.attachment_files` keys on it and `messages()` fills the path
   in on the way out, because the signal arrives long after the message it
   belongs to and knows nothing about which bubble asked.
-- **No contact photos.** All 229 vCards carry `FN` and `TEL` and not one
-  `PHOTO`. That is why avatars are two letters and a colour.
+- **No contact photos.** RustiCal's address book carries `FN` and `TEL` and
+  no `PHOTO`. That is why avatars are two letters and a colour.
 
-Those cards are vCard **2.1**, and thirty of them write the name as
-`FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=53=61=6D=C3=BC...` — which is
-every contact whose name carries an accent or an emoji, i.e. most of the
-people you actually text. Match on the property *name*, never on the literal
-`"FN:"`. Two continuations exist and the cards use both: RFC 2425 folding (a
-leading space) and the quoted-printable soft break (a trailing `=`).
-`ContactsModel.unfold` joins them; `decodeQP` goes through
-`decodeURIComponent` because that is the only UTF-8 decoder in QML's
-JavaScript and `ü` is two bytes, not one.
+`ContactsModel`'s parser still tolerates vCard **2.1**'s two continuation
+styles, because that is the dialect the original KDE Connect vCard sync used
+and the parser was written against: thirty of its 229 cards wrote the name as
+`FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=53=61=6D=C3=BC...` — every
+contact whose name carries an accent or an emoji, i.e. most of the people you
+actually text. Match on the property *name*, never on the literal `"FN:"`.
+RFC 2425 folding (a leading space) and the quoted-printable soft break (a
+trailing `=`) both occur; `ContactsModel.unfold` joins them, and `decodeQP`
+goes through `decodeURIComponent` because that is the only UTF-8 decoder in
+QML's JavaScript and `ü` is two bytes, not one. Whatever RustiCal's own CardDAV
+export looks like, this is why the parser does not assume plain single-line
+`FN:` and UTF-8 bytes it does not have to re-decode.
 
 ## Refreshes are not news
 
@@ -430,8 +433,8 @@ bubble reads `#131312` across its padding and `#565451` across its words.
 | No conversations, phone connected | SMS permission on Android. Run the probe. If the probe is happy, check `activeConversations` on the bus: an empty `[[]]` is a daemon nobody primed. |
 | No conversations after a reboot or a rebuild, and opening the Android SMS app fills them in | `primeThreads()` did not fire. The daemon's cache is empty and the SMS app is asking on its own behalf. |
 | Mobile zone empty, `--list-devices` finds the phone | Paired but not **reachable**. The zone runs `kdeconnect-cli -a`, which lists reachable devices only; `--list-devices` lists paired ones. Check `isReachable` on the device object. Messages still opens and shows the cache. |
-| Every thread named by its number | The vCard read failed, or `relabel()` did not fire. |
-| *Some* threads named by their number, and the KDE notification has the name | Those cards are quoted-printable. The phone resolves the name itself for notifications; the panel parses the vCards. See the FN note above. |
+| Every thread named by its number | The RustiCal sync hasn't run or has nothing in `~/.local/share/contacts/rustical`, the vCard read failed, or `relabel()` did not fire. Check `vdirsyncer --config ~/.config/vdirsyncer/contacts-config discover contacts` and `sync contacts` by hand. |
+| *Some* threads named by their number, and the phone's own notification has the name | The address book on RustiCal is missing that contact, or its card is quoted-printable-encoded in a way the parser doesn't expect. The phone resolves the name itself for its own notifications, independent of this sync; the panel only knows what RustiCal's CardDAV has. See the FN note above. |
 | A message you sent appears twice | A pending row the echo did not replace. Reconciliation is on the body — if you sent the same text twice inside two minutes, the second is not a duplicate and is kept. |
 | A thread stops at thirty messages | In order: is `loadingOlder` stuck true (then `pageSettle` is not firing and `fetchOlder()` is returning at its guard), does `handleSignal` still unwrap `conversationUpdated` (the pages arrive as nothing else), is `pageLimit` growing, is `fetchedCount` being skipped for the on-screen length again. |
 | Nothing at all, and `busctl` from a terminal works fine | Check the object path the command was built with. Anything derived from `deviceId` as a *binding* can still be the empty-device version inside `onConnectedChanged` — `devPathFor()` exists because of that. The symptom is `Invalid object path: /modules/kdeconnect/devices/` on stderr, which nothing reads. |
