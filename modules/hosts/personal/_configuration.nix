@@ -30,7 +30,9 @@
       efi.canTouchEfiVariables = true;
     };
 
-    # kernelPackages = pkgs.linuxPackages_latest;
+    # https://discussion.fedoraproject.org/t/nvme-i-o-timeouts-and-slow-boot-on-asus-zenbook-with-micron-mtfdkba1t0qgn/187890
+    # I desactivate the Intel VMD in the UEFI
+
     supportedFilesystems = [ "ntfs" ];
   };
 
