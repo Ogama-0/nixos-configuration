@@ -36,21 +36,20 @@ in
           qmlTheme = import ../../../lib/qml-theme.nix;
           palettes = import ../../../lib/theme-colors.nix;
 
-          # Instrumentation for the "first login is always rejected"
-          # investigation. Records message types, timings and password *lengths* -
-          # never a password - to /tmp/greeter-trace.log, plus quickshell's own
-          # output to /tmp/greeter-quickshell.log. Nothing else depends on it.
+          # Instrumentation for the greeter, which can log nowhere else: it is
+          # a Wayland surface owned by a user with no home directory, started
+          # by a compositor started by greetd. Records message types, timings
+          # and password *lengths* - never a password - to
+          # /tmp/greeter-trace.log, plus quickshell's own stderr to
+          # /tmp/greeter-quickshell.log.
           #
-          # Off again: the traces it collected over 2026-11-22/23 show the
-          # authentication path behaving correctly every time (create_session ->
-          # auth_message -> response -> success -> start_session, no first-login
-          # rejection), so it has answered its question. What it DID catch is a
-          # different bug, now written up in
-          # docs/superpowers/specs/2026-11-23-greeter-output-race.md: the
-          # greeter dying on a Wayland protocol error when sway has no output
-          # yet. Turn this back on while working that one - it is the only
-          # window into a surface that cannot log anywhere else.
-          debugTrace = false;
+          # ON, and it has to stay on until the greeter is reliable. It was
+          # turned off on 2026-11-23 because it had answered the "first login
+          # is always rejected" question, and the greeter failed to come up
+          # twice within the hour with nothing recorded either time - the
+          # failure that is actually happening is the one this would show.
+          # See docs/superpowers/specs/2026-11-23-greeter-output-race.md.
+          debugTrace = true;
 
           greetdProxy = "${lpkgs.greetd-proxy}/bin/greetd-proxy";
           # The greeter itself runs plain sway: it shows one fullscreen Quickshell
@@ -65,6 +64,9 @@ in
           # execs it: greetd starts the session by absolute store path, right here.
           sessionBin = "${import ../../../lib/swayfx.nix pkgs}/bin/sway";
           swaymsgBin = "${pkgs.sway}/bin/swaymsg";
+          # Draws on sway's own output, which is the only surface the user can
+          # see when the greeter has failed - see the fallback in `launcher`.
+          swaynagBin = "${pkgs.sway}/bin/swaynag";
           systemctlBin = "${pkgs.systemd}/bin/systemctl";
 
           darkImage = ../../../assets/lockscreen/dark-lockscreen-arcane-jinx.jpeg;
@@ -117,9 +119,49 @@ in
               export GREETD_TRACE
               echo "-- greeter-launch starting surface $SURFACE" >> "$GREETD_TRACE"
             ''}
+                # Do not start quickshell until sway actually has an output.
+                #
+                # This is the "greeter never appeared" failure, and it is a
+                # race, which is why it came and went. sway runs exec_always
+                # as soon as it has read its config - which can be before the
+                # eDP output is enabled. quickshell starts, Qt reports zero
+                # screens and invents a placeholder, the bare PanelWindow in
+                # Greeter{Dark,Light}.qml binds to it, and when the real
+                # output turns up the placeholder's wl_output global is gone:
+                #
+                #   qt.qpa.wayland: There are no outputs - creating placeholder screen
+                #   wl_registry#2: error 0: global wl_output (60) is unavailable
+                #   WARN: The Wayland connection experienced a fatal error: Protocol error
+                #
+                # sway's own IPC is the authority on when its output is up, so
+                # ask it rather than sleeping a guessed interval. Bounded at
+                # 5s so a genuinely headless boot still reaches the fallback
+                # below instead of spinning here forever; in practice the
+                # output is there within a few hundred milliseconds.
+                tries=0
+                while [ "$tries" -lt 100 ]; do
+                  if ${swaymsgBin} -t get_outputs 2>/dev/null \
+                       | ${pkgs.gnugrep}/bin/grep -q '"active": true'; then
+                    break
+                  fi
+                  tries=$((tries + 1))
+                  ${pkgs.coreutils}/bin/sleep 0.05
+                done
+            ${lib.optionalString debugTrace ''
+              echo "-- greeter-launch: output ready after $tries tries" >> "$GREETD_TRACE"
+            ''}
                 ${upkgs.quickshell}/bin/quickshell -p "$SURFACE" ${lib.optionalString debugTrace ">> /tmp/greeter-quickshell.log 2>&1"} || true
 
                 if [ ! -e "$GREETD_STARTED_MARKER" ]; then
+                  # Say so ON SCREEN first. agreety writes to the VT, and sway
+                  # is holding that VT in graphics mode, so the text greeter
+                  # is invisible - which is why this path looked like a black
+                  # screen for five and a half minutes on 2026-11-22 and again
+                  # twice on 2026-11-24. swaynag draws on sway's own output,
+                  # so it is the one thing here the user can actually see.
+                  ${swaynagBin} -t warning -m \
+                    "Greeter failed to start. Press Ctrl+Alt+F2 for a console login." \
+                    >/dev/null 2>&1 || true
                   exec ${pkgs.greetd}/bin/agreety --cmd ${swayBin}
                 fi
           '';
