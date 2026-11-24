@@ -313,6 +313,43 @@ ShellRoot {
         check(model.activeMessages.length === 2,
               "re-ingesting duplicated messages: " + model.activeMessages.length);
 
+
+        // --- the refresh guard notices an attachment arriving ---
+        //
+        // refreshActive() only reassigns activeMessages when the page has
+        // actually changed, and that comparison used to be two full
+        // JSON.stringify()s of the whole thread. It is now a signature over
+        // ids, timestamps and attachment-path presence (pageSignature), which
+        // is far cheaper but, unlike a deep compare, only sees what it was
+        // told to look at. This pins the one field in a message row that
+        // changes AFTER the row is written: an attachment's `path`, filled in
+        // when the picture finally comes down off the phone. Miss it and the
+        // bubble keeps showing a placeholder until something else happens to
+        // move the thread.
+        const sigBefore = model.pageSignature(model.activeMessages);
+        const withPath = model.activeMessages.map(m => ({
+            id: m.id, convId: m.convId, body: m.body, ts: m.ts,
+            outgoing: m.outgoing, address: m.address,
+            attachments: [{ partId: 1, mime: "image/jpeg", uid: "u1",
+                            data: "", path: "/tmp/pic.jpg" }]
+        }));
+        check(model.pageSignature(withPath) !== sigBefore,
+              "pageSignature ignored an attachment arriving");
+
+        // And the complement: the same page twice is the same signature, or
+        // the guard stops guarding and every refresh rebuilds every delegate.
+        check(model.pageSignature(model.activeMessages) === sigBefore,
+              "pageSignature is not stable for an unchanged page");
+
+        // A row being replaced changes its id - that is what a pending send
+        // becoming the real message looks like.
+        const renamed = model.activeMessages.map(m => ({
+            id: m.id + "-x", convId: m.convId, body: m.body, ts: m.ts,
+            outgoing: m.outgoing, address: m.address, attachments: m.attachments
+        }));
+        check(model.pageSignature(renamed) !== sigBefore,
+              "pageSignature ignored a message id changing");
+
         // --- a bulk refresh is not news ---
         //
         // Opening the pane re-reads all 50 conversations off the phone and

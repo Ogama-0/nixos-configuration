@@ -5,32 +5,33 @@
 #
 # `colors` is one base16 palette attrset out of lib/theme-colors.nix -
 # the same source for the bar, the lock and the greeter surfaces.
-{ colors
-, laserColor
-, lockscreenImage
-, systemctlBin
-, corptaFontPath
+{
+  colors,
+  laserColor,
+  lockscreenImage,
+  systemctlBin,
+  corptaFontPath,
   # Status-widget tokens. Defaulted so greetd.nix and the lockVariant helper,
   # which never render StatusPanel.qml, do not have to pass them - a required
   # argument here would break both callers. The colour defaults are the Horizon
   # dark values; the quickshell module always passes explicit
   # polarity-correct ones, because Horizon puts teal at base0C in dark but
   # base0E in light, so no single base16 slot means "up" in both schemes.
-, statusApiUrl ? ""
-, metricsApiUrl ? ""
-, upColor ? "#FF24A8B4"
-, degradedColor ? "#FFEFB993"
-, downColor ? "#FFE93C58"
+  statusApiUrl ? "",
+  metricsApiUrl ? "",
+  upColor ? "#FF24A8B4",
+  degradedColor ? "#FFEFB993",
+  downColor ? "#FFE93C58",
   # base04 is legible on the dark ground (6.5:1) but only 2.5:1 on the light
   # one, which is too low for the 11px latency column. The quickshell module
   # passes a polarity-correct value; this default preserves the dark-ground
   # behaviour for callers that never render these tokens.
-, mutedColor ? "#FF${colors.base04}"
+  mutedColor ? "#FF${colors.base04}",
   # Space-separated directory names under assets/wallpaper that the picker
   # draws from, substituted into Wallpaper.qml's find. Defaulted so
   # modules/nixosconf/greetd.nix, which renders no Wallpaper.qml, needs no
   # change. The quickshell module passes "dark both" or "light both".
-, wallpaperDirs ? "both"
+  wallpaperDirs ? "both",
   # Bar-module capsule colours. Not a single base16 slot: the plate is the
   # light one and the outline the dark one, and those swap between the
   # variants (dark base05 is near-white, light base05 is near-black). The
@@ -38,18 +39,26 @@
   # dark ones, for the callers that render no bar.
   # Absolute path to swaymsg. PATH is not dependable inside the systemd user
   # service, which is why @systemctlBin@ exists too.
-, swaymsgBin ? "swaymsg"
-, capsuleFill ? "#F2${colors.base05}"
-, capsuleInk ? "#FF${colors.base00}"
+  swaymsgBin ? "swaymsg",
+  capsuleFill ? "#F2${colors.base05}",
+  capsuleInk ? "#FF${colors.base00}",
   # Messages' per-contact identity colours, comma-separated. Not a single slot
   # and not derivable here: the pool differs by variant because Horizon light's
   # base0A is #FBE0D9, near-white, and initials painted in it disappear into
   # the cream sheet. The quickshell module passes the polarity-correct list;
   # this default is the dark one, for the callers that render no Messages.
-, msgHues ? builtins.concatStringsSep "," (map (c: "#FF${c}") [
-    colors.base08 colors.base09 colors.base0A colors.base0B
-    colors.base0C colors.base0D colors.base0E colors.base0F
-  ])
+  msgHues ? builtins.concatStringsSep "," (
+    map (c: "#FF${c}") [
+      colors.base08
+      colors.base09
+      colors.base0A
+      colors.base0B
+      colors.base0C
+      colors.base0D
+      colors.base0E
+      colors.base0F
+    ]
+  ),
   # The outgoing bubble. base0D, the slot the bar already treats as THE UI
   # accent - not @greenColor@ (base0B), which is this panel's "a thing is on"
   # colour and would make every message you sent read as a status light.
@@ -59,19 +68,19 @@
   # Messages' store. Mutable state, so it lives in ~/.local/state and not the
   # store; what is declarative is the shape of it - the name, how much a page
   # is, and how long a conversation keeps its bodies after you last opened it.
-, msgDbName ? "quickshell-messages"
-, msgPageSize ? 30
-, msgRetentionDays ? 30
-, msgAccent ? "#FF${colors.base0D}"
-, msgAccentInk ? "#FF${colors.base00}"
+  msgDbName ? "quickshell-messages",
+  msgPageSize ? 30,
+  msgRetentionDays ? 30,
+  msgAccent ? "#FF${colors.base0D}",
+  msgAccentInk ? "#FF${colors.base00}",
   # Ink on an accent fill. Not derivable from `colors` alone: it is base00 in
   # dark but base07 in light, because light's base00 IS the cream ground and
   # an icon painted in it would disappear into the fill. Same reason
   # capsuleFill/capsuleInk are passed per variant rather than computed here.
-, onAccentInk ? "#FF${colors.base00}"
+  onAccentInk ? "#FF${colors.base00}",
   # geoclue's own CLI. PATH is not dependable inside the systemd user
   # service, which is why @systemctlBin@ exists too.
-, whereAmIBin ? "where-am-i"
+  whereAmIBin ? "where-am-i",
   # The control panel sheet's ground. Named @sheetBg@ and not @panelBg@
   # because that token already exists for StatusPanel - replaceStrings takes
   # the FIRST match, so a duplicate name is silently dead and the sheet
@@ -82,7 +91,14 @@
   # near-white text) and fails in light, where 40% cream over a saturated
   # wallpaper leaves base05 text floating on a mid-tone. Same lesson
   # @cardBg@'s consumers learned at 90%. Passed per variant.
-, sheetBg ? "#CC${colors.base01}"
+  sheetBg ? "#CC${colors.base01}",
+  # Basename, under $XDG_RUNTIME_DIR, of the file whose presence suspends the
+  # idle timeouts. Declared by ogama.desktop.swayIdle.inhibitFlagName and
+  # consumed by the control panel's idle tile, which is the only thing that
+  # writes it; sway-idle.nix builds the matching `[ -e ... ]` guard. Defaulted
+  # so the greeter and the lock variants, which render no toggle grid, need no
+  # change - the same reason every token below carries one.
+  idleInhibitFlag ? "laserbar-idle-inhibit",
 }:
 builtins.replaceStrings
   [
@@ -123,6 +139,7 @@ builtins.replaceStrings
     "@plateBg@"
     "@whereAmIBin@"
     "@sheetBg@"
+    "@idleInhibitFlag@"
     # Messages tokens. @msgHues@ is a comma-separated list, not a colour -
     # MessageHue.qml splits it. Named msg* and not hues/accent because this
     # list is matched in order and a short, generic name is the one most
@@ -175,6 +192,7 @@ builtins.replaceStrings
     "#12${colors.base05}"
     whereAmIBin
     sheetBg
+    idleInhibitFlag
     msgHues
     msgAccent
     msgAccentInk

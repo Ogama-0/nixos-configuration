@@ -64,7 +64,21 @@ does not switch.
    - **gtk-theme** — three `dconf write`s: `color-scheme`, `gtk-theme`,
      `icon-theme`.
    - **quickshell-theme** — repoint the `widgets` symlink at
-     `widgets-dark`/`widgets-light` and restart `quickshell-widgets.service`.
+     `widgets-dark`/`widgets-light`, then restart `quickshell-widgets.service`
+     **unless the session is locked**.
+
+     The restart is gated, and the gate is not optional. `quickshell-widgets`
+     hosts the session lock, so restarting it while that lock is up destroys
+     the lock surface; `ext-session-lock-v1` forbids sway from unlocking when
+     the client dies, so sway paints a solid red screen that takes no input
+     and the machine needs a power cycle. It used to do exactly that on every
+     resume that crossed sunrise or sundown. The script asks
+     `quickshell ipc -c widgets call lock isLocked` and restarts only on an
+     exact `false` — fail closed, because an un-restarted shell costs a stale
+     palette and a wrong guess costs a reboot. The relink still happens, and
+     the lock restarts the shell itself 500ms after a successful unlock, so
+     the deferred case fixes itself. See
+     `docs/superpowers/specs/2026-11-23-session-lock-robustness.md`.
 
 Force a mode by hand while testing:
 

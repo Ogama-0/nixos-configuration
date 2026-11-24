@@ -20,7 +20,14 @@ let
 in
 {
   flake.featureModules.nixos.greeter =
-    { config, pkgs, lpkgs, upkgs, lib, ... }:
+    {
+      config,
+      pkgs,
+      lpkgs,
+      upkgs,
+      lib,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
@@ -29,12 +36,21 @@ in
           qmlTheme = import ../../../lib/qml-theme.nix;
           palettes = import ../../../lib/theme-colors.nix;
 
-          # TEMPORARY instrumentation for the "first login is always rejected"
+          # Instrumentation for the "first login is always rejected"
           # investigation. Records message types, timings and password *lengths* -
           # never a password - to /tmp/greeter-trace.log, plus quickshell's own
-          # output to /tmp/greeter-quickshell.log. Flip to false and rebuild to
-          # remove both; nothing else depends on it.
-          debugTrace = true;
+          # output to /tmp/greeter-quickshell.log. Nothing else depends on it.
+          #
+          # Off again: the traces it collected over 2026-11-22/23 show the
+          # authentication path behaving correctly every time (create_session ->
+          # auth_message -> response -> success -> start_session, no first-login
+          # rejection), so it has answered its question. What it DID catch is a
+          # different bug, now written up in
+          # docs/superpowers/specs/2026-11-23-greeter-output-race.md: the
+          # greeter dying on a Wayland protocol error when sway has no output
+          # yet. Turn this back on while working that one - it is the only
+          # window into a surface that cannot log anywhere else.
+          debugTrace = false;
 
           greetdProxy = "${lpkgs.greetd-proxy}/bin/greetd-proxy";
           # The greeter itself runs plain sway: it shows one fullscreen Quickshell
@@ -56,18 +72,22 @@ in
           corptaFont = ../../../assets/fonts/Corpta-DEMO.otf;
 
           # Greeter-only tokens, on top of the shared palette substitution.
-          withGreeterBins = builtins.replaceStrings
-            [ "@greetdProxyBin@" "@sessionBin@" ]
-            [ greetdProxy sessionBin ];
+          withGreeterBins =
+            builtins.replaceStrings
+              [ "@greetdProxyBin@" "@sessionBin@" ]
+              [ greetdProxy sessionBin ];
 
-          themeGreeter = variant: image: path:
-            withGreeterBins (qmlTheme {
-              colors = palettes.${variant};
-              laserColor = if variant == "light" then "#FFFFFF" else "#000000";
-              lockscreenImage = "${image}";
-              inherit systemctlBin;
-              corptaFontPath = "${corptaFont}";
-            } (builtins.readFile path));
+          themeGreeter =
+            variant: image: path:
+            withGreeterBins (
+              qmlTheme {
+                colors = palettes.${variant};
+                laserColor = if variant == "light" then "#FFFFFF" else "#000000";
+                lockscreenImage = "${image}";
+                inherit systemctlBin;
+                corptaFontPath = "${corptaFont}";
+              } (builtins.readFile path)
+            );
 
           # GreetdSession carries no palette tokens, only the two binary paths, so
           # one copy serves both variants.
@@ -84,24 +104,24 @@ in
           # its absence means no session was ever requested - the one case the
           # fallback is for.
           launcher = pkgs.writeShellScript "greeter-launch" ''
-            VARIANT=$(${greetdProxy} --theme || echo dark)
-            case "$VARIANT" in
-              light) SURFACE=/etc/greeter/GreeterLight.qml ;;
-              *)     SURFACE=/etc/greeter/GreeterDark.qml ;;
-            esac
+                VARIANT=$(${greetdProxy} --theme || echo dark)
+                case "$VARIANT" in
+                  light) SURFACE=/etc/greeter/GreeterLight.qml ;;
+                  *)     SURFACE=/etc/greeter/GreeterDark.qml ;;
+                esac
 
-            GREETD_STARTED_MARKER="$(${pkgs.coreutils}/bin/mktemp -d)/started"
-            export GREETD_STARTED_MARKER
-        ${lib.optionalString debugTrace ''
-            GREETD_TRACE=/tmp/greeter-trace.log
-            export GREETD_TRACE
-            echo "-- greeter-launch starting surface $SURFACE" >> "$GREETD_TRACE"
-        ''}
-            ${upkgs.quickshell}/bin/quickshell -p "$SURFACE" ${lib.optionalString debugTrace ">> /tmp/greeter-quickshell.log 2>&1"} || true
+                GREETD_STARTED_MARKER="$(${pkgs.coreutils}/bin/mktemp -d)/started"
+                export GREETD_STARTED_MARKER
+            ${lib.optionalString debugTrace ''
+              GREETD_TRACE=/tmp/greeter-trace.log
+              export GREETD_TRACE
+              echo "-- greeter-launch starting surface $SURFACE" >> "$GREETD_TRACE"
+            ''}
+                ${upkgs.quickshell}/bin/quickshell -p "$SURFACE" ${lib.optionalString debugTrace ">> /tmp/greeter-quickshell.log 2>&1"} || true
 
-            if [ ! -e "$GREETD_STARTED_MARKER" ]; then
-              exec ${pkgs.greetd}/bin/agreety --cmd ${swayBin}
-            fi
+                if [ ! -e "$GREETD_STARTED_MARKER" ]; then
+                  exec ${pkgs.greetd}/bin/agreety --cmd ${swayBin}
+                fi
           '';
 
           swayConf = pkgs.writeText "greeter-sway.conf" ''

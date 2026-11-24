@@ -77,6 +77,31 @@ Item {
                          "M 0 -10 L 0 -7 M 0 7 L 0 10 M -10 0 L -7 0 M 7 0 L 10 0",
                          "M -7.1 -7.1 L -5 -5 M 5 5 L 7.1 7.1 M 7.1 -7.1 L 5 -5 M -5 5 L -7.1 7.1"],
                      f: "" };
+        // The idle tile's three states. An eye because what the tile governs
+        // is whether anything is WATCHING for idleness - a padlock would
+        // collide with the lock tile sitting next to it, and a moon with dark
+        // mode two cells over.
+        case "eye":
+            return { s: ["M -10 0 C -6 -6 6 -6 10 0 C 6 6 -6 6 -10 0 Z", "", ""],
+                     f: "M -2.6 0 A 2.6 2.6 0 1 1 2.6 0 A 2.6 2.6 0 1 1 -2.6 0 Z" };
+        // The SAME eye with a line through it, for the same reason bell-off
+        // redraws the bell: a negated icon has to be the icon first, or the
+        // off state reads as an unrelated glyph rather than as "that thing,
+        // switched off".
+        case "eye-off":
+            return { s: ["M -10 0 C -6 -6 6 -6 10 0 C 6 6 -6 6 -10 0 Z",
+                         "",
+                         "M -9.5 -9.5 L 9.5 9.5"],
+                     f: "M -2.6 0 A 2.6 2.6 0 1 1 2.6 0 A 2.6 2.6 0 1 1 -2.6 0 Z" };
+        // Four corner brackets: idle is being held off by sway's own
+        // `inhibit_idle fullscreen`, not by the tile. Deliberately not an eye
+        // variant - the cause is different from "switched off by hand" and the
+        // glyph is the only thing that says which one is in force.
+        case "fullscreen":
+            return { s: ["M -9 -4 L -9 -9 L -4 -9 M 4 -9 L 9 -9 L 9 -4",
+                         "M 9 4 L 9 9 L 4 9 M -4 9 L -9 9 L -9 4",
+                         ""],
+                     f: "" };
         case "speaker":
             return { s: ["M 5 -4.5 A 5 5 0 0 1 5 4.5", "", ""],
                      f: "M -8 -3 L -4 -3 L 1 -8 L 1 8 L -4 3 L -8 3 Z" };

@@ -462,6 +462,34 @@ Item {
     // several short timers (120ms coalesce, 180ms open-settle, 1.2s page-
     // settle) and fires in bursts, so without this guard opening a thread
     // with any backlog rebuilt its whole bubble list several times a second.
+    // A cheap stand-in for "is this the same page of messages". It replaces
+    // `JSON.stringify(next) !== JSON.stringify(root.activeMessages)`, which
+    // serialised every body and every attachment object of the whole thread
+    // TWICE on the GUI thread - and refreshActive() runs off three separate
+    // short timers (120ms coalesce, 180ms open-settle, 1.2s page-settle) plus
+    // once per incoming message, so a page burst paid that cost in a tight
+    // run while the same thread was also trying to render.
+    //
+    // What has to be caught is a row appearing, disappearing, being replaced
+    // (a pending send becoming the real message, which changes `id`), or an
+    // attachment acquiring a `path` - that last one arrives long after its
+    // message and is the picture turning up in the bubble. Bodies never
+    // change after insert, so nothing here reads one.
+    function pageSignature(list: var): string {
+        let s = "" + list.length;
+        for (let i = 0; i < list.length; i++) {
+            const m = list[i];
+            s += "|" + m.id + "@" + m.ts;
+            const atts = m.attachments;
+            if (atts && atts.length > 0) {
+                s += "#" + atts.length;
+                for (let k = 0; k < atts.length; k++)
+                    if (atts[k].path) s += "+";
+            }
+        }
+        return s;
+    }
+
     function refreshActive(): void {
         if (!root.store || !root.activeId) {
             if (root.activeMessages.length > 0) root.activeMessages = [];
@@ -469,7 +497,7 @@ Item {
         }
         const next = root.store.messages(
             root.activeId, Math.max(root.pageLimit, root.store.pageSize), 0);
-        if (JSON.stringify(next) !== JSON.stringify(root.activeMessages))
+        if (root.pageSignature(next) !== root.pageSignature(root.activeMessages))
             root.activeMessages = next;
     }
 

@@ -98,6 +98,19 @@ Scope {
         target: "lock"
         function lock(): void { root.locked = true }
         function unlock(): void { root.locked = false }
+
+        // Asked by darkman's theme script before it restarts this process,
+        // and the answer is load-bearing: restarting the shell while it holds
+        // the ext-session-lock destroys the lock surface, and sway then paints
+        // its abandoned-lock fallback - a solid red screen that takes no input
+        // and cannot be authenticated, so the only way out is a reboot. The
+        // protocol forbids the compositor from unlocking on client death, so
+        // this is correct behaviour on sway's part, not a bug to wait out.
+        //
+        // `unlocking` counts as locked on purpose: the surface is still up for
+        // the fade, and the restart is already queued behind it by
+        // postUnlockRestart anyway.
+        function isLocked(): bool { return root.locked || root.unlocking }
     }
 
     property var currentTime: new Date()

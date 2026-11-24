@@ -4,6 +4,7 @@ import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
+import QtQuick.Shapes
 
 PanelWindow {
     id: root
@@ -117,27 +118,34 @@ PanelWindow {
         coverColorProc.running = true
     }
 
+    // No repaint handlers on any of these any more. They used to each call
+    // waveRing.requestPaint()/waveCanvas.requestPaint(); both are Shapes now,
+    // so a colour change is an ordinary property binding the scene graph
+    // picks up, and only the two geometry drivers (ringPhase, displayValues)
+    // rebuild any points at all.
     property color coverAccentColor: "@tempColor@"
-    onCoverAccentColorChanged: waveRing.requestPaint()
 
     property var coverPalette: []
-    onCoverPaletteChanged: {
-        waveRing.requestPaint()
-        waveCanvas.requestPaint()
-    }
 
     property real paletteAngle: 0
-    onPaletteAngleChanged: waveRing.requestPaint()
 
+    // Advanced by the card's one 33ms tick (the artArea timer), NOT by a
+    // NumberAnimation.
+    //
+    // It WAS a `NumberAnimation on ringPhase`, 0 to 2*PI over 7s. Under the
+    // old Canvas that was harmless: every change just called requestPaint(),
+    // and Canvas coalesces to at most one repaint per frame. Driving a Shape
+    // it is not harmless at all - a NumberAnimation steps once per displayed
+    // frame, so the nine rings were being rebuilt at 60Hz while every other
+    // per-frame job in this file had been moved to 30. Measured live with a
+    // track playing: 53.9% of a core on the GUI thread, against 20.1% once
+    // the phase moved onto the shared tick. Same rotation speed either way -
+    // 2*PI over 7s is 0.0296 per 33ms tick.
+    //
+    // The step is applied only while playing, so a paused card stops turning
+    // but still gets its per-tick rebuild and settles its bars to zero.
     property real ringPhase: 0
-    onRingPhaseChanged: waveRing.requestPaint()
-    NumberAnimation on ringPhase {
-        from: 0
-        to: Math.PI * 2
-        duration: 7000
-        loops: Animation.Infinite
-        running: root.activePlayer !== null && root.activePlayer.isPlaying
-    }
+    readonly property real ringPhaseStep: Math.PI * 2 * 33 / 7000
 
     readonly property bool isPlayingNow: root.activePlayer !== null && root.activePlayer.isPlaying
     onIsPlayingNowChanged: {
@@ -161,11 +169,14 @@ PanelWindow {
 
     property real coverRotation: 0
 
+    // The slow spin of the cover art. 33ms, not 16: the whole card now runs
+    // on one 30Hz beat (see RemoteSpectrum.qml, which has fed 30fps all
+    // along), and the step is doubled to keep the same 18.75 deg/s.
     Timer {
-        interval: 16
+        interval: 33
         repeat: true
-        running: root.isPlayingNow
-        onTriggered: root.coverRotation += 0.3
+        running: root.visible && root.isPlayingNow
+        onTriggered: root.coverRotation += 0.62
     }
 
     NumberAnimation {
@@ -263,6 +274,14 @@ PanelWindow {
     // remote wave and its marker would only ever appear on the bar.
     visible: root.activePlayer !== null && (root.deezerRunning || root.remote)
 
+    // Every per-frame tick in this file is gated on `visible`, so when the
+    // card goes away the wave stops wherever it happened to be. Clear it, or
+    // the next time the card appears it pops in showing the last frame of
+    // some track that finished hours ago and only then starts animating.
+    // Empty rather than zeroed: the interpolator treats a length change as a
+    // fresh start and snaps, which is what is wanted here.
+    onVisibleChanged: if (!root.visible) artArea.displayValues = []
+
     WlrLayershell.namespace: "music-widget"
     WlrLayershell.layer: WlrLayer.Background
 
@@ -347,7 +366,47 @@ PanelWindow {
             width: parent.width
             height: parent.height
 
-        Canvas {
+        // Nine concentric wobbling rings behind the cover art, stroked with
+        // the cover's own palette swept across them.
+        //
+        // This was a `Canvas` with `renderStrategy: Canvas.Immediate`, and it
+        // was the single most expensive thing in the whole shell. Measured on
+        // the live daemon: removing just this canvas's two repaint drivers
+        // took the process from 161% of a core to 35%, and the eight Qt pool
+        // threads from ~10% each to ~0.6%. One canvas, ~126% of a core -
+        // Qt rasterises it with QPainter on the GUI thread and re-uploads the
+        // whole texture on every repaint, 60 times a second, and that thread
+        // is the one running every binding, timer and animation in the shell.
+        // That is what "the bar feels laggy" was.
+        //
+        // The port follows BeamSide.qml, which made exactly this move for
+        // exactly this reason - read its comments. Points are computed once
+        // per tick into `ringCache` and handed to `PathPolyline`; the scene
+        // graph re-triangulates and the GPU rasterises, with no manual
+        // repaint call anywhere.
+        //
+        // Two things forced the shape of this:
+        //
+        //   * Rings are FILLED BANDS, not stroked lines. `ShapePath` has
+        //     `fillGradient` but no stroke gradient, and the palette sweep
+        //     across the rings is the whole look - a solid-coloured stroke
+        //     would have been a visibly flatter widget. So each ring is an
+        //     annulus: the centreline offset radially by `halfWidth` either
+        //     way, outer edge forward then inner edge backward, closed. At
+        //     2.4px wide a radial offset and a true normal differ by well
+        //     under a pixel on a curve this gentle.
+        //   * `Repeater` cannot have a `ShapePath` delegate - it needs an
+        //     `Item`, and a `ShapePath` used directly renders nothing at all,
+        //     silently (rule 4 in docs/adding-a-bar-widget.md). Each one is
+        //     wrapped in an `Item` that pushes it into `Shape.data` by hand
+        //     once it exists, which is BeamSide's documented workaround.
+        //
+        // Verified against a probe before being written: a `PathPolyline`
+        // fed from a JS array rebuilt on a timer, a `LinearGradient` whose
+        // endpoints and stops move at runtime, and both of those inside a
+        // Repeater, all render correctly. Rule 4 only bites the delegate
+        // case, which is why that one is wrapped.
+        Shape {
             id: waveRing
             anchors {
                 left: slideContainer.left
@@ -357,49 +416,114 @@ PanelWindow {
                 rightMargin: 16
             }
             height: Math.max(0, contentColumn.y + titleText.y - 6)
-            antialiasing: true
-            renderStrategy: Canvas.Immediate
+            preferredRendererType: Shape.CurveRenderer
 
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-            Component.onCompleted: requestPaint()
+            // A Canvas rasterises into a buffer its own size, so anything
+            // outside its width/height simply did not exist. A Shape has no
+            // such bound - its ShapePaths draw wherever their coordinates
+            // say, and the only thing stopping them is an ancestor that
+            // clips. That difference is invisible most of the time and very
+            // visible on PAUSE: the cover expands, this item's height
+            // collapses, `cy` (height - 104) goes negative, and the ring
+            // stack ends up centred above the card. The Canvas cropped it;
+            // the first Shape version drew grey arcs across the top of the
+            // card instead. Restoring the Canvas's implicit bound is the
+            // whole fix.
+            clip: true
 
-            onPaint: {
-                const ctx = getContext("2d")
-                ctx.clearRect(0, 0, width, height)
+            // Hidden once the wave has fully settled, which is what a paused
+            // or stopped card looks like. The Canvas did this by accident -
+            // with nothing driving requestPaint() while paused it simply left
+            // an unpainted buffer - and the first Shape version, which has no
+            // buffer to leave empty, drew the resting ring stack across the
+            // top of the card instead. Nobody has ever seen that, so it is a
+            // regression however defensible the geometry is.
+            //
+            // `displayValues` is emptied by the tick below the moment the
+            // settle finishes, and is non-empty for the whole of playback and
+            // the whole of the fade down, so this hides exactly at the end of
+            // the animation and never during it. A silent passage mid-track
+            // keeps the rings: that path only clears while NOT playing.
+            visible: root.isPlayingNow || artArea.displayValues.length > 0
+
+            // Every one of these is the number the Canvas used.
+            readonly property int layerCount: 9
+            readonly property real baseRadius: 76
+            readonly property real amplitudeX: 32
+            readonly property real amplitudeY: 10
+            // ctx.lineWidth was 2.4, i.e. 1.2 either side of the centreline.
+            readonly property real halfWidth: 1.2
+            // Samples per original quadratic segment when flattening it into
+            // a polyline, and this number was measured rather than guessed.
+            // Against the Canvas it replaces (97.1% of a core on
+            // tests/laserbar/music-card.qml, 15s, bar revealed):
+            //
+            //   3 -> 75.1%   indistinguishable from 2
+            //   2 -> 64.9%   indistinguishable from the Canvas  <- this
+            //   1 -> 47.1%   visibly polygonal, straight segments and corners
+            //
+            // Shape.GeometryRenderer is cheaper again (53.4% at 2) but does
+            // not antialias these curves - the rings come out stair-stepped
+            // next to the Canvas original, so it is not a trade worth taking.
+            // `asynchronous: true` is far WORSE here, not better: 118.5%,
+            // because the geometry is rebuilt 30 times a second and the
+            // threaded path re-syncs on every one of them.
+            readonly property int subdivisions: 2
+
+            readonly property real cx: width / 2
+            readonly property real cy: height - 104
+
+            // Gradient endpoints, swept by paletteAngle exactly as
+            // ctx.createLinearGradient's did. Colour only: these move without
+            // touching ringCache, so a palette or angle change costs a
+            // re-render and no geometry work at all. That is the main reason
+            // the repaint handlers this file used to carry are gone.
+            readonly property real gradSpan: Math.max(amplitudeX, amplitudeY) + baseRadius
+            readonly property real gradX: Math.cos(root.paletteAngle) * gradSpan
+            readonly property real gradY: Math.sin(root.paletteAngle) * gradSpan
+
+            readonly property var palette: root.coverPalette.length > 0
+                ? root.coverPalette
+                : [root.coverAccentColor]
+
+            // Four declared stops, because GradientStop is not an Item and so
+            // cannot come out of a Repeater, while the palette is 1 to 4
+            // colours. Short palettes collapse onto the end: two colours give
+            // positions 0,1,1,1, which ramps once and then holds - the same
+            // gradient the Canvas built from two stops.
+            function stopPos(k) {
+                const n = palette.length
+                if (n <= 1) return k / 3
+                return Math.min(k, n - 1) / (n - 1)
+            }
+            function stopColor(k, alpha) {
+                const c = Qt.color(palette[Math.min(k, palette.length - 1)])
+                return Qt.rgba(c.r, c.g, c.b, alpha)
+            }
+
+            // One array of band points per layer, rebuilt on a tick rather
+            // than per consumer - the same reason BeamSide keeps a
+            // strandCache instead of calling strandPoints() from both of its
+            // Repeaters.
+            property var ringCache: []
+
+            function rebuildRings() {
+                if (width <= 0 || height <= 0) { ringCache = []; return }
 
                 const values = artArea.displayValues
                 const bands = values.length > 0 ? values.length : 20
                 const n = bands * 2
-                const cx = width / 2
-                const cy = height - 104
-                const baseRadius = 76
-                const amplitudeX = 32
-                const amplitudeY = 10
                 const time = root.ringPhase
 
+                // Mirrored band index, so the ring is symmetric left to
+                // right the way the Canvas's was.
                 const raw = []
                 for (let i = 0; i < n; i++) {
                     const bandIndex = Math.min(i <= bands ? i : n - i, bands - 1)
-                    const value = bandIndex < values.length ? values[bandIndex] : 0
-                    raw.push(value / 100)
+                    raw.push((bandIndex < values.length ? values[bandIndex] : 0) / 100)
                 }
 
-                function midpoint(a, b) {
-                    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
-                }
-
-                const span = Math.max(amplitudeX, amplitudeY) + baseRadius
-                const dx = Math.cos(root.paletteAngle) * span
-                const dy = Math.sin(root.paletteAngle) * span
-                const grad = ctx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy)
-                const palette = root.coverPalette.length > 0 ? root.coverPalette : [root.coverAccentColor]
-                for (let p = 0; p < palette.length; p++) {
-                    const stop = palette.length === 1 ? 0 : p / (palette.length - 1)
-                    grad.addColorStop(stop, palette[p])
-                }
-
-                const layerCount = 9
+                const out = []
                 for (let l = 0; l < layerCount; l++) {
                     const layerT = l / (layerCount - 1)
                     const radiusOffset = (layerT - 0.5) * 26
@@ -415,24 +539,96 @@ PanelWindow {
                         const ry = baseRadius + radiusOffset + t * amplitudeY * ampScale + wobble * 0.4
                         pts.push({ x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle) })
                     }
-
-                    ctx.beginPath()
-                    let m = midpoint(pts[n - 1], pts[0])
-                    ctx.moveTo(m.x, m.y)
-                    for (let i = 0; i < n; i++) {
-                        const next = pts[(i + 1) % n]
-                        const mid = midpoint(pts[i], next)
-                        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mid.x, mid.y)
-                    }
-                    ctx.closePath()
-
-                    ctx.lineWidth = 2.4
-                    ctx.lineJoin = "round"
-                    ctx.strokeStyle = grad
-                    ctx.globalAlpha = 0.4 + 0.5 * (1 - Math.abs(layerT - 0.5) * 2)
-                    ctx.stroke()
+                    out.push(bandFor(pts, n))
                 }
-                ctx.globalAlpha = 1
+                ringCache = out
+            }
+
+            // The Canvas drew quadratics THROUGH the midpoints of consecutive
+            // points, using each point as the control handle. Same curve
+            // here, just evaluated into vertices instead of handed to
+            // ctx.quadraticCurveTo - and then offset either side of itself to
+            // make the band.
+            function bandFor(pts, n) {
+                const outer = []
+                const inner = []
+                const sub = subdivisions
+                for (let i = 0; i < n; i++) {
+                    const cur = pts[i]
+                    const prev = pts[(i - 1 + n) % n]
+                    const next = pts[(i + 1) % n]
+                    const p0x = (prev.x + cur.x) / 2
+                    const p0y = (prev.y + cur.y) / 2
+                    const p1x = (cur.x + next.x) / 2
+                    const p1y = (cur.y + next.y) / 2
+                    for (let s = 0; s < sub; s++) {
+                        const t = s / sub
+                        const u = 1 - t
+                        const x = u * u * p0x + 2 * u * t * cur.x + t * t * p1x
+                        const y = u * u * p0y + 2 * u * t * cur.y + t * t * p1y
+                        // Radial normal. The rings are star-shaped about
+                        // (cx, cy), so the outward direction is simply away
+                        // from the centre; `len` can only be zero if a point
+                        // lands exactly on the centre, which baseRadius 76
+                        // rules out, but the guard costs nothing.
+                        const dx = x - cx
+                        const dy = y - cy
+                        const len = Math.sqrt(dx * dx + dy * dy) || 1
+                        const nx = dx / len * halfWidth
+                        const ny = dy / len * halfWidth
+                        outer.push(Qt.point(x + nx, y + ny))
+                        inner.push(Qt.point(x - nx, y - ny))
+                    }
+                }
+                // Close both loops back onto their own first sample before
+                // joining them. Without this the polygon's closing chord cuts
+                // straight across the band at 12 o'clock - i = 0 is the top,
+                // because the angle starts at -PI/2 - and the render showed a
+                // dark radial notch through all nine rings there. The
+                // quadratic is periodic, so the first sample IS the last one.
+                outer.push(outer[0])
+                inner.push(inner[0])
+                inner.reverse()
+                return outer.concat(inner)
+            }
+
+            // Geometry only. Palette, accent and paletteAngle are bindings on
+            // the gradient and deliberately do NOT appear here.
+            onWidthChanged: rebuildRings()
+            onHeightChanged: rebuildRings()
+            Component.onCompleted: rebuildRings()
+
+
+            Repeater {
+                model: waveRing.layerCount
+                Item {
+                    required property int index
+                    // The Canvas's per-layer globalAlpha: brightest in the
+                    // middle of the stack, fading to the inner and outer
+                    // edges. Baked into the gradient stops because a
+                    // ShapePath has no opacity of its own to put it on.
+                    readonly property real layerAlpha: {
+                        const layerT = index / (waveRing.layerCount - 1)
+                        return 0.4 + 0.5 * (1 - Math.abs(layerT - 0.5) * 2)
+                    }
+                    property ShapePath shapePath: ShapePath {
+                        strokeColor: "transparent"
+                        strokeWidth: 0
+                        fillRule: ShapePath.OddEvenFill
+                        fillGradient: LinearGradient {
+                            x1: waveRing.cx - waveRing.gradX
+                            y1: waveRing.cy - waveRing.gradY
+                            x2: waveRing.cx + waveRing.gradX
+                            y2: waveRing.cy + waveRing.gradY
+                            GradientStop { position: 0.0; color: waveRing.stopColor(0, layerAlpha) }
+                            GradientStop { position: waveRing.stopPos(1); color: waveRing.stopColor(1, layerAlpha) }
+                            GradientStop { position: waveRing.stopPos(2); color: waveRing.stopColor(2, layerAlpha) }
+                            GradientStop { position: 1.0; color: waveRing.stopColor(3, layerAlpha) }
+                        }
+                        PathPolyline { path: waveRing.ringCache[index] || [] }
+                    }
+                    Component.onCompleted: waveRing.data.push(shapePath)
+                }
             }
         }
 
@@ -457,30 +653,88 @@ PanelWindow {
 
                 property var displayValues: []
 
+                // The card's ONE per-frame tick. Everything that moves at
+                // 30Hz happens here and the rings are rebuilt exactly once
+                // for all of it - the whole point, since the rebuild is the
+                // expensive part and two drivers meant two rebuilds.
+                //
+                // Not gated on playback: it keeps running after a pause
+                // precisely so the bars interpolate down to zero instead of
+                // freezing at whatever height the last frame had. The gate is
+                // `root.visible`.
+                //
+                // 33ms, not 16. Both feeds are already slower or equal to
+                // that - RemoteSpectrum emits at 30fps by design and cava's
+                // 60 is smoothed by this interpolation anyway - so the old
+                // 16ms tick was re-deriving nine rings twice per input frame.
                 Timer {
-                    interval: 16
-                    running: root.activePlayer !== null
+                    interval: 33
+                    // Stops dead once the settle has finished, on the same
+                    // condition that hides the rings - there is nothing left
+                    // for it to do, and a visible paused card is a state that
+                    // lasts hours. Playback resuming flips isPlayingNow and
+                    // starts it again.
+                    running: root.visible && root.activePlayer !== null
+                             && (root.isPlayingNow || artArea.displayValues.length > 0)
                     repeat: true
                     onTriggered: {
                         const playing = root.activePlayer !== null && root.activePlayer.isPlaying
+
+                        // Nothing is rebuilt unless something actually moved.
+                        // A paused card that has finished settling is a real
+                        // and common state - the track ends, or you pause and
+                        // walk away - and it used to keep re-deriving nine
+                        // identical rings 30 times a second for as long as
+                        // the card was up. Measured: 26.3% of a core on a
+                        // paused card, against ~3% once this flag gates it.
+                        let moved = false
+
+                        // The rotation. Only while playing, so a paused card
+                        // holds still, and wrapped so the number cannot grow
+                        // without bound over a long listening session.
+                        if (playing) {
+                            root.ringPhase = (root.ringPhase + root.ringPhaseStep) % (Math.PI * 2)
+                            moved = true
+                        }
+
                         const target = playing ? root.waveLevels : []
                         const n = playing ? target.length : artArea.displayValues.length
-                        if (n === 0) return
-                        if (artArea.displayValues.length !== n) {
-                            artArea.displayValues = playing ? target.slice() : new Array(n).fill(0)
-                        } else {
-                            const factor = playing ? 0.55 : 0.09
-                            const next = []
-                            for (let i = 0; i < n; i++) {
-                                const goal = playing ? target[i] : 0
-                                next.push(artArea.displayValues[i] + (goal - artArea.displayValues[i]) * factor)
+                        if (n > 0) {
+                            if (artArea.displayValues.length !== n) {
+                                artArea.displayValues = playing ? target.slice() : new Array(n).fill(0)
+                                moved = true
+                            } else {
+                                // Half as many ticks than the old 16ms timer,
+                                // so the per-tick fraction is the old one
+                                // applied twice - 1-(1-f)^2 - and the rise and
+                                // the settle take the same wall-clock time
+                                // they did. Straight 0.55/0.09 here would have
+                                // halved both speeds.
+                                const factor = playing ? 0.80 : 0.17
+                                const next = []
+                                let peak = 0
+                                for (let i = 0; i < n; i++) {
+                                    const goal = playing ? target[i] : 0
+                                    const v = artArea.displayValues[i] + (goal - artArea.displayValues[i]) * factor
+                                    next.push(v)
+                                    if (v > peak) peak = v
+                                }
+                                // The settle has to END, not merely approach
+                                // zero: an exponential decay never reaches it,
+                                // so without a floor the "finished" state below
+                                // is never reached and the rebuild never stops.
+                                // Half a unit on a 0-100 scale is a third of a
+                                // pixel of bar height.
+                                if (!playing && peak < 0.5) artArea.displayValues = []
+                                else artArea.displayValues = next
+                                moved = true
                             }
-                            artArea.displayValues = next
                         }
+
+                        if (moved) waveRing.rebuildRings()
                     }
                 }
 
-                onDisplayValuesChanged: waveRing.requestPaint()
             }
 
             Text {
@@ -551,61 +805,111 @@ PanelWindow {
                         : 0
                     property real wavePhase: 0
 
-                    onProgressChanged: waveCanvas.requestPaint()
-                    onWidthChanged: waveCanvas.requestPaint()
-                    onWavePhaseChanged: waveCanvas.requestPaint()
+                    // Geometry drivers for the Shape below. No repaint calls:
+                    // the strands are PathPolylines fed from this cache, so
+                    // the scene graph redraws them on its own.
+                    property var strandCache: []
+                    property var trackCache: []
 
-                    Timer {
-                        interval: 16
-                        repeat: true
-                        running: root.activePlayer !== null && root.activePlayer.isPlaying
-                        onTriggered: progressBar.wavePhase += 0.0628
+                    function rebuildWave() {
+                        const midY = height / 2
+                        const splitX = width * progress
+
+                        // The unplayed remainder: a flat line from the
+                        // playhead to the right edge. Two points, but kept in
+                        // a cache like the rest so there is one rebuild path.
+                        trackCache = splitX < width
+                            ? [Qt.point(splitX, midY), Qt.point(width, midY)]
+                            : []
+
+                        const next = []
+                        for (let s = 0; s < progressBar.strandCount; s++) {
+                            const phaseOffset = s * 1.7
+                            const speedFactor = 1 + s * 0.12
+                            const amplitude = 5 + (s % 2) * 2
+                            const wavelength = 6 + s * 1.3
+                            const pts = []
+                            for (let x = 0; x <= splitX; x += 2) {
+                                const ramp = Math.min(1, x / 20, (splitX - x) / 20)
+                                pts.push(Qt.point(x, midY + amplitude * ramp
+                                    * Math.sin(x / wavelength + wavePhase * speedFactor + phaseOffset)))
+                            }
+                            next.push(pts)
+                        }
+                        strandCache = next
                     }
 
-                    Canvas {
-                        id: waveCanvas
+                    // Fixed at four so the Repeater's model never changes.
+                    // The old Canvas picked min(4, max(3, palette.length))
+                    // strands and indexed the palette modulo its length;
+                    // strandColor() below keeps that mapping, and a strand
+                    // the old code would not have drawn is simply given no
+                    // points - the palette is 1-4 colours, so this only ever
+                    // draws between three and four of them, same as before.
+                    readonly property int strandCount: 4
+                    readonly property int liveStrands: {
+                        const n = root.coverPalette.length > 0 ? root.coverPalette.length : 1
+                        return Math.min(4, Math.max(3, n))
+                    }
+                    function strandColor(s) {
+                        const palette = root.coverPalette.length > 0
+                            ? root.coverPalette
+                            : [root.coverAccentColor]
+                        const c = Qt.color(palette[s % palette.length])
+                        return Qt.rgba(c.r, c.g, c.b, 0.85)
+                    }
+
+                    onProgressChanged: rebuildWave()
+                    onWidthChanged: rebuildWave()
+                    onHeightChanged: rebuildWave()
+                    onWavePhaseChanged: rebuildWave()
+                    Component.onCompleted: rebuildWave()
+
+                    // 33ms with the step doubled, so the wave travels at the
+                    // speed it always did on half the ticks. Gated on the
+                    // card being visible as well as playing - see the
+                    // ringPhase animation for why that matters on a
+                    // background layer surface.
+                    Timer {
+                        interval: 33
+                        repeat: true
+                        running: root.visible && root.activePlayer !== null && root.activePlayer.isPlaying
+                        onTriggered: progressBar.wavePhase += 0.1256
+                    }
+
+                    // Was a second Canvas.Immediate on the same 16ms tick as
+                    // waveRing. Same port, and a much more direct one: these
+                    // are plain solid-coloured polylines, which is exactly
+                    // what BeamSide.qml's strands are.
+                    Shape {
+                        id: waveShape
                         anchors.fill: parent
-                        renderStrategy: Canvas.Immediate
+                        preferredRendererType: Shape.CurveRenderer
 
-                        onPaint: {
-                            const ctx = getContext("2d")
-                            ctx.clearRect(0, 0, width, height)
-                            const midY = height / 2
-                            const splitX = width * progressBar.progress
+                        ShapePath {
+                            strokeColor: "@dividerColor@"
+                            strokeWidth: 2
+                            fillColor: "transparent"
+                            capStyle: ShapePath.RoundCap
+                            PathPolyline { path: progressBar.trackCache }
+                        }
 
-                            ctx.strokeStyle = "@dividerColor@"
-                            ctx.lineWidth = 2
-                            ctx.lineCap = "round"
-                            ctx.beginPath()
-                            ctx.moveTo(splitX, midY)
-                            ctx.lineTo(width, midY)
-                            ctx.stroke()
-
-                            const palette = root.coverPalette.length > 0 ? root.coverPalette : [root.coverAccentColor]
-                            const strandCount = Math.min(4, Math.max(3, palette.length))
-                            for (let s = 0; s < strandCount; s++) {
-                                const color = palette[s % palette.length]
-                                const phaseOffset = s * 1.7
-                                const speedFactor = 1 + s * 0.12
-                                const amplitude = 5 + (s % 2) * 2
-                                const wavelength = 6 + s * 1.3
-
-                                ctx.strokeStyle = color
-                                ctx.lineWidth = 2.2
-                                ctx.lineCap = "round"
-                                ctx.lineJoin = "round"
-                                ctx.globalAlpha = 0.85
-                                ctx.beginPath()
-                                for (let x = 0; x <= splitX; x += 2) {
-                                    const ramp = Math.min(1, x / 20, (splitX - x) / 20)
-                                    const y = midY + amplitude * ramp * Math.sin(x / wavelength + progressBar.wavePhase * speedFactor + phaseOffset)
-                                    if (x === 0) ctx.moveTo(x, y)
-                                    else ctx.lineTo(x, y)
+                        Repeater {
+                            model: progressBar.strandCount
+                            Item {
+                                required property int index
+                                property ShapePath shapePath: ShapePath {
+                                    strokeColor: index < progressBar.liveStrands
+                                        ? progressBar.strandColor(index)
+                                        : "transparent"
+                                    strokeWidth: 2.2
+                                    fillColor: "transparent"
+                                    capStyle: ShapePath.RoundCap
+                                    joinStyle: ShapePath.RoundJoin
+                                    PathPolyline { path: progressBar.strandCache[index] || [] }
                                 }
-                                ctx.stroke()
+                                Component.onCompleted: waveShape.data.push(shapePath)
                             }
-
-                            ctx.globalAlpha = 1
                         }
                     }
 

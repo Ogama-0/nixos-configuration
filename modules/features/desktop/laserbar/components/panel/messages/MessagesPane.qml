@@ -196,7 +196,43 @@ Item {
         title: conv ? conv.title : ""
         initials: conv ? conv.initials : ""
         hue: conv ? conv.hue : "@mutedColor@"
-        messages: root.core ? root.core.activeMessages : []
+        // Pushed in, not bound. This was
+        //   messages: root.core ? root.core.activeMessages : []
+        // and the running shell logged, several times an hour:
+        //   QML ConversationView ... Binding loop detected for property
+        //   "messages": MessagesPane.qml:199
+        // `activeMessages` is a `property var` holding a JS array that
+        // MessagesModel reassigns from four places - an incoming message and
+        // three short timers - and a reassignment landing while this binding
+        // was still being evaluated made Qt re-enter it and flag the loop.
+        // Every re-entry re-read the whole page.
+        //
+        // Assigning from a signal handler instead takes the read out of
+        // binding evaluation entirely, so there is nothing left to re-enter.
+        // It does NOT make the list update more often: the only writer is
+        // still refreshActive(), still behind its own guard, so the
+        // delegate-rebuild storm that guard exists to prevent stays
+        // prevented. See MessagesModel.qml's comment above refreshActive().
+        messages: thread.pageIn
+        property var pageIn: []
+
+        function syncMessages() {
+            thread.pageIn = root.core ? root.core.activeMessages : []
+        }
+        Component.onCompleted: syncMessages()
+
+        // Two sources, because either end can change: the model swapping its
+        // page, and the pane being handed a different core (or its first
+        // one - `core` starts null, so without this the thread stays empty
+        // until the next message arrives).
+        Connections {
+            target: root.core
+            function onActiveMessagesChanged() { thread.syncMessages() }
+        }
+        Connections {
+            target: root
+            function onCoreChanged() { thread.syncMessages() }
+        }
         loadingOlder: root.core ? root.core.loadingOlder : false
         audio: root.core ? root.core.audio : null
 

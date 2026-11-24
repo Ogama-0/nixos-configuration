@@ -16,7 +16,14 @@ in
   flake.featureModules.nixos.laserbar = sharedOptions;
 
   flake.featureModules.home.laserbar =
-    { pkgs, upkgs, lpkgs, config, lib, ... }:
+    {
+      pkgs,
+      upkgs,
+      lpkgs,
+      config,
+      lib,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
@@ -175,6 +182,12 @@ in
                   statusApiUrl
                   metricsApiUrl
                   ;
+                # The control panel's idle tile writes this file and sway-idle.nix
+                # guards every timeout command on its absence. Read off the
+                # option rather than spelled here, so the two sides cannot
+                # drift - an absent flag file reads as "idle management is on",
+                # so a rename would fail silently in the permissive direction.
+                idleInhibitFlag = config.ogama.desktop.swayIdle.inhibitFlagName;
                 lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
                 onAccentInk = onAccentInkFor variant;
                 whereAmIBin = "${pkgs.geoclue2}/libexec/geoclue-2.0/demos/where-am-i";

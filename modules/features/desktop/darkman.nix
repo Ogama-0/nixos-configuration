@@ -4,14 +4,21 @@ let
   sharedOptions =
     { lib, ... }:
     {
-      options.ogama.desktop.darkman.enable = lib.mkEnableOption "the dark/light switch that rewrites app themes at sunrise and sunset";
+      options.ogama.desktop.darkman.enable =
+        lib.mkEnableOption "the dark/light switch that rewrites app themes at sunrise and sunset";
     };
 in
 {
   flake.featureModules.nixos.darkman = sharedOptions;
 
   flake.featureModules.home.darkman =
-    { pkgs, lib, config, ... }:
+    {
+      pkgs,
+      lpkgs,
+      lib,
+      config,
+      ...
+    }:
     {
       imports = [ sharedOptions ];
 
@@ -68,6 +75,41 @@ in
                 done
           '';
 
+          # Relinking the tree is always safe: it only changes which QML the NEXT
+          # start reads. The restart is not, and that guard is the whole point of
+          # this helper.
+          #
+          # quickshell-widgets hosts the session lock (components/LockDark.qml,
+          # wired in shell.qml). Killing it while that lock is up destroys the
+          # ext-session-lock surface, and the protocol forbids sway from
+          # unlocking on client death - so sway falls back to painting a solid
+          # red screen that takes no input and cannot be authenticated. The only
+          # way out of that is a reboot.
+          #
+          # Which is not hypothetical: it is what happened on every resume that
+          # crossed sunrise or sundown. The lid-close `before-sleep` locks the
+          # session, darkman wakes on resume, decides the mode changed, and
+          # restarts the process holding the lock. That is also why it read as
+          # intermittent - resumes inside the same mode never ran this script.
+          #
+          # Nothing is lost by skipping the restart. The relink has already
+          # happened, and the lock restarts the shell itself 500ms after a
+          # successful unlock (postUnlockRestart), which picks up the
+          # newly-linked tree. The cost is a lock surface in the old palette
+          # until then.
+          #
+          # Fail CLOSED: restart only on a positive, exact "false". A dead shell
+          # or any unexpected output leaves the restart undone, which costs a
+          # stale palette until the next transition. Guessing the other way costs
+          # a reboot, and that asymmetry is what picks the default.
+          quickshellTheme = variant: ''
+            ${treeLink} "${config.xdg.configHome}/quickshell/widgets-${variant}" "${config.xdg.configHome}/quickshell/widgets"
+
+            if [ "$(${lpkgs.quickshell-multimedia}/bin/quickshell ipc -c widgets call lock isLocked 2>/dev/null)" = "false" ]; then
+              ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets.service || true
+            fi
+          '';
+
           bashExe = "${pkgs.bash}/bin/bash";
           coreutils = pkgs.coreutils;
 
@@ -104,14 +146,19 @@ in
           '';
         in
         {
-          home.activation.darkmanTimezoneSync = lib.hm.dag.entryAfter [ "linkGeneration" "quickshellThemeTree" ] ''
-            ${bashExe} ${syncScript}
-          '';
+          home.activation.darkmanTimezoneSync =
+            lib.hm.dag.entryAfter [ "linkGeneration" "quickshellThemeTree" ]
+              ''
+                ${bashExe} ${syncScript}
+              '';
 
           # The GTK themes the scripts below select between. Installed here rather
           # than in display/gtk.nix because that module is shared with `epita`, which
           # has no darkman and would gain them for nothing.
-          home.packages = with pkgs; [ adw-gtk3 papirus-icon-theme ];
+          home.packages = with pkgs; [
+            adw-gtk3
+            papirus-icon-theme
+          ];
 
           services.darkman = {
             enable = true;
@@ -139,10 +186,7 @@ in
                 ${dconfExe} write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3-dark'"
                 ${dconfExe} write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'"
               '';
-              quickshell-theme = ''
-                ${treeLink} "${config.xdg.configHome}/quickshell/widgets-dark" "${config.xdg.configHome}/quickshell/widgets"
-                ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets.service || true
-              '';
+              quickshell-theme = quickshellTheme "dark";
             };
 
             lightModeScripts = {
@@ -159,10 +203,7 @@ in
                 ${dconfExe} write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3'"
                 ${dconfExe} write /org/gnome/desktop/interface/icon-theme "'Papirus-Light'"
               '';
-              quickshell-theme = ''
-                ${treeLink} "${config.xdg.configHome}/quickshell/widgets-light" "${config.xdg.configHome}/quickshell/widgets"
-                ${pkgs.systemd}/bin/systemctl --user restart quickshell-widgets.service || true
-              '';
+              quickshell-theme = quickshellTheme "light";
             };
           };
         }

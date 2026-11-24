@@ -18,8 +18,9 @@ Scope {
             spacing: 18
             Repeater {
                 model: ["bell", "bell-off", "leaf", "gauge", "bolt", "warm",
-                        "wifi", "bluetooth", "moon", "sun", "speaker",
-                        "speaker-muted", "lock", "phone", "clipboard", "upload"]
+                        "wifi", "bluetooth", "moon", "sun", "eye", "eye-off",
+                        "fullscreen", "speaker", "speaker-muted", "lock",
+                        "phone", "clipboard", "upload"]
                 Rectangle {
                     required property var modelData
                     width: 76; height: 76; radius: 18
