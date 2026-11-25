@@ -12,6 +12,7 @@
     ./_hardware-configuration.nix
 
     ./_nixosconf/backup-laptop.nix
+    ./_nixosconf/asus-numpad.nix
   ];
 
   # Per-host identity. These were entries in host/profiles.nix, reached through

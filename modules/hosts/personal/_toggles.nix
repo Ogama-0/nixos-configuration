@@ -16,7 +16,6 @@
     git.enable = true;
     keyboard.enable = true;
     nixGc.enable = true;
-    asus-numpad.enable = true;
   };
 
   ogama.system = {
@@ -32,7 +31,7 @@
     stream.enable = true;
     samba.client.enable = true;
     tailscale.enable = true;
-    howdy.enable = false; # broken
+    howdy.enable = true; # broken
     vm.enable = false;
 
   };
