@@ -244,12 +244,6 @@
                 "${modifier}+${down}" = "focus down";
                 "${modifier}+Escape" = "exec quickshell ipc -c widgets call lock lock";
                 "${modifier}+Shift+Escape" = "exec sleep 0.3 && swaylock -C ~/.config/swaylock/config";
-                # Was: "${modifier}" = "exec swaymsg bar mode toggle";
-                # Commented out because the laser bar now binds the same key (see
-                # extraConfig). Two bindings on the bare modifier compete, and the
-                # second one is the likely reason sway stopped firing the --release
-                # that collapses the bar. Restore it if you still want the swaybar
-                # toggle and would rather move the laser bar to another key.
                 "${modifier}+Shift+z" = "exec quickshell ipc -c widgets call panel clearNotifications";
                 # "${modifier}+Shift+d" = "exec vesktop";
                 "${modifier}+space" = "exec nautilus";
@@ -258,14 +252,6 @@
                 "${modifier}+Shift+a" = "exec pavucontrol";
                 "${modifier}+p" = "exec wl-color-picker";
                 "${modifier}+w" = "exec quickshell ipc -c widgets call wallpaper togglePicker";
-                # Hold mod (which raises the bar), then n. A normal binding works
-                # here where a bare-modifier one would not: sway only stops firing
-                # the --release of the modifier ITSELF once it has been used as one.
-                "${modifier}+n" = "exec quickshell ipc -c widgets call panel toggle";
-                # Messages, from anywhere, panel open or not. Unlike every other
-                # binding here this one leaves the panel holding the keyboard - the
-                # compose field needs it - so ControlPanel drops out of modes.panel
-                # while it is up and handles Escape itself.
                 "${modifier}+m" = "exec quickshell ipc -c widgets call panel messages";
 
                 # Workspace related keys

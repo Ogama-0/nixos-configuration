@@ -310,3 +310,134 @@ def test_bridge_leaves_no_marker_when_no_session_is_started(tmp_path):
     )
     proxy.run_bridge(fake.client, stdin, io.StringIO(), str(marker))
     assert not marker.exists()
+
+
+class FakeHowdyGreetd:
+    """greetd with a `sufficient` pam_howdy in front of pam_unix.
+
+    The shape that broke the greeter: create_session is answered with an
+    `info` auth_message ("Scanning face"), NOT a secret. PAM only moves on to
+    pam_unix - and the password prompt - once that info has been answered.
+    A client that replies to `secret` alone never sends anything, and both
+    sides sit there forever.
+    """
+
+    def __init__(self, password, face_ok=False):
+        self.password = password
+        self.face_ok = face_ok
+        self.server, self.client = socket.socketpair()
+        self.received = []
+        self.stage = "idle"
+        self.thread = threading.Thread(target=self._serve, daemon=True)
+        self.thread.start()
+
+    def _serve(self):
+        while True:
+            request = _read_framed(self.server)
+            if request is None:
+                return
+            self.received.append(request)
+            kind = request.get("type")
+            if kind == "create_session":
+                self.stage = "howdy"
+                _write_framed(
+                    self.server,
+                    {
+                        "type": "auth_message",
+                        "auth_message_type": "info",
+                        "auth_message": "Scanning face...",
+                    },
+                )
+            elif kind == "post_auth_message_response":
+                if self.stage == "howdy":
+                    if self.face_ok:
+                        # howdy is `sufficient`: pam_unix never runs and no
+                        # password is ever asked for.
+                        self.stage = "done"
+                        _write_framed(self.server, {"type": "success"})
+                    else:
+                        # howdy failed, so PAM falls through to pam_unix.
+                        self.stage = "password"
+                        _write_framed(
+                            self.server,
+                            {
+                                "type": "auth_message",
+                                "auth_message_type": "error",
+                                "auth_message": "Face not recognised",
+                            },
+                        )
+                elif self.stage == "password":
+                    self.stage = "secret"
+                    _write_framed(
+                        self.server,
+                        {
+                            "type": "auth_message",
+                            "auth_message_type": "secret",
+                            "auth_message": "Password: ",
+                        },
+                    )
+                elif self.stage == "secret":
+                    self.stage = "done"
+                    if request.get("response") == self.password:
+                        _write_framed(self.server, {"type": "success"})
+                    else:
+                        _write_framed(
+                            self.server,
+                            {
+                                "type": "error",
+                                "error_type": "auth_error",
+                                "description": "authentication failed",
+                            },
+                        )
+            elif kind in ("cancel_session", "start_session"):
+                _write_framed(self.server, {"type": "success"})
+
+
+def test_bridge_relays_a_response_with_no_response_field():
+    # The reply to an `info`/`error` auth_message carries no `response` key at
+    # all. It still has to reach greetd, or the PAM conversation never
+    # advances - this is the contract GreetdSession.qml now depends on.
+    fake = FakeHowdyGreetd("hunter2")
+    out = _drive(
+        fake,
+        [
+            json.dumps({"type": "create_session", "username": "ogama"}),
+            json.dumps({"type": "post_auth_message_response"}),
+        ],
+    )
+    assert out[0]["auth_message_type"] == "info"
+    assert out[1]["auth_message_type"] == "error"
+    assert fake.received[1] == {"type": "post_auth_message_response"}
+
+
+def test_howdy_success_never_asks_for_a_password():
+    # Face accepted: `sufficient` means pam_unix is skipped entirely, so the
+    # greeter must be able to reach `success` having sent only the empty
+    # answer to the info message.
+    fake = FakeHowdyGreetd("hunter2", face_ok=True)
+    out = _drive(
+        fake,
+        [
+            json.dumps({"type": "create_session", "username": "ogama"}),
+            json.dumps({"type": "post_auth_message_response"}),
+        ],
+    )
+    assert out[0]["auth_message_type"] == "info"
+    assert out[1]["type"] == "success"
+
+
+def test_howdy_failure_still_reaches_the_password_prompt():
+    # Face rejected: info -> error -> secret -> success. Every one of those
+    # first three needs an answer; the old handler answered only the last.
+    fake = FakeHowdyGreetd("hunter2")
+    out = _drive(
+        fake,
+        [
+            json.dumps({"type": "create_session", "username": "ogama"}),
+            json.dumps({"type": "post_auth_message_response"}),
+            json.dumps({"type": "post_auth_message_response"}),
+            json.dumps({"type": "post_auth_message_response", "response": "hunter2"}),
+        ],
+    )
+    assert [m.get("auth_message_type") for m in out[:3]] == ["info", "error", "secret"]
+    assert out[3]["type"] == "success"

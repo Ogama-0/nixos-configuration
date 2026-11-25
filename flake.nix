@@ -16,6 +16,13 @@
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
+    # NumberPad 2.0 on the ZenBook's touchpad. The older
+    # mohamed-badaoui/asus-touchpad-numpad-driver does not know this hardware:
+    # it matches only ASUE/ELAN touchpad names, and its single-value backlight
+    # write does not light an ASUF1415 panel.
+    asus-numberpad-driver.url = "github:asus-linux-drivers/asus-numberpad-driver";
+    asus-numberpad-driver.inputs.nixpkgs.follows = "nixpkgs";
+
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
 

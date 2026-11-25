@@ -16,6 +16,7 @@
     git.enable = true;
     keyboard.enable = true;
     nixGc.enable = true;
+    asus-numpad.enable = true;
   };
 
   ogama.system = {

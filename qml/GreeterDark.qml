@@ -284,22 +284,31 @@ Scope {
 
         function submitUsername() {
             if (usernameField.text.trim() === "") return
+            // Opens the conversation. PAM decides what it wants from here:
+            // with howdy `sufficient` and a face it recognises, there is
+            // never a password prompt at all. Focus still moves to the
+            // password field immediately so typing ahead works while the
+            // face scan runs - providePassword() holds anything typed until
+            // PAM actually asks.
+            session.begin(usernameField.text.trim())
             root.focusedField = 1
             passwordField.forceActiveFocus()
         }
 
         function submitPassword() {
-            if (session.busy) return
-            // Enter on the username field hands focus here mid-keypress, so
-            // that same Return - held down, or double-tapped - repeats into
-            // this field and submits an empty password. greetd takes it to
-            // PAM, which rejects it and holds the next attempt for its
-            // several-second fail delay, so one stray Enter costs a bogus
-            // "wrong password" and a visible stall. An empty password is
-            // never a real attempt; drop it here rather than pay for it.
+            // An empty password is never a real attempt - Enter on the
+            // username field hands focus here mid-keypress, so that same
+            // Return, held down or double-tapped, repeats into this field.
+            // greetd would take it to PAM, which rejects it and holds the
+            // next attempt for its several-second fail delay.
             if (passwordField.text === "") return
+            // Already handed one over for this attempt.
+            if (session.havePassword) return
+            // Normally begin() has already run from submitUsername(); this
+            // covers focus landing here some other way.
+            if (!session.busy) session.begin(usernameField.text.trim())
             root.submittedText = passwordField.text
-            session.authenticate(usernameField.text.trim(), passwordField.text)
+            session.providePassword(passwordField.text)
         }
 
         Item {
@@ -583,7 +592,9 @@ Scope {
                             echoMode: TextInput.Password
                             // Deliberately not disabled while session.busy: going disabled drops
                             // focus and silently eats everything typed during PAM's fail delay.
-                            // submitPassword()'s own busy guard is what stops a second submit.
+                            // submitPassword()'s own havePassword guard is what stops a
+                            // second submit - busy is true for the whole
+                            // conversation now, so it cannot be the guard.
 
                             // Hides the I-beam mouse cursor over the
                             // field - HoverHandler tracks hover without
