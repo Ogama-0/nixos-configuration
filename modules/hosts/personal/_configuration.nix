@@ -75,6 +75,7 @@
   environment.systemPackages = with pkgs; [
     helix
     alsa-utils
+    libva-utils # vainfo, the only way to check the VA-API stack is actually live
   ];
 
   services.pipewire = {
@@ -88,7 +89,23 @@
   security.pam.services.swaylock = { };
   security.pam.services.quickshell-lock = { };
   security.polkit.enable = true;
-  hardware.graphics.enable = true;
+  # Arrow Lake-P / Arc 140T (Xe2). `hardware.graphics.enable` alone ships only
+  # Mesa, which carries no VA-API driver for Intel — /run/opengl-driver/lib/dri
+  # ends up holding the radeonsi/nouveau/d3d12 `*_drv_video.so` and nothing
+  # else, so every browser silently decodes video on the CPU. iHD is what puts
+  # H.264/VP9/AV1 back on the media engine.
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-media-driver # iHD, the VA-API driver itself
+      vpl-gpu-rt # oneVPL runtime, for anything that asks through libvpl
+    ];
+  };
+
+  # libva autodetects a driver from the kernel driver name, which is `xe` on
+  # this generation and maps to nothing, so iHD has to be named explicitly.
+  # System-wide rather than per-app: ffmpeg and mpv want it as much as Zen.
+  environment.sessionVariables.LIBVA_DRIVER_NAME = "iHD";
 
   # environment.loginShellInit = ''
   #   [[ "$(tty)" == /dev/tty1 ]]

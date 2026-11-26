@@ -11,7 +11,12 @@ in
   flake.featureModules.nixos.firefox = sharedOptions;
 
   flake.featureModules.home.firefox =
-    { inputs, config, lib, ... }:
+    {
+      inputs,
+      config,
+      lib,
+      ...
+    }:
     {
       # The extra entries instruct the module system and cannot live inside
       # mkIf, so they apply whether or not the feature is enabled. What they
@@ -34,6 +39,16 @@ in
           };
 
           settings = {
+            # Hardware video decoding. Firefox only reaches for VA-API when it
+            # finds a usable driver AND the codec is not blocklisted, and its
+            # blocklist is conservative about new Intel generations, so Xe2 gets
+            # refused on probe and falls back to ffvpx on the CPU. Forcing it is
+            # the difference between a YouTube tab idling and one pinning a core
+            # per 4K frame. Needs `hardware.graphics.extraPackages` to carry iHD
+            # on the host, or this just fails to initialise and falls back again.
+            "media.ffmpeg.vaapi.enabled" = true;
+            "media.hardware-video-decoding.force-enabled" = true;
+
             # Privacy and default bloat
             "extensions.pocket.enabled" = false;
             "browser.newtabpage.pinned" = "";
@@ -85,7 +100,6 @@ in
 
         in
         {
-
 
           home.sessionVariables.BROWSER = lib.getExe config.programs.zen-browser.package;
 
