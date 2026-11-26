@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // Paused: the cover has stopped turning and settled into a rounded
 // square, and the wave is the flat resting line.

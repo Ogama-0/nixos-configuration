@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "notification"
 
 // The ugly cases, all at once: a notification with no body, one with no app
 // name, one with no summary, one carrying four kilobytes of body, and a

@@ -20,7 +20,7 @@ My personal NixOS + Home Manager flake, covering a main desktop, a home server, 
   - `hosts/<host>/`: `default.nix` (the only flake-parts module there, which builds that host's configurations), `_toggles.nix` (what this host runs), and `_`-prefixed entry modules and machine-specific extras
   - `flake/`: the plumbing — option declarations, package sets, and the aggregator that imports every feature
 - `lib/`: not modules — plain functions and data (the colour palette, the QML theme substitution, the swayfx package, the storage roots)
-- `qml/`: the greeter's QML, which is rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`
+- `qml/`: every line of QML in the repo - the whole quickshell desktop - one directory per feature (`laserbar/`, `desktopwidgets/`, `notification/`, `panel/mainpanel/`, `panel/messagepanel/`, `lockscreen/`, `greeter/`, plus `common/`). `greeter/` is rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`
 - `docs/`: runbooks for the parts that bite (see below), plus `superpowers/` design specs and plans, one topic per dated file
 - `tests/`: render fixtures for the laser bar — there is no unit-test framework, so the bar is verified by screenshotting it
 - `pkgs/`: standalone package derivations exposed as flake outputs

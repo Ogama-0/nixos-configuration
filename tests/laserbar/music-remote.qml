@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // The mini music widget playing the PHONE's track, over kdeconnect: the
 // phone mark on the right of the capsule, and a wave fed by RemoteSpectrum

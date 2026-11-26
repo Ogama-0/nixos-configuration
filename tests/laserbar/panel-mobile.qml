@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "panel/mainpanel"
 
 // A connected phone, stubbed. Not driven through MobileModel: that one asks
 // kdeconnect-cli what is on the network, and there is nothing paired here.

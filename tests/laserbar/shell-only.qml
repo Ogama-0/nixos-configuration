@@ -1,6 +1,6 @@
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // One BarShell on a flat blue field. Blue so the three things under test are
 // all distinguishable: the capsule fill, the near-black outline, and the

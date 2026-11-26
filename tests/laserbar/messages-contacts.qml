@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // ContactsModel, against vCards this fixture writes itself.
 //

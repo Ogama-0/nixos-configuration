@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "panel/mainpanel"
 
 // Summoned, then undocked. The sheet must still be painted in full and the
 // funnel must be gone - that is the whole visible difference between the two

@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "desktopwidgets"
 
 // The desktop music CARD - Music.qml, not the bar's MusicWidget. Every other
 // music-*.qml fixture here drives the little capsule on the bar; this one is

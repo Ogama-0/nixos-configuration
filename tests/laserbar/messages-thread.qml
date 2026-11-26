@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // ConversationView, fed fixed messages.
 //
@@ -26,6 +26,14 @@ import "components/panel/messages"
 //   an incoming bubble is the plate, and the same probe rejects the accent
 //     dark:  probe 75  464 15  6 --near '#131312' 10
 //     light: probe 75  464 15  6 --near '#e5d9d6' 10
+//
+// Two day separators and a stamp beside every bubble, which is the other
+// thing this fixture is for now. The messages span midnight, so the dated
+// separator has to appear BETWEEN m1 and m0 as well as above m0 - that top
+// one is drawn unconditionally and proves nothing on its own. The stamps sit
+// in the gutter opposite each bubble's tail, left of an outgoing bubble and
+// right of an incoming one; read them off the render rather than probing,
+// since a 10px clock on a bare sheet averages to the sheet.
 //
 // Probe the PADDING of a bubble, never its middle. The middle is text, and a
 // region average over glyphs is the font's opinion: the same incoming bubble
@@ -86,7 +94,14 @@ Scope {
                       outgoing: false, attachments: [] },
                     { id: "m1", body: "Morning — still good for the 9am?",
                       ts: new Date(2026, 9, 26, 8, 14).getTime(),
-                      outgoing: true, attachments: [] }
+                      outgoing: true, attachments: [] },
+                    // The day before, so the river has to draw a SECOND day
+                    // separator between this and m1 - the one above the
+                    // oldest message we hold is drawn unconditionally and
+                    // would pass a fixture that never changed day at all.
+                    { id: "m0", body: "Sounds good, see you tomorrow.",
+                      ts: new Date(2026, 9, 25, 21, 47).getTime(),
+                      outgoing: false, attachments: [] }
                 ]
             }
         }

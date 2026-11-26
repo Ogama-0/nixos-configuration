@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "panel/mainpanel"
 
 // Open when the screen locks. The panel must dismiss rather than draw over
 // the lock surface.

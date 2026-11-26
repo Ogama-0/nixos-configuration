@@ -1,7 +1,8 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "common"
+import "notification"
 
 // Two pure decisions, driven from literals and asserted on the log.
 //

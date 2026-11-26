@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // Nothing playing: the music widget takes no width at all and the right
 // capsule is the wifi readout alone.

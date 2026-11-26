@@ -193,6 +193,22 @@ let
             '';
           };
 
+          sshHostKey = mkOption {
+            type = types.str;
+            default = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGYXkizN6u1DiHjit53E49gx9A5PdPz/qM8Lwd/mQ9QI";
+            description = ''
+              The server's SSH *host* key, in `known_hosts` form — the type
+              prefix included, unlike `ogama.identity.sshPubkey`, because this
+              one is interpolated into `programs.ssh.knownHosts` rather than an
+              authorized_keys line.
+
+              Lives here because the personal profile is what needs it: its
+              borg job runs as root, which reads no user's known_hosts, so the
+              key has to come from the system config or the job dies with
+              "Host key verification failed".
+            '';
+          };
+
           ipv6Host = mkOption {
             type = types.str;
             default = "ipv6.${server.domain}";

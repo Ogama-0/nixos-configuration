@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // A workspace closing: focus leaves an empty workspace, so sway destroys it
 // and the strip loses a middle cell. Every surviving cell must keep its own

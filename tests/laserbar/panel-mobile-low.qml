@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "panel/mainpanel"
 
 // A phone low on battery and not charging: the bar must warn, not stay green.
 // kdeconnect-cli what is on the network, and there is nothing paired here.

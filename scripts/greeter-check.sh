@@ -57,8 +57,9 @@ done
 echo "== greetd conversation =="
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-mkdir -p "$WORK/components"
-cp "$GREETER/components/GreetdSession.qml" "$WORK/components/"
+# GreetdSession sits beside the greeter surfaces now, not in a components/
+# subdirectory, so the fixture needs no import path of its own.
+cp "$GREETER/GreetdSession.qml" "$WORK/"
 cp "$REPO/tests/greeter/greetd-session.qml" "$WORK/shell.qml"
 
 for case in "fail:face rejected, falls through to the password:passwordRequested=true authenticated=true" \

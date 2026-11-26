@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // Three cells. Paired with workspaces.qml to show the capsule opening both ways.
 Scope {

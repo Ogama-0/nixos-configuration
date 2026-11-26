@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "panel/mainpanel"
 
 // The calendar pane, stubbed. August 2026 draws SIX rows.
 //

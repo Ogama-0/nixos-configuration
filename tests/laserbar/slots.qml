@@ -1,6 +1,6 @@
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // Four groups across the three sides, to prove placement and spacing.
 Scope {

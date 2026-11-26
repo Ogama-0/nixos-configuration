@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
-import "components"
+import "laserbar"
 
 // The strip grows after the bar has laid out, with a real beam behind it.
 // The strands must collapse around the capsule's NEW extent, not the one it

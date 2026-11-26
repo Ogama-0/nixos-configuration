@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // One stable palette colour per contact.
 //

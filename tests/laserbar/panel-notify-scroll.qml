@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "notification"
 
 // Thirteen apps in a 400-tall zone - far more than fits. Before the list
 // could scroll this rendered five plates and "and 8 more apps", and the

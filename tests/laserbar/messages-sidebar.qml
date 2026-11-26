@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // ThreadList, fed fixed data.
 //

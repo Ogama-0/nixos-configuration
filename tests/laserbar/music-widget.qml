@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // The mini music widget next to the wifi readout, with the player data and
 // the cava bands supplied directly so nothing has to be on the bus.

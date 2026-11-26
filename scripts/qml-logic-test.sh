@@ -87,8 +87,8 @@ for name, text in data.items():
 PY
 fi
 
-# The fixture replaces shell.qml; components/ comes from the evaluated tree,
-# so a fixture imports them exactly as the real shell does.
+# The fixture replaces shell.qml; the component buckets come from the
+# evaluated tree, so a fixture imports them exactly as the real shell does.
 work="$RT/run"
 cp -r "$TREE" "$work"
 cp "$fixture" "$work/shell.qml"

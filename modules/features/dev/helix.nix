@@ -271,6 +271,7 @@ in
                   name = "gas";
                   auto-format = false;
                   file-types = [ "S" ];
+                  # comment-tokens = ";";
                   language-servers = [
                     {
                       name = "asm-lsp";
@@ -294,6 +295,16 @@ in
                   language-servers = [ "wakatime" ];
                 }
               ];
+            };
+          };
+          xdg.configFile."asm-lsp/.asm-lsp.toml".source = (pkgs.formats.toml { }).generate "asm-lsp.toml" {
+            default_config = {
+              assembler = "gas";
+              instruction_set = "x86-64";
+              opts = {
+                diagnostics = false;
+                default_diagnostics = false;
+              };
             };
           };
 

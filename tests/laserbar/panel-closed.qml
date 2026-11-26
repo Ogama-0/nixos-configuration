@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "panel/mainpanel"
 
 // The control panel, never summoned - the baseline the open render is diffed
 // against. Identical to panel-open.qml but for the missing summon().

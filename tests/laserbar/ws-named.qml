@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // A named workspace: sway reports -1 and there is no number to show.
 Scope {

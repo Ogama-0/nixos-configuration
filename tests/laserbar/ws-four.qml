@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // The settled four-cell state workspace-anim.qml animates towards.
 Scope {

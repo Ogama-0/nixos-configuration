@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "panel/mainpanel"
 
 // The three ways a panel goes away, driven from outside with LASERBAR_EXEC.
 //

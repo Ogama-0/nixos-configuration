@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // The whole pane on the control panel's real 940x700 stage, so the render can
 // be held next to docs/previews/messages-panel.html.

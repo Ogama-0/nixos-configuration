@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "panel/mainpanel"
 
 // The control panel, summoned. The harness only drives `laserbar reveal`, so
 // the fixture opens the panel itself.

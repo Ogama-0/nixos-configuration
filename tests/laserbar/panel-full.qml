@@ -1,7 +1,8 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
+import "panel/mainpanel"
 
 // Every zone, live, attached to the bar. The one fixture that is NOT stubbed:
 // it renders whatever this machine actually reports, so it is for looking at

@@ -4,8 +4,8 @@ How to put something new on the bar — a DND toggle, a battery readout, a media
 button. Read this before writing the QML; several of the constraints below are
 non-obvious and two of them fail *silently*.
 
-All paths are relative to
-`modules/features/desktop/laserbar/components/` unless stated.
+All paths are relative to `qml/laserbar/` unless stated - see the tree layout
+in `CLAUDE.md` for which bucket a component belongs in.
 
 ## What the bar is
 
@@ -89,18 +89,22 @@ BarGroup {
 That gives a DND button to the left of the clock, in the middle capsule. `pos`
 orders widgets within the group; the numbers need not be contiguous.
 
-### 3. Register the file in `treeFor`
+### 3. Nothing to register
 
-In `modules/features/desktop/laserbar/default.nix`:
+There is no list to add the file to. `modules/features/desktop/laserbar/default.nix`
+walks `qml/` with `lib.filesystem.listFilesRecursive` and installs every `.qml`
+under it into both themed trees at the same relative path, so adding a
+component is adding a file.
 
-```nix
-"${d}/components/DndWidget.qml" = themedQmlFile variant ./components/DndWidget.qml;
-```
+The one thing that still bites: **flakes only see tracked files.** An
+un-`git add`ed `DndWidget.qml` is simply absent from the evaluation, and the
+error you get is `DndWidget is not a type` with no hint that the file is
+sitting right there on disk. `git add` it before you believe any result.
 
-**This one fails silently.** The QML tree is generated file-by-file; a
-component that is not listed simply does not exist at runtime, and the error
-you get is `DndWidget is not a type` with no hint that the file is sitting
-right there on disk.
+Two files are deliberately NOT installed by the walk, and both are documented
+in `default.nix`: `greeter/` (installed to `/etc/greeter` by the NixOS module,
+since the greetd user cannot read `/home`) and `lockscreen/Lock{Dark,Light}.qml`
+(two designs behind one installed `Lock.qml`, picked per variant).
 
 ## Making a widget clickable
 
@@ -306,7 +310,7 @@ when a generated QML file throws. Check the generated text directly, for both
 variants:
 
 ```sh
-nix eval --raw '.#homeConfigurations.personal.config.xdg.configFile."quickshell/widgets-dark/components/DndWidget.qml".text'
+nix eval --raw '.#homeConfigurations.personal.config.xdg.configFile."quickshell/widgets-dark/laserbar/DndWidget.qml".text'
 ```
 
 Never discard its stderr: a failed eval returns an empty string, which then

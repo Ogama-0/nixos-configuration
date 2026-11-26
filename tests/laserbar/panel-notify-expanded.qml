@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "notification"
 
 // The Signal group opened with its middle entry SELECTED: that row gets
 // its own tint and prints its whole body, while the group keeps the single

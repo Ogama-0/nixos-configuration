@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // VoiceBubble, four states in a column: incoming idle, outgoing idle,
 // playing at ~34%, and fetching.

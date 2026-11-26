@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "panel/mainpanel"
 
 // The calendar pane with khal absent or silent: an empty diary, not a blank zone.
 //

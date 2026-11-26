@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "desktopwidgets"
 
 // The standing desktop calendar widget, which keeps running after the panel
 // gains one of its own. Its khal reading moves into CalendarModel so there

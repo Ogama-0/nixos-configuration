@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // With real cover art, which goes through the circular mask - the vinyl
 // fallback draws its own circle and would hide a square-edged one.

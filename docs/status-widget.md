@@ -11,14 +11,14 @@ planned in `docs/superpowers/plans/2026-10-09-oserv-status-widget.md`.
 
 ## Where everything lives
 
-- `modules/features/desktop/laserbar/components/StatusModel.qml` —
+- `qml/desktopwidgets/StatusModel.qml` —
   non-visual. Owns both pollers, all JSON parsing, state derivation, and the
   key→label map. Exposes `services`, `online`, `verdictText`, `verdictCount`,
   `hostLoad`, `hostRam`, `hostDisk`.
-- `.../components/StatusPanel.qml` — the `PanelWindow`, the health spine, the
+- `qml/desktopwidgets/StatusPanel.qml` — the `PanelWindow`, the health spine, the
   three stages, rows, footer. All sizes are in one block at the top of the
   file; scale the widget by editing that block alone.
-- `.../components/Sparkline.qml` — per-row recent history.
+- `qml/common/Sparkline.qml` — per-row recent history.
 - `.../quickshell/default.nix` — derives the polarity-correct semantic colours
   and the API URLs, registers the three files.
 - `lib/qml-theme.nix` — the `@token@` substitution. Shared with
@@ -209,7 +209,7 @@ Harness notes beyond the greeter's:
 
 ```
 nix flake check
-nix eval --raw '.#homeConfigurations.personal.config.xdg.configFile."quickshell/widgets/components/StatusPanel.qml".text' | grep -oE '@[a-zA-Z]+@'
+nix eval --raw '.#homeConfigurations.personal.config.xdg.configFile."quickshell/widgets-dark/desktopwidgets/StatusPanel.qml".text' | grep -oE '@[a-zA-Z]+@'
 ```
 
 `nix flake check` does **not** force `xdg.configFile` text, so it passes green

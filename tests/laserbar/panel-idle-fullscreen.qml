@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components/panel"
+import "panel/mainpanel"
 
 // ToggleModel.countFullscreen, against the shape sway's get_tree actually has.
 //

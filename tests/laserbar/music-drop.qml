@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
-import "components"
+import "laserbar"
 
 // The music widget goes away under the bar, the way it does when a player
 // quits: play, stop, kill the client. The capsule it shared with wifi shrinks

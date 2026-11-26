@@ -1,8 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
-import "components/panel"
+import "panel/mainpanel"
 
 // The tooltip must be able to draw OUTSIDE the panel.
 //

@@ -10,9 +10,9 @@ reference for changing it. The original design rationale is in
 | Path | What it is |
 | --- | --- |
 | `modules/features/desktop/greeter.nix` | The whole NixOS side: substitutes the QML, installs it to `/etc/greeter/`, configures `greetd`, grants polkit rights |
-| `qml/GreeterDark.qml` | Dark surface. Stencil panels, neon edge-glow, Orbitron |
-| `qml/GreeterLight.qml` | Light surface. Frosted glass pills, falling snow, Nunito |
-| `qml/components/GreetdSession.qml` | The auth conversation. Shared by both surfaces |
+| `qml/greeter/GreeterDark.qml` | Dark surface. Stencil panels, neon edge-glow, Orbitron |
+| `qml/greeter/GreeterLight.qml` | Light surface. Frosted glass pills, falling snow, Nunito |
+| `qml/greeter/GreetdSession.qml` | The auth conversation. Shared by both surfaces |
 | `pkgs/greetd-proxy/proxy.py` | stdio↔socket bridge *and* the dark/light variant picker |
 | `pkgs/greetd-proxy/test_proxy.py` | Its tests. pytest-style functions, so `python3 -m unittest` silently runs none |
 | `lib/qml-theme.nix` | The `@token@` substitution, shared with the home-manager lockscreen |

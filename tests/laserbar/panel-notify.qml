@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "notification"
 
 // Three apps, one of them with three notifications stacked, stubbed. Not driven through
 // NotificationServer: that one owns a bus, and a render fixture must not

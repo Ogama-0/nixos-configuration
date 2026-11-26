@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import "components"
 
 // Drives GreetdSession through the howdy sequence with no UI at all.
 ShellRoot {

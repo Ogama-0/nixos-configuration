@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "notification"
 
 // Bodies carrying markup. The WhatsApp ones arrive the way KDE Connect
 // really sends them - with the phone app's tags escaped - and must come out

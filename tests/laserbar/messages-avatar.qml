@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // MessageAvatar in its four states, on a flat ground.
 //

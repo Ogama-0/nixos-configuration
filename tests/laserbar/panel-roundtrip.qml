@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "panel/mainpanel"
 
 // Summoned, undocked, then docked again. The chrome must come back
 // pixel-identical to a plain summon: anything left over is a resting binding

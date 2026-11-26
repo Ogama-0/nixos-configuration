@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "panel/mainpanel"
 
 // The panel on a BLACK ground, which is what the real wallpaper is.
 // the fixture opens the panel itself.

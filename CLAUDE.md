@@ -96,7 +96,33 @@ Every module in the tree is reachable from `flake.nix` and evaluated on every ch
 
 **oserv runs ZFS** (`ogama.system.zfs.enable`), which is why it pins `boot.kernelPackages = pkgs.linuxPackages` — the ZFS kernel module does not build against `linuxPackages_latest` on this nixpkgs pin. The same LTS constraint independently applies to `personal-lenovo` through `nvidia-open`; `personal` has no Nvidia GPU and carries no such pin.
 
-**`lib/`** is not modules. It is plain functions and data `import`ed directly: the colour palette (`palette.nix`, the single source for every colour on the desktop), the QML `@token@` substitution (`qml-theme.nix`), per-app theme renderers, the `swayfx` package both sway and greetd need by absolute store path, and `constants.nix` (the domain and storage roots, needed by `packages.calino` before any module exists). **`qml/`** holds the greeter's QML, rendered by a NixOS module rather than a Home Manager one because the greeter user cannot read `/home`. Both sit at the repo root, outside the import root.
+**`lib/`** is not modules. It is plain functions and data `import`ed directly: the colour palette (`palette.nix`, the single source for every colour on the desktop), the QML `@token@` substitution (`qml-theme.nix`), per-app theme renderers, the `swayfx` package both sway and greetd need by absolute store path, and `constants.nix` (the domain and storage roots, needed by `packages.calino` before any module exists). **`qml/`** is every line of QML in the repo - the whole quickshell desktop, not just the greeter - organised one directory per feature (see below). Both sit at the repo root, outside the import root.
+
+**The `qml/` tree is one directory per feature**, and that layout is load-bearing twice over. `modules/features/desktop/laserbar/default.nix` *walks* it — every `.qml` under `qml/` is installed into both themed trees at the same relative path, so adding a component is adding a file and there is no list to forget. And the installed layout mirrors the source layout exactly, so a `nix eval` of a generated path reads the same as the file you edited.
+
+```
+qml/shell.qml                 the session root: instantiates one of everything
+qml/common/                   used by two or more features - PanelBeam, PanelIcon,
+                              PanelSheet, ColorUtils, RevealMask, Sparkline,
+                              CalendarModel, RemoteBadge, and the session-wide
+                              models shell.qml owns (MprisModel, RemoteSpectrum,
+                              WeatherModel)
+qml/laserbar/                 the momentary bar and its widgets
+qml/desktopwidgets/           the always-on desktop surfaces: wallpaper, clock,
+                              music card, calendar card, server status
+qml/lockscreen/               LockDark/LockLight - two designs, one Lock.qml
+qml/notification/             the freedesktop notification server, the centre
+                              and the toasts
+qml/panel/mainpanel/          ControlPanel and its zones
+qml/panel/messagepanel/       the KDE Connect SMS surface
+qml/greeter/                  the greetd surfaces - NOT part of the walk
+```
+
+**Directory names must be legal QML module names**, which means no hyphens: quickshell's scanner rejects `desktop-widget` with `Module path contains invalid characters` and the directory stops resolving as an import. That is why the bucket is `desktopwidgets`.
+
+**A component used from another bucket needs an explicit `import`.** A directory import covers one directory and no other — not its subdirectories — and a missing one fails as `X is not a type`, which reads like a typo rather than a missing import. `qml/panel/mainpanel/ControlPanel.qml` is the worked example: it imports `"../../common"`, `"../../notification"` and `"../messagepanel"`, and needs no import at all for the zones sitting beside it.
+
+**Two things are deliberately outside the walk.** `qml/greeter/` is installed to `/etc/greeter` by `modules/features/desktop/greeter.nix`, because the greetd user cannot read `/home` — it shares the palette with the desktop and nothing else. And `qml/lockscreen/Lock{Dark,Light}.qml` are two deliberately different designs behind *one* installed `lockscreen/Lock.qml`: `shell.qml` instantiates `Lock`, and which design that is comes from the variant.
 
 **`pkgs/`** contains standalone package derivations (`librepods.nix`) exposed as flake outputs under `packages.${system}`, consumed elsewhere via the `lpkgs` set built in `flake.nix`.
 

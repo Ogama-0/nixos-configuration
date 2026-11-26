@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components/panel"
+import "notification"
 
 // Four notifications from two apps, pushed in directly: they must become
 // TWO toasts, the Signal one carrying a count of 3. Not driven through the

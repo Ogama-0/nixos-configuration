@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "common"
 
 // Every glyph, large, on the accent fill they are actually seen on.
 Scope {

@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "panel/mainpanel"
 
 // The three meters, stubbed to the preview's values with RAM in the warning
 // band. Not driven through MetricsModel: that one reads this machine's real

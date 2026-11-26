@@ -41,9 +41,6 @@ EXEMPT_FILES = {
     # Toasts exist precisely to appear when the panel is shut. The sweep is
     # gated on there being a toast up, which is the real bound.
     "NotificationToasts.qml",
-    # The same thing for texts, and for the same reason - a toast for a
-    # message that arrived while the panel was shut is the entire point.
-    "MessageToasts.qml",
     # The voice-note progress tick. Gated on something actually sounding
     # (`playingId !== "" && !paused`), which is the real bound: every path
     # out of Messages routes through ControlPanel.closeMessages(), and that
@@ -69,7 +66,7 @@ EXEMPT_FILES = {
 
 APPLY = (
     'cf: let ns = builtins.filter (n: builtins.match '
-    '"quickshell/widgets-dark/components/(panel/)?.*qml" n != null) '
+    '"quickshell/widgets-dark/.+/.+qml" n != null) '
     '(builtins.attrNames cf); in builtins.listToAttrs '
     '(map (n: { name = n; value = cf.${n}.text; }) ns)'
 )

@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "panel/mainpanel"
 
 // GPU telemetry unavailable: the row must read as a dash, not as 0%.
 // band. Not driven through MetricsModel: that one reads this machine's real

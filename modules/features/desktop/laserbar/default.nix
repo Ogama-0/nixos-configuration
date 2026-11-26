@@ -261,124 +261,70 @@ in
                 frame_delimiter = 10
               '';
 
+              # The repo-root QML tree, shared with the greeter (which installs its
+              # own corner of it from modules/features/desktop/greeter.nix).
+              qmlRoot = ../../../../qml;
+              qmlRootStr = toString qmlRoot + "/";
+              qmlRel = p: lib.removePrefix qmlRootStr (toString p);
+
+              # Walked, not enumerated. Every .qml under qml/ lands in both themed
+              # trees at the same relative path, so adding a component is adding a
+              # file. The hand-written list this replaces had to be edited twice for
+              # every new file, and a forgotten entry failed at runtime as "X is not
+              # a type" with a perfectly green `nix flake check`.
+              #
+              # Two exclusions, both load-bearing:
+              #
+              #   - greeter/ is installed into /etc/greeter by the NixOS module,
+              #     because the greetd user cannot read /home. It shares the palette
+              #     with this tree and nothing else.
+              #   - lockscreen/Lock{Dark,Light}.qml are two deliberately different
+              #     designs behind ONE installed Lock.qml - shell.qml instantiates
+              #     `Lock`, and which design that is comes from the variant. Letting
+              #     the walk install them under their own names would put the dark
+              #     lockscreen in the light tree.
+              installable =
+                p:
+                let
+                  rel = qmlRel p;
+                in
+                lib.hasSuffix ".qml" rel
+                && !(lib.hasPrefix "greeter/" rel)
+                && !(builtins.elem rel [
+                  "lockscreen/LockDark.qml"
+                  "lockscreen/LockLight.qml"
+                ]);
+
+              qmlFiles = lib.filter installable (lib.filesystem.listFilesRecursive qmlRoot);
+
               # Each variant gets its own lockscreen artwork: dark uses the Arcane/Jinx
               # piece (see LockDark.qml), light keeps the original Nausicaa/snow
               # treatment (see LockLight.qml) - they are deliberately different
               # designs, not the same skin recoloured.
               lockFor = {
                 dark =
-                  lockVariant "dark" ./components/LockDark.qml
+                  lockVariant "dark" (qmlRoot + "/lockscreen/LockDark.qml")
                     "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/dark-lockscreen-arcane-jinx.jpeg";
-                light =
-                  lockVariant "light" ./components/LockLight.qml
-                    "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
+                light = lockVariant "light" (
+                  qmlRoot + "/lockscreen/LockLight.qml"
+                ) "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
               };
 
-              # Music.qml resolves cava as Quickshell.shellDir + "/cava.conf", so each
-              # tree needs its own copy; shellDir makes that automatic.
               treeFor =
                 variant:
                 let
                   d = "quickshell/widgets-${variant}";
                 in
                 {
+                  # Music.qml and MusicWidget.qml resolve cava as
+                  # Quickshell.shellDir + "/cava.conf", so each tree needs its own
+                  # copy; shellDir makes that automatic.
                   "${d}/cava.conf".text = cavaConf;
-                  "${d}/shell.qml" = themedQmlFile variant ./shell.qml;
-                  "${d}/components/Lock.qml" = lockFor.${variant};
-                  "${d}/components/Wallpaper.qml" = themedQmlFile variant ./components/Wallpaper.qml;
-                  "${d}/components/Clock.qml" = themedQmlFile variant ./components/Clock.qml;
-                  "${d}/components/Music.qml" = themedQmlFile variant ./components/Music.qml;
-                  "${d}/components/MprisModel.qml" = themedQmlFile variant ./components/MprisModel.qml;
-                  "${d}/components/RemoteSpectrum.qml" = themedQmlFile variant ./components/RemoteSpectrum.qml;
-                  "${d}/components/RemoteBadge.qml" = themedQmlFile variant ./components/RemoteBadge.qml;
-                  "${d}/components/Calendar.qml" = themedQmlFile variant ./components/Calendar.qml;
-                  "${d}/components/RevealMask.qml" = themedQmlFile variant ./components/RevealMask.qml;
-                  "${d}/components/GlassPill.qml" = themedQmlFile variant ./components/GlassPill.qml;
-                  "${d}/components/ColorUtils.qml" = themedQmlFile variant ./components/ColorUtils.qml;
-                  "${d}/components/BarShell.qml" = themedQmlFile variant ./components/BarShell.qml;
-                  "${d}/components/BarGroup.qml" = themedQmlFile variant ./components/BarGroup.qml;
-                  "${d}/components/BarSlots.qml" = themedQmlFile variant ./components/BarSlots.qml;
-                  "${d}/components/WorkspaceIcon.qml" = themedQmlFile variant ./components/WorkspaceIcon.qml;
-                  "${d}/components/WorkspaceWidget.qml" = themedQmlFile variant ./components/WorkspaceWidget.qml;
-                  "${d}/components/WifiWidget.qml" = themedQmlFile variant ./components/WifiWidget.qml;
-                  "${d}/components/BarButton.qml" = themedQmlFile variant ./components/BarButton.qml;
-                  "${d}/components/MusicWidget.qml" = themedQmlFile variant ./components/MusicWidget.qml;
-                  "${d}/components/BeamSide.qml" = themedQmlFile variant ./components/BeamSide.qml;
-                  "${d}/components/CollisionEffects.qml" = themedQmlFile variant ./components/CollisionEffects.qml;
-                  "${d}/components/ClockWidget.qml" = themedQmlFile variant ./components/ClockWidget.qml;
-                  "${d}/components/LaserBar.qml" = themedQmlFile variant ./components/LaserBar.qml;
-                  "${d}/components/StatusModel.qml" = themedQmlFile variant ./components/StatusModel.qml;
-                  "${d}/components/Sparkline.qml" = themedQmlFile variant ./components/Sparkline.qml;
-                  "${d}/components/StatusPanel.qml" = themedQmlFile variant ./components/StatusPanel.qml;
-                  "${d}/components/CalendarModel.qml" = themedQmlFile variant ./components/CalendarModel.qml;
-                  "${d}/components/PanelBeam.qml" = themedQmlFile variant ./components/PanelBeam.qml;
-                  "${d}/components/panel/PanelIcon.qml" = themedQmlFile variant ./components/panel/PanelIcon.qml;
-                  "${d}/components/panel/ToggleTile.qml" = themedQmlFile variant ./components/panel/ToggleTile.qml;
-                  "${d}/components/panel/ToggleGrid.qml" = themedQmlFile variant ./components/panel/ToggleGrid.qml;
-                  "${d}/components/panel/ToggleModel.qml" = themedQmlFile variant ./components/panel/ToggleModel.qml;
-                  "${d}/components/panel/ToggleTip.qml" = themedQmlFile variant ./components/panel/ToggleTip.qml;
-                  "${d}/components/panel/ClockWeatherHead.qml" =
-                    themedQmlFile variant ./components/panel/ClockWeatherHead.qml;
-                  "${d}/components/panel/WeatherModel.qml" =
-                    themedQmlFile variant ./components/panel/WeatherModel.qml;
-                  "${d}/components/panel/PanelNavButton.qml" =
-                    themedQmlFile variant ./components/panel/PanelNavButton.qml;
-                  "${d}/components/panel/CalendarPane.qml" =
-                    themedQmlFile variant ./components/panel/CalendarPane.qml;
-                  "${d}/components/panel/MetricsPane.qml" = themedQmlFile variant ./components/panel/MetricsPane.qml;
-                  "${d}/components/panel/MetricsModel.qml" =
-                    themedQmlFile variant ./components/panel/MetricsModel.qml;
-                  "${d}/components/panel/DiskPane.qml" = themedQmlFile variant ./components/panel/DiskPane.qml;
-                  "${d}/components/panel/DiskModel.qml" = themedQmlFile variant ./components/panel/DiskModel.qml;
-                  "${d}/components/panel/NotificationServer.qml" =
-                    themedQmlFile variant ./components/panel/NotificationServer.qml;
-                  "${d}/components/panel/NotificationRow.qml" =
-                    themedQmlFile variant ./components/panel/NotificationRow.qml;
-                  "${d}/components/panel/NotificationToasts.qml" =
-                    themedQmlFile variant ./components/panel/NotificationToasts.qml;
-                  "${d}/components/panel/NotificationPane.qml" =
-                    themedQmlFile variant ./components/panel/NotificationPane.qml;
-                  "${d}/components/panel/AudioModel.qml" = themedQmlFile variant ./components/panel/AudioModel.qml;
-                  "${d}/components/panel/AudioPane.qml" = themedQmlFile variant ./components/panel/AudioPane.qml;
-                  "${d}/components/panel/MobileModel.qml" = themedQmlFile variant ./components/panel/MobileModel.qml;
-                  "${d}/components/panel/MobilePane.qml" = themedQmlFile variant ./components/panel/MobilePane.qml;
-                  "${d}/components/panel/MobileAction.qml" =
-                    themedQmlFile variant ./components/panel/MobileAction.qml;
-                  "${d}/components/panel/messages/ContactsModel.qml" =
-                    themedQmlFile variant ./components/panel/messages/ContactsModel.qml;
-                  "${d}/components/panel/messages/MessageHue.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessageHue.qml;
-                  "${d}/components/panel/messages/MessageAudio.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessageAudio.qml;
-                  "${d}/components/panel/messages/MessageStore.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessageStore.qml;
-                  "${d}/components/panel/messages/MessageAvatar.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessageAvatar.qml;
-                  "${d}/components/panel/messages/MessageTokens.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessageTokens.qml;
-                  "${d}/components/panel/messages/ThreadList.qml" =
-                    themedQmlFile variant ./components/panel/messages/ThreadList.qml;
-                  "${d}/components/panel/messages/ConversationView.qml" =
-                    themedQmlFile variant ./components/panel/messages/ConversationView.qml;
-                  "${d}/components/panel/messages/VoiceBubble.qml" =
-                    themedQmlFile variant ./components/panel/messages/VoiceBubble.qml;
-                  "${d}/components/panel/messages/MessagesModel.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessagesModel.qml;
-                  "${d}/components/panel/messages/ComposeRow.qml" =
-                    themedQmlFile variant ./components/panel/messages/ComposeRow.qml;
-                  "${d}/components/panel/messages/MessagesCore.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessagesCore.qml;
-                  "${d}/components/panel/messages/MessagesPane.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessagesPane.qml;
-                  "${d}/components/panel/messages/MessageToast.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessageToast.qml;
-                  "${d}/components/panel/messages/MessageToasts.qml" =
-                    themedQmlFile variant ./components/panel/messages/MessageToasts.qml;
-                  "${d}/components/panel/messages/PictureViewer.qml" =
-                    themedQmlFile variant ./components/panel/messages/PictureViewer.qml;
-                  "${d}/components/PanelSheet.qml" = themedQmlFile variant ./components/PanelSheet.qml;
-                  "${d}/components/ControlPanel.qml" = themedQmlFile variant ./components/ControlPanel.qml;
-                };
+                  "${d}/lockscreen/Lock.qml" = lockFor.${variant};
+                }
+                // lib.listToAttrs (
+                  map (p: lib.nameValuePair "${d}/${qmlRel p}" (themedQmlFile variant p)) qmlFiles
+                );
             in
             treeFor "dark" // treeFor "light";
 

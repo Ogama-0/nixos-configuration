@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "notification"
 
 // A relay grouped by the PHONE's app, not by the courier. Three Deezer\n// notifications pack into one group headed 'Deezer'; Finamp is its own;\n// Thunderbird is a normal app and unaffected. Relayed rows print only\n// their body, because their summary IS the group's header. Not driven through
 // NotificationServer: that one owns a bus, and a render fixture must not

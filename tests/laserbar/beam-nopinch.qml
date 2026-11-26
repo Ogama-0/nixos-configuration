@@ -1,7 +1,7 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
-import "components"
+import "laserbar"
 
 // One left-hand beam at full extent, with a pinch span over 800..1000.
 // The control: no pinch spans, so the strands run straight through 800..1000.

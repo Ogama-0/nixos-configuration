@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // MessageAudio, the one player every voice-note bubble shares.
 //

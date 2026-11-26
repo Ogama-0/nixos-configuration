@@ -93,7 +93,7 @@ in
 
           # GreetdSession carries no palette tokens, only the two binary paths, so
           # one copy serves both variants.
-          greetdSessionQml = themeGreeter "dark" darkImage ../../../qml/components/GreetdSession.qml;
+          greetdSessionQml = themeGreeter "dark" darkImage ../../../qml/greeter/GreetdSession.qml;
 
           # If quickshell cannot start, fall back to a text greeter rather than
           # leaving the machine with no way in. This is the primary lockout guard.
@@ -185,9 +185,11 @@ in
         in
         {
           environment.etc = {
-            "greeter/GreeterDark.qml".text = themeGreeter "dark" darkImage ../../../qml/GreeterDark.qml;
-            "greeter/GreeterLight.qml".text = themeGreeter "light" lightImage ../../../qml/GreeterLight.qml;
-            "greeter/components/GreetdSession.qml".text = greetdSessionQml;
+            "greeter/GreeterDark.qml".text = themeGreeter "dark" darkImage ../../../qml/greeter/GreeterDark.qml;
+            "greeter/GreeterLight.qml".text =
+              themeGreeter "light" lightImage
+                ../../../qml/greeter/GreeterLight.qml;
+            "greeter/GreetdSession.qml".text = greetdSessionQml;
             "greeter/sway.conf".source = swayConf;
           };
 

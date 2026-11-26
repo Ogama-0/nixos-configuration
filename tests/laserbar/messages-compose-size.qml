@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // ComposeRow's height against the text it is holding.
 //

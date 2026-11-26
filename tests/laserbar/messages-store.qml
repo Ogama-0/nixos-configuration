@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // MessageStore, against a throwaway database.
 //

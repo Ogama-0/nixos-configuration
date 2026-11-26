@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "panel/mainpanel"
 
 // Three mounts, stubbed, the last one over the warning threshold. Not driven
 // through DiskModel: that one runs df against this machine.

@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components"
+import "laserbar"
 
 // Catches the strip mid-transition. Slowed right down through the widget's
 // own public duration rather than a test-only hook, and the list is swapped

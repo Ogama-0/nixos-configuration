@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components"
+import "panel/mainpanel"
 
 // The selection arithmetic, driven with literals.
 //

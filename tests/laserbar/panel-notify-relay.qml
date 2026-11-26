@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components/panel"
+import "notification"
 
 // KDE Connect is a relay: everything the phone shows arrives under its
 // name. Packing by sender would put a message, a battery warning and a

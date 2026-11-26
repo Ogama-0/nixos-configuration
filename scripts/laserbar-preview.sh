@@ -77,7 +77,8 @@ for name, text in data.items():
 print(f"{len(data)} files", file=sys.stderr)
 PY
 
-# The fixture replaces shell.qml; components/ comes from the evaluated tree.
+# The fixture replaces shell.qml; the component buckets come from the
+# evaluated tree.
 #
 # ENTRY=real keeps the GENERATED shell.qml instead, which is the only way to
 # find out whether the thing that actually runs loads. A fixture instantiates

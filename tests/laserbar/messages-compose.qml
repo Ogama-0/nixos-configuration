@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // Sending, and the honesty of what the bubble claims afterwards.
 //

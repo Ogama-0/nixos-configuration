@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import "components/panel"
+import "panel/mainpanel"
 
 // The audio footer, stubbed. Not driven through AudioModel: that one asks
 // PipeWire what this machine is plugged into.

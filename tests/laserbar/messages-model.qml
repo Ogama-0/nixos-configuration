@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "components/panel/messages"
+import "panel/messagepanel"
 
 // MessagesModel, fed the payload captured in docs/kdeconnect-sms-payload.md.
 //

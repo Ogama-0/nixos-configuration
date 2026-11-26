@@ -22,7 +22,6 @@ MessagesPane          one per screen: a view, holds no state
 ├── ConversationView  bubbles, day separators, lazy scrollback
 └── ComposeRow        type, attach, paste, send
 
-MessageToasts         its own layer surface; MessageToast per thread
 PictureViewer         its own layer surface; grown from a tapped photo
 ```
 
@@ -57,7 +56,10 @@ every open.
 That burst is also why freshness is asked of the **store** and not only of
 `MessagesModel.seen`. `seen` is session memory and a session begins at every
 reboot, so against an empty one all fifty re-announced threads read as news
-and toasted texts read days ago.
+and announced texts read days ago. The popup that announced them is gone
+(see "Ways in"), but `messageArrived` and the freshness test behind it are
+not - the store write that precedes the signal is what keeps the cache
+current with the panel shut.
 
 **Everything the phone sends back is a signal, so the unwrap has to be right.**
 `requestConversation` returns nothing and answers as a burst of
@@ -67,7 +69,7 @@ first version tested `.data` on the variant's array — undefined, because
 arrays have no such property — and fell through to the wrapper itself, a
 one-field "message" that `usable()` then rejected. Every signal was dropped
 without a word, so the conversation list only ever filled from
-`activeConversations`, **no toast had ever fired**, and every page
+`activeConversations`, **`messageArrived` had never fired**, and every page
 `fetchOlder()` asked for answered into the void. `handleSignal` is split out
 of the Process for exactly this reason: a `SplitParser` cannot be handed a
 fixture, and this is the seam that broke.
@@ -236,6 +238,50 @@ re-read it triggers is coalesced through a 120ms timer.
 3. Add a column in `MessageStore.init` and bump `schemaVersion`.
 4. Store it in `putMessages`, read it back in `messages`.
 
+## When a message was sent
+
+Two marks, dividing the work between them.
+
+- **The day separator**, above the first message of each day (and above the
+  oldest message held, unconditionally). `ConversationView.dayLabel` — "Today",
+  "Yesterday", otherwise the dated weekday, and the year only when it is not
+  this one.
+- **The stamp**, `HH:mm`, beside every bubble. `ConversationView.timeLabel`.
+
+The separator used to carry a time of its own — "Today 08:32", which is the
+approved mock's wording (`docs/previews/messages-panel.html`) and was fine
+while nothing else said the hour. It is a pure date now: that minute belongs
+to the first bubble under it, which prints it for itself, and the separator
+saying it again put the same fact on two adjacent lines.
+
+**The stamp is OUTSIDE the bubble, in the gutter opposite the tail** — left of
+an outgoing bubble, right of an incoming one, bottom-aligned with it. The
+WhatsApp place for it is inside, bottom-right, and inside costs more than it
+looks: the stamp becomes a term in `bubble.width` (or it clips, since the
+bubble sizes itself from `bodyText.implicitWidth`) and a line in
+`content.implicitHeight` — around 20px of extra height on *every* message, in
+a view whose whole job is how much thread fits on screen. The gutter is
+already there and cannot run out: a bubble stops at 0.64 of the width, so the
+narrow side always keeps about a third of the pane and "08:32" at 10px needs
+a fraction of it. It also means a bled photo (`entry.bleeds` — an image with
+no caption, which fills its bubble edge to edge) needs no special case; an
+in-bubble stamp would have had to be laid over the picture with a scrim of
+its own.
+
+24-hour, from `Qt.formatTime(d, "HH:mm")`, not the locale's idea of a clock —
+the bar's clock and `ThreadList.relativeTime` are both already fixed to it,
+and a thread list reading `8:25` beside a bubble reading `8:25 AM` is the kind
+of drift nobody notices until it looks wrong.
+
+Nothing here reads a new field, so "Adding a field to a message" above does
+not apply: `ts` is already decoded in `MessagesModel.parseMessage` and already
+stored. A time on a bubble is a rendering change, with no schema bump.
+
+`tests/laserbar/messages-thread.qml` spans midnight for this: the separator
+has to appear *between* two messages, not only above the oldest one, which is
+drawn whatever the dates are and so proves nothing on its own. Don't probe the
+stamps — a 10px clock on a bare sheet averages to the sheet. Read them.
+
 ## Colour
 
 One pool, `@msgHues@`, per variant, hashed from the phone number so a contact
@@ -296,7 +342,7 @@ Messages cannot work that way — a compose field needs the keyboard. So:
 Tapping a photo opens `PictureViewer` full in the panel, over Messages
 rather than instead of it — `ControlPanel.pictureLayer` sits at `z: 110`
 against `messagesLayer`'s `z: 100`, grown out of the bubble exactly the way
-`messagesLayer` itself grows out of the mobile zone or a toast (same
+`messagesLayer` itself grows out of the mobile zone (same
 `Behavior on t`, same `NumberAnimation { duration: 210; easing.type:
 Easing.OutCubic }` — one animation feel, not two).
 
@@ -390,7 +436,6 @@ dead whenever the cursor is in a field.
 |---|---|
 | `mod+m` | `quickshell ipc -c widgets call panel messages` — a toggle: pressing it with Messages up dismisses the whole panel, where Escape collapses back to the control panel |
 | Mobile zone button | `MobilePane.messagesAsked` → `ControlPanel.openMessages("")` |
-| Toast, double-clicked | `MessageToasts.paneAsked` → `openMessages(convId)` |
 
 Escape collapses, replaying whichever expansion brought you in, backwards.
 
@@ -411,7 +456,7 @@ Logic: `messages-contacts`, `messages-hue`, `messages-store`,
 `quickshell` binary (ffmpeg plugin present) — `messages-audio` never touches
 a real player at all.
 Render: `messages-avatar`, `messages-sidebar`, `messages-thread`,
-`messages-pane`, `messages-toast`, `messages-voice`, `messages-viewer`.
+`messages-pane`, `messages-voice`, `messages-viewer`.
 
 Run the render ones with `LASERBAR_VARIANT=light` too. Several bugs here were
 only ever visible in one variant.
