@@ -30,6 +30,19 @@ in
           alacrittyColors = import ../../../lib/alacritty-colors.nix { inherit pkgs; };
           treeLink = import ../../../lib/quickshell-tree-link.nix { inherit pkgs; };
 
+          swayosdStylePath = "${config.xdg.configHome}/swayosd/style.css";
+          swayosdStyles = import ../../../lib/swayosd-style.nix { inherit pkgs; };
+
+          # GTK reads its stylesheet once, at startup, so the new colours only
+          # land on a restart. Safe to do bluntly, unlike quickshell-widgets:
+          # this daemon holds no session lock and no state worth keeping - the
+          # worst case is a volume pill that was on screen during a sunrise
+          # disappearing a moment early.
+          swayosdTheme = mode: ''
+            ${coreutils}/bin/install -m 644 ${swayosdStyles.${mode}} "${swayosdStylePath}"
+            ${pkgs.systemd}/bin/systemctl --user try-restart swayosd.service || true
+          '';
+
           helixAutoTheme = "${config.xdg.configHome}/helix/themes/auto.toml";
           helixTheme = import ../../../lib/helix-auto-theme.nix { inherit pkgs; };
 
@@ -187,6 +200,7 @@ in
                 ${dconfExe} write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'"
               '';
               quickshell-theme = quickshellTheme "dark";
+              swayosd = swayosdTheme "dark";
             };
 
             lightModeScripts = {
@@ -204,6 +218,7 @@ in
                 ${dconfExe} write /org/gnome/desktop/interface/icon-theme "'Papirus-Light'"
               '';
               quickshell-theme = quickshellTheme "light";
+              swayosd = swayosdTheme "light";
             };
           };
         }

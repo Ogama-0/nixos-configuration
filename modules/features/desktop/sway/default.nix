@@ -31,7 +31,19 @@
 
             # First paired-and-reachable device, rather than a hardcoded id, so this
             # survives a re-pair.
-            DEVICE=$(${pkgs.kdePackages.kdeconnect-kde}/bin/kdeconnect-cli -a --id-only | ${pkgs.coreutils}/bin/head -n1)
+            #
+            # Asked over the bus rather than with `kdeconnect-cli -a --id-only`.
+            # Same question, same daemon, same answer - but the CLI spends 70
+            # to 110ms starting a Qt/KDE process to ask it, and this runs on a
+            # keypress you are holding down. It was most of the delay between
+            # pressing the key and seeing the level move.
+            #
+            # `devices bb true true` is (onlyReachable, onlyPaired), and prints
+            # `as N "id" "id"...`.
+            DEVICE=$(${pkgs.systemd}/bin/busctl --user --json=short call \
+              org.kde.kdeconnect /modules/kdeconnect org.kde.kdeconnect.daemon \
+              devices bb true true 2>/dev/null \
+              | ${pkgs.gnused}/bin/sed -n 's/.*\[\"\([^"]*\)\".*/\1/p')
             if [ -z "$DEVICE" ]; then exit 0; fi
             OBJ=/modules/kdeconnect/devices/$DEVICE/mprisremote
 
@@ -52,67 +64,38 @@
             if [ "$NEXT" -gt 100 ]; then NEXT=100; fi
 
             ${pkgs.systemd}/bin/busctl --user set-property $SVC "$OBJ" $IFACE volume i "$NEXT"
-            # Fixed replaces-id so holding the key repaints one toast instead of stacking.
-            ${pkgs.notify-desktop}/bin/notify-desktop -r 7311 -a kdeconnect "Phone Volume" "Volume: $NEXT%" >/dev/null
+
+            # Through SwayOSD, like the machine's own volume keys, rather than
+            # as a notification. It is the same kind of thing - a reading you
+            # wanted at the instant you pressed a key - and the shift variants
+            # sitting on the very same keys ought to answer the same way.
+            #
+            # --custom-progress ONLY, never together with --custom-message.
+            # Passing both draws the message, then replaces it with the bar a
+            # frame later: you see the text flash and vanish. They are two
+            # different OSDs, not two parts of one. The phone glyph is what
+            # says this is the phone and not this machine.
+            #
+            # --custom-progress wants 0..1, so the percentage is divided here.
+            ${pkgs.swayosd}/bin/swayosd-client \
+              --custom-icon phone \
+              --custom-progress "$(${pkgs.coreutils}/bin/printf '%d.%02d' \
+                  $((NEXT / 100)) $((NEXT % 100)))" >/dev/null 2>&1 || true
           '';
 
-          # wpctl is silent, and this laptop has no volume LED: a keypress that
-          # changed nothing looks exactly like one that did not register. So the
-          # audio keys say what they did.
+          # The volume, mic and brightness readouts belong to SwayOSD now - see
+          # modules/features/desktop/swayosd.nix.
           #
-          # Sent transient (`boolean:transient:true`): the laser bar's notification
-          # server shows a transient as a toast and does NOT keep it, because a
-          # reading you wanted at the instant you pressed a key is not a message,
-          # and twenty of them would push the real ones out of the centre.
+          # `swayosd-client` performs the wpctl/brightnessctl call AND draws the
+          # result, so each key is one command rather than a script that made
+          # the change, read the level back, parsed `wpctl get-volume` output
+          # and picked an icon from the number.
           #
-          # One script for all four keys so the reading is parsed in one place -
-          # mute and volume share an output line, and the mic's is the same shape.
-          audioOsd = pkgs.writeShellScript "audio-osd" ''
-            set -eu
+          # And nothing here sends a notification for them any more. They used
+          # to go out transient so the laser bar would toast them; keeping that
+          # alongside SwayOSD would put two things on screen for one keypress.
+          swayosdClient = "${pkgs.swayosd}/bin/swayosd-client";
 
-            wpctl=${pkgs.wireplumber}/bin/wpctl
-
-            # "Volume: 0.45 [MUTED]" -> "45 [MUTED]", the tag absent when unmuted.
-            reading() {
-              $wpctl get-volume "$1" \
-                | ${pkgs.gawk}/bin/awk '{ printf "%.0f %s", $2 * 100, $3 }'
-            }
-
-            # One app name per device, because the toasts pack by app: the volume
-            # and the mic each keep a toast of their own rather than fighting over
-            # one.
-            osd() {
-              ${pkgs.libnotify}/bin/notify-send \
-                -a "$1" -i "$2" -h boolean:transient:true "$3"
-            }
-
-            case "$1" in
-              up) $wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ ;;
-              down) $wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- ;;
-              mute) $wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
-              mic) $wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
-            esac
-
-            if [ "$1" = mic ]; then
-              set -- $(reading @DEFAULT_AUDIO_SOURCE@)
-              if [ "''${2-}" = "[MUTED]" ]; then
-                osd Microphone microphone-sensitivity-muted "Mic muted"
-              else
-                osd Microphone microphone-sensitivity-high "Mic live"
-              fi
-            else
-              set -- $(reading @DEFAULT_AUDIO_SINK@)
-              if [ "''${2-}" = "[MUTED]" ]; then
-                osd Volume audio-volume-muted "Muted"
-              elif [ "$1" -ge 66 ]; then
-                osd Volume audio-volume-high "$1%"
-              elif [ "$1" -ge 33 ]; then
-                osd Volume audio-volume-medium "$1%"
-              else
-                osd Volume audio-volume-low "$1%"
-              fi
-            fi
-          '';
         in
         {
           # What sway used to import is registered separately now:
@@ -301,18 +284,23 @@
                 "XF86AudioNext" = "exec playerctl next";
                 "XF86AudioPlay" = "exec playerctl play-pause";
 
-                "XF86AudioRaiseVolume" = "exec ${audioOsd} up";
-
-                "XF86AudioLowerVolume" = "exec ${audioOsd} down";
+                # SwayOSD does the change and draws it. No notify-send here:
+                # one keypress, one thing on screen.
+                "XF86AudioRaiseVolume" = "exec ${swayosdClient} --output-volume raise";
+                "XF86AudioLowerVolume" = "exec ${swayosdClient} --output-volume lower";
 
                 # Same keys with Shift, aimed at the phone over KDE Connect.
                 "Shift+XF86AudioRaiseVolume" = "exec ${kdeconnectVolume} 5";
                 "Shift+XF86AudioLowerVolume" = "exec ${kdeconnectVolume} -5";
-                "XF86AudioMute" = "exec ${audioOsd} mute";
-                "XF86AudioMicMute" = "exec ${audioOsd} mic";
 
-                "XF86MonBrightnessUp" = "exec brightnessctl --exponent=2 s +10%";
-                "XF86MonBrightnessDown" = "exec brightnessctl --exponent=2 s 10%-";
+                "XF86AudioMute" = "exec ${swayosdClient} --output-volume mute-toggle";
+                "XF86AudioMicMute" = "exec ${swayosdClient} --input-volume mute-toggle";
+
+                # Brightness had no readout at all before. The volume keys got
+                # one because this laptop has no volume LED and these never
+                # did; it comes free now that something else draws it.
+                "XF86MonBrightnessUp" = "exec ${swayosdClient} --brightness raise";
+                "XF86MonBrightnessDown" = "exec ${swayosdClient} --brightness lower";
 
                 "Print" = ''exec grim -g "$(slurp)" - | satty -f - --action-on-enter save-to-clipboard'';
               };

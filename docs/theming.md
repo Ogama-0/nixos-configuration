@@ -20,7 +20,7 @@ colour you want changed is a colour you edit by hand, in one place.
 | `lib/helix-auto-theme.nix` | The two `auto.toml` bodies — helix is the one app that does *not* follow ANSI |
 | `lib/zellij-theme.nix` | The two zellij themes, which need true colour rather than ANSI slots |
 | `lib/quickshell-tree-link.nix` | Repoints `~/.config/quickshell/widgets` at one of the two trees |
-| `modules/features/desktop/darkman.nix` | The switch itself: five dark/light script pairs, plus the timezone sync |
+| `modules/features/desktop/darkman.nix` | The switch itself: six dark/light script pairs, plus the timezone sync |
 | `modules/features/desktop/gtk.nix` | GTK plumbing, with the keys darkman owns deliberately left unset |
 | `lib/timezone-coords.nix` | Lat/lng per timezone, shared with the greeter |
 
@@ -30,7 +30,7 @@ Not everything reads the same group, and that split is the thing most likely
 to surprise you:
 
 - **`ui`** → the Quickshell bar, widgets, control panel and lockscreen, the
-  greeter, mako, vicinae. Via `theme-colors.nix`. Follows the base16 slot
+  greeter, SwayOSD, vicinae. Via `theme-colors.nix`. Follows the base16 slot
   convention (`base00` darkest ground → `base07` lightest text,
   `base08`–`base0F` accents), and consumers assume those *roles*. Changing a
   slot's value is fine; swapping its role will look wrong everywhere.
@@ -56,13 +56,17 @@ does not switch.
    script derives coordinates from `/etc/localtime` instead, writing
    `~/.config/darkman/config.yaml` on every switch. That makes the mode follow
    `time.timeZone`, which is what you actually change when you travel.
-2. On transition it runs five scripts per direction:
+2. On transition it runs six scripts per direction:
    - **alacritty** — `install` the right `colors.toml`. Alacritty live-reloads.
    - **helix** — `install` the right `auto.toml`, then `pkill -USR1` helix.
    - **zellij** — `install` the right `auto.kdl` (for *new* sessions) **and**
      `zellij action set-<mode>-theme` for every *running* one.
    - **gtk-theme** — three `dconf write`s: `color-scheme`, `gtk-theme`,
      `icon-theme`.
+   - **swayosd** — `install` the right `style.css`, then `try-restart`
+     `swayosd.service`: GTK reads its stylesheet once, at startup. Safe to
+     restart bluntly, unlike quickshell-widgets below - this daemon holds no
+     session lock and nothing worth keeping.
    - **quickshell-theme** — repoint the `widgets` symlink at
      `widgets-dark`/`widgets-light`, then restart `quickshell-widgets.service`
      **unless the session is locked**.
@@ -99,6 +103,10 @@ saying so, because each one learned it separately:
   activation script rather than `xdg.configFile`.
 - `helix.nix` does the same for `themes/auto.toml`.
 - `zellij/default.nix` leaves `themes/` unmanaged for the same reason.
+- `swayosd.nix` seeds `swayosd/style.css` only when missing, and points
+  `services.swayosd.stylePath` at that unmanaged path rather than at a store
+  file - the path is baked into the unit at build time, so it has to be one
+  darkman can keep rewriting underneath it.
 - `darkman.nix` keeps `services.darkman.settings = { }` **on purpose** —
   home-manager's own darkman module manages `darkman/config.yaml` via
   `mkIf (cfg.settings != {})`, so a single setting there would turn the file
