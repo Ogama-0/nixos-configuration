@@ -12,6 +12,8 @@ help:
 	@echo "make oserv-hm     Home Manager switch only, no sudo (home server, run on oserv itself)"
 	@echo "make epita        Home Manager switch (EPITA computer)"
 	@echo "make epita-light  Home Manager switch (EPITA computer, trimmed down)"
+	@echo "make y13          Nixos switch only sudo (y13 server)"
+	@echo "make y13-hm       Home Manager switch (y13 server)"
 	@echo "make check        nix flake check"
 	@echo "make update       nix flake update"
 
@@ -34,6 +36,12 @@ oserv:
 
 oserv-hm:
 	nh home switch . -c oserv
+
+y13:
+	nh os switch . -H y13
+
+y13-hm:
+	nh home switch . -c y13
 
 epita:
 	cp ~/afs/.wakatime.cfg ~
