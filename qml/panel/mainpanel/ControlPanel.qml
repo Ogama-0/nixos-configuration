@@ -517,9 +517,86 @@ Scope {
         onPosted: record => toasts.show(record)
     }
 
+    // One clock for every "5m ago" on the desktop, ticking only while
+    // something is actually showing one. Owned here and handed to both
+    // surfaces so the toasts and the centre cannot disagree about the time.
+    NowClock {
+        id: nowClock
+        active: toasts.visible || root.isOpen
+    }
+
     NotificationToasts {
         id: toasts
         uiScale: 1
+        clock: nowClock
+        onActivated: record => root.runAction(record)
+    }
+
+    // What clicking a notification does.
+    //
+    // A table, not a switch buried in a delegate: adding an app is adding a
+    // row. `match` is given the record and returns true; `run` does the
+    // thing. First match wins, and the last row matches everything.
+    //
+    // NOTE: the server already advertises `actionsSupported: true`, so some
+    // senders attach their own actions that nothing has ever invoked. Those
+    // are reachable through `record.ref.actions` and are a better answer
+    // than anything guessed from an app name - hence the second row.
+    // The freedesktop convention is that clicking the body invokes the action
+    // whose identifier is "default". `actions[0]` is merely whichever one the
+    // sender happened to list first - a calendar reminder leading with
+    // "Snooze", a mail client leading with "Mark as read" - so taking it
+    // would fire something you did not ask for.
+    function defaultAction(record) {
+        if (!record.live || !record.ref || !record.ref.actions) return null;
+        const acts = record.ref.actions;
+        for (const a of acts) if (a.identifier === "default") return a;
+        return null;
+    }
+
+    readonly property var actionTable: [
+        {
+            // SMS only, not everything the phone forwards. EVERYTHING from
+            // the phone arrives relayed as "KDE Connect" - battery warnings,
+            // media, BeReal - so matching on the courier alone opened the
+            // compose surface for a low-battery warning, and because this
+            // row is first it also hid those notifications' own actions.
+            // Through a relay the summary is the real sender; the phone's
+            // SMS app announces itself as "Messages".
+            match: r => (r.appName || "") === "KDE Connect"
+                        && (r.summary || "") === "Messages",
+            run: r => root.openMessages("")
+        },
+        {
+            match: r => root.defaultAction(r) !== null,
+            run: r => root.defaultAction(r).invoke()
+        },
+        {
+            match: r => true,
+            run: r => { root.summon(); root.expandGroupFor(r); }
+        }
+    ]
+
+    function runAction(record) {
+        if (!record) return;
+        for (const rule of actionTable)
+            if (rule.match(record)) { rule.run(record); return; }
+    }
+
+    // Open the centre with this notification's group already unfolded, so a
+    // click lands you on the thing you clicked rather than on a list.
+    function expandGroupFor(record) {
+        for (const g of notifications.groups)
+            for (const it of g.items)
+                if (it.uid === record.uid) {
+                    const next = {};
+                    for (const k in expandedGroups) next[k] = expandedGroups[k];
+                    next[g.key] = true;
+                    expandedGroups = next;
+                    selectedNotifications = [record.uid];
+                    selectionAnchor = record.uid;
+                    return;
+                }
     }
 
     AudioModel {
@@ -1151,6 +1228,7 @@ Scope {
                                 height: parent.height - 36 * zones.s
                                 uiScale: panel.uiScale
                                 groups: notifications.groups
+                                clock: nowClock
                                 maxGroups: root.maxGroups
                                 maxInGroup: root.maxInGroup
                                 selectedUids: root.selectedNotifications

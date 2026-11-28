@@ -10,6 +10,10 @@ Item {
     property real uiScale: 1
     property var item: null
     property bool showApp: true
+    // The toast draws the icon once in its header, above a pack that may hold
+    // several rows; the centre still draws one per row, because there the
+    // rows are the only thing identifying who sent each entry.
+    property bool showIcon: true
     // A relayed notification's summary is the phone app's name, which the
     // group header already prints. Repeating it leaves the body - the only
     // part you actually read - as the smallest text in the row.
@@ -29,7 +33,7 @@ Item {
         if (item.appIcon) return Quickshell.iconPath(item.appIcon, true);
         return "";
     }
-    readonly property bool hasIcon: iconSource !== ""
+    readonly property bool hasIcon: showIcon && iconSource !== ""
 
     // The server advertises body-markup, so a sender writing "<b>" means
     // bold. StyledText rather than AutoText because the heuristic that picks

@@ -46,6 +46,20 @@ Item {
     // Read back from disk at startup; display-only.
     property var restored: []
 
+    // Notification id -> the moment it arrived.
+    //
+    // NOT stamped in recordFor(). That runs inside the `notifications`
+    // binding, which re-evaluates every time anything arrives or is
+    // dismissed - a Date.now() in there would quietly reset the timestamp of
+    // every notification on the list each time a new one came in, and the
+    // whole column would read "now" forever. Stamped once, on arrival,
+    // looked up afterwards.
+    //
+    // Mutated in place rather than reassigned, deliberately: reassigning
+    // would invalidate `notifications` and recompute the list purely to
+    // record that we had recorded something.
+    property var seenAt: ({})
+
     function recordFor(n) {
         return {
             // `key` is the TEXT, used to fold a restored twin into its live
@@ -59,6 +73,14 @@ Item {
             body: n.body || "",
             appIcon: n.appIcon || "",
             image: n.image || "",
+            // When it arrived, which nothing used to record. The bus handing
+            // it to us is the only honest answer - the freedesktop spec
+            // gives a sender no way to say when. See `seenAt` for why it is
+            // a lookup and not a Date.now() right here.
+            ts: root.seenAt[n.id] || 0,
+            // Low / Normal / Critical, straight off the hint. Never read
+            // before: a battery at 3% and a Syncthing scan were one thing.
+            urgency: n.urgency,
             // An OSD (the volume keys, the mic toggle) is not tracked, so
             // there is no live notification left to act on or dismiss - the
             // record is a copy the toast renders and then forgets.
@@ -215,9 +237,24 @@ Item {
         onTriggered: {
             const flat = root.notifications.map(r => ({
                 appName: r.appName, summary: r.summary, body: r.body,
-                appIcon: r.appIcon, image: r.image
+                appIcon: r.appIcon, image: r.image,
+                // Without these two a restart resets every notification to
+                // "now" and forgets which one was critical.
+                ts: r.ts, urgency: r.urgency
             }));
             store.setText(JSON.stringify(flat));
+
+            // `seenAt` would otherwise keep an entry for every notification
+            // the session ever saw. Pruned here rather than on dismissal
+            // because this already runs on every arrival and every removal,
+            // and the live list is exactly the set worth keeping.
+            // Deleted in place, not reassigned: assigning a fresh object
+            // would invalidate `notifications` and recompute the whole list
+            // just to record that some keys went away.
+            const alive = {};
+            const model = server.trackedNotifications;
+            for (const n of (model ? model.values : [])) if (n) alive[n.id] = true;
+            for (const k in root.seenAt) if (!alive[k]) delete root.seenAt[k];
         }
     }
 
@@ -240,6 +277,10 @@ Item {
             // that tells you a text arrived. It takes the ordinary path:
             // toast, then the centre, grouped under the real sender by the
             // relay handling above. Answering is mod+m.
+
+            // Before anything else, and before `tracked` invalidates the
+            // list: this is the one moment we know when it arrived.
+            root.seenAt[notification.id] = Date.now();
 
             // Transient means "show it, do not keep it": one per volume
             // keypress. Tracking those would walk a 50-entry centre full of
@@ -308,11 +349,39 @@ Item {
                         body: e.body || "",
                         appIcon: e.appIcon || "",
                         image: e.image || "",
+                        // 0, not Date.now(): a file written before
+                        // timestamps existed has no ts, and NowClock
+                        // renders 0 as "earlier" rather than claiming
+                        // something days old just arrived.
+                        ts: e.ts || 0,
+                        urgency: e.urgency,
                         live: false,
                         ref: null
                     });
                 }
                 root.restored = out;
+
+                // Seed the arrival times of anything that OUTLIVED a config
+                // reload. `keepOnReload` keeps trackedNotifications across
+                // one, but this object is new and `onNotification` does not
+                // re-fire for the survivors - so without this every one of
+                // them has no entry in `seenAt`, reads ts 0, and the whole
+                // centre says "earlier" after a reload. The restored twin
+                // cannot rescue it either: a live record always wins the
+                // fold in `notifications`, ts and all.
+                //
+                // Matched on `key`, the text, because ids are not stable
+                // across the reload either.
+                const byText = {};
+                for (const e of saved) if (e.ts) byText[(e.appName || "") + "|"
+                    + (e.summary || "") + "|" + (e.body || "")] = e.ts;
+                const model = server.trackedNotifications;
+                for (const n of (model ? model.values : [])) {
+                    if (!n || root.seenAt[n.id] !== undefined) continue;
+                    const k = (n.appName || "") + "|" + (n.summary || "")
+                            + "|" + (n.body || "");
+                    if (byText[k]) root.seenAt[n.id] = byText[k];
+                }
             } catch (err) {
                 root.restored = [];
             }

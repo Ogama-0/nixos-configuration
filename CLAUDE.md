@@ -106,13 +106,14 @@ qml/common/                   used by two or more features - PanelBeam, PanelIco
                               PanelSheet, ColorUtils, RevealMask, Sparkline,
                               CalendarModel, RemoteBadge, and the session-wide
                               models shell.qml owns (MprisModel, RemoteSpectrum,
-                              WeatherModel)
+                              WeatherModel, NowClock)
 qml/laserbar/                 the momentary bar and its widgets
 qml/desktopwidgets/           the always-on desktop surfaces: wallpaper, clock,
                               music card, calendar card, server status
 qml/lockscreen/               LockDark/LockLight - two designs, one Lock.qml
-qml/notification/             the freedesktop notification server, the centre
-                              and the toasts
+qml/notification/             the freedesktop notification server, the centre,
+                              the toasts and BeamWire (the bar's wire, at
+                              notification scale)
 qml/panel/mainpanel/          ControlPanel and its zones
 qml/panel/messagepanel/       the KDE Connect SMS surface
 qml/greeter/                  the greetd surfaces - NOT part of the walk
@@ -138,4 +139,4 @@ qml/greeter/                  the greetd surfaces - NOT part of the walk
 - `docs/adding-a-bar-widget.md` for putting something new on the sway laser bar (a DND toggle, a battery readout) — the group/widget split, the properties the bar binds for you, the performance rules that are already scar tissue, and the headless render harness that stands in for a test suite.
 - `docs/theming.md` before changing any colour or adding an app to the dark/light switch — the one-palette rule, and the constraint that explains most of the code: anything `darkman` rewrites at runtime must *not* be managed by `xdg.configFile`, or it becomes a read-only store symlink darkman cannot replace.
 
-`docs/calendar-stack.md`, `docs/greeter.md`, `docs/status-widget.md` and `docs/messages-panel.md` cover those four subsystems' own setup and gotchas. The last of those is also where the KDE Connect SMS surface is written down (with `docs/kdeconnect-sms-payload.md`), and it is the only part of the panel that takes keyboard focus - read its focus section before touching `modes.panel`. `docs/superpowers/{specs,plans}/` holds per-feature design specs and implementation plans, dated and one topic per file.
+`docs/calendar-stack.md`, `docs/greeter.md`, `docs/status-widget.md`, `docs/notifications.md` and `docs/messages-panel.md` cover those five subsystems' own setup and gotchas. The last of those is also where the KDE Connect SMS surface is written down (with `docs/kdeconnect-sms-payload.md`), and it is the only part of the panel that takes keyboard focus - read its focus section before touching `modes.panel`. `docs/superpowers/{specs,plans}/` holds per-feature design specs and implementation plans, dated and one topic per file.

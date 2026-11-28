@@ -18,6 +18,9 @@ Item {
     property real uiScale: 1
     // [{ app, items: [...], count }]
     property var groups: []
+    // The shared clock behind every "5m ago". Owned by ControlPanel; null in
+    // a fixture, which simply renders no timestamps.
+    property var clock: null
 
     // A flood of two hundred must not become two hundred delegates, so there
     // is still a ceiling - but it sits far above a normal desktop's worth of
@@ -219,8 +222,21 @@ Item {
                             }
                         }
 
+                        // When the newest one in this group arrived. A
+                        // backlog without times is a list of things that
+                        // happened at no particular moment.
                         Text {
+                            id: stamp
                             x: parent.width - width
+                            text: root.clock
+                                ? root.clock.relative(group.modelData.items[0].ts) : ""
+                            color: "@mutedColor@"
+                            font.pixelSize: Math.round(9.5 * root.uiScale)
+                            font.family: "Orbitron"
+                        }
+
+                        Text {
+                            x: stamp.x - width - 8 * root.uiScale
                             visible: group.stacked
                             text: group.open ? "Collapse" : "Expand"
                             color: "@mutedColor@"
