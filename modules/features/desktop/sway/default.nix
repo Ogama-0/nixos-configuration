@@ -159,16 +159,33 @@
                   $((PCT / 100)) $((PCT % 100)))" >/dev/null 2>&1 || true
           '';
 
+          screenshot = pkgs.writeShellScript "screenshot" ''
+            set -eu
+            grim=${pkgs.grim}/bin/grim
+            slurp=${pkgs.slurp}/bin/slurp
+            satty=${pkgs.satty}/bin/satty
+            wlcopy=${pkgs.wl-clipboard}/bin/wl-copy
+            region=$($slurp) || exit 0
+            case "$1" in
+              copy)
+                $grim -g "$region" - | $wlcopy -t image/png
+                ;;
+              annotate)
+                $grim -g "$region" -t ppm - \
+                  | $satty -f - \
+                      --copy-command "$wlcopy -t image/png" \
+                      --actions-on-enter save-to-clipboard \
+                      --early-exit
+                ;;
+            esac
+          '';
+
         in
         {
-          # What sway used to import is registered separately now:
-          # sway-effects, sway-idle, laserbar, gammastep, vicinae and swaylock
-          # each default to ogama.desktop.sway.enable, so turning sway on still
-          # brings the whole rig, and any one piece can be dropped with a flag.
           home.packages = with pkgs; [
-            grim
             slurp
             wlroots
+            grim
             satty
           ];
           services.autotiling.enable = true;
@@ -366,7 +383,8 @@
                 "XF86MonBrightnessUp" = "exec ${brightnessKey} +10%";
                 "XF86MonBrightnessDown" = "exec ${brightnessKey} 10%-";
 
-                "Print" = ''exec grim -g "$(slurp)" - | satty -f - --action-on-enter save-to-clipboard'';
+                "Print" = "exec ${screenshot} copy";
+                "Shift+Print" = "exec ${screenshot} annotate";
               };
             };
 
