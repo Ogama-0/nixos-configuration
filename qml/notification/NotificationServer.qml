@@ -224,15 +224,25 @@ Item {
         save();
     }
 
-    // Deferred by a turn. Called straight from onNotification it ran before
-    // the new notification was in trackedNotifications, so the file was
-    // always one behind the screen - and the newest notification, the one
-    // you most want back, was the one a restart lost.
+    // Deferred. Called straight from onNotification it ran before the new
+    // notification was in trackedNotifications, so the file was always one
+    // behind the screen - and the newest notification, the one you most
+    // want back, was the one a restart lost.
+    //
+    // The interval is also what coalesces a burst. Every arrival and every
+    // dismissal lands here, and each run walks all fifty records, builds a
+    // flat copy of each, serialises them and writes a file - so clearing a
+    // group of twelve used to be twelve of those. `restart()` means a run
+    // of changes inside the window collapses into one write, and the file
+    // is the LAST state rather than every state on the way there.
+    //
+    // Short enough that the window is not a real exposure: losing the file
+    // costs the notifications a reboot was going to drop anyway.
     function save() { saveSoon.restart() }
 
     Timer {
         id: saveSoon
-        interval: 0
+        interval: 250
         repeat: false
         onTriggered: {
             const flat = root.notifications.map(r => ({

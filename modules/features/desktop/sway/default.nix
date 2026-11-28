@@ -86,15 +86,78 @@
           # The volume, mic and brightness readouts belong to SwayOSD now - see
           # modules/features/desktop/swayosd.nix.
           #
-          # `swayosd-client` performs the wpctl/brightnessctl call AND draws the
-          # result, so each key is one command rather than a script that made
-          # the change, read the level back, parsed `wpctl get-volume` output
-          # and picked an icon from the number.
+          # `swayosd-client` performs the wpctl call AND draws the result, so a
+          # volume key is one command rather than a script that made the change,
+          # read the level back, parsed `wpctl get-volume` output and picked an
+          # icon from the number.
           #
           # And nothing here sends a notification for them any more. They used
           # to go out transient so the laser bar would toast them; keeping that
           # alongside SwayOSD would put two things on screen for one keypress.
-          swayosdClient = "${pkgs.swayosd}/bin/swayosd-client";
+          #
+          # SwayOSD makes the change IN THE SERVER, which is the part that is
+          # easy to miss: `swayosd-client --output-volume raise` is a DBus call,
+          # not a local one. If swayosd.service is not up the key does nothing
+          # at all - where the old wpctl script at least changed the volume and
+          # only lost the readout. The unit carries Restart=always with
+          # StartLimitBurst=5/StartLimitIntervalSec=10, so five crashes inside
+          # ten seconds is enough to leave it `failed` and the volume keys dead
+          # with no indication of why.
+          #
+          # So: ask SwayOSD, and do it ourselves when it cannot be reached
+          # (the client exits 1 - verified against an empty session bus). The
+          # fallback is silent, because there is no volume LED on this laptop
+          # and nothing left to draw with - but silent and working beats silent.
+          volumeKey = pkgs.writeShellScript "volume-key" ''
+            set -eu
+
+            wpctl=${pkgs.wireplumber}/bin/wpctl
+            osd=${pkgs.swayosd}/bin/swayosd-client
+
+            # -l 1 is the same 100% ceiling SwayOSD's own max_volume default
+            # applies, so the two paths cannot disagree about the top of the
+            # range.
+            case "$1" in
+              up)   $osd --output-volume raise       || $wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+              down) $osd --output-volume lower       || $wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%- ;;
+              mute) $osd --output-volume mute-toggle || $wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+              mic)  $osd --input-volume mute-toggle  || $wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
+            esac
+          '';
+
+          # Brightness is the one key where SwayOSD does NOT get to make the
+          # change: brightnessctl does it and SwayOSD only draws the result.
+          # The same split the phone volume uses above, and for one reason.
+          #
+          # `swayosd-client --brightness raise` is a LINEAR 5% of the raw
+          # backlight range (BRIGHTNESS_CHANGE_DELTA in swayosd's source) and
+          # there is no knob for either half of that. These keys were
+          # `brightnessctl --exponent=2 s +10%`, and on an OLED panel the
+          # exponent is the point: it puts the small steps at the bottom of
+          # the range, which is where you want fine control and where a linear
+          # 5% of maximum is a huge relative jump. Going through brightnessctl
+          # keeps the step and the curve the keys always had.
+          #
+          # Fail-soft by construction: the brightness has already changed by
+          # the time SwayOSD is asked for anything, so a dead daemon costs the
+          # readout and nothing else.
+          brightnessKey = pkgs.writeShellScript "brightness-key" ''
+            set -eu
+
+            # -m prints device,class,current,percent,max - field 4 is "45%".
+            PCT=$(${pkgs.brightnessctl}/bin/brightnessctl -m --exponent=2 s "$1" \
+                  | ${pkgs.coreutils}/bin/cut -d, -f4 \
+                  | ${pkgs.coreutils}/bin/tr -d '%')
+            case "$PCT" in ""|*[!0-9]*) exit 0 ;; esac
+
+            # --custom-progress wants 0..1, and NEVER together with
+            # --custom-message: they are two different OSDs, and passing both
+            # draws the message and then replaces it with the bar a frame later.
+            ${pkgs.swayosd}/bin/swayosd-client \
+              --custom-icon display-brightness-symbolic \
+              --custom-progress "$(${pkgs.coreutils}/bin/printf '%d.%02d' \
+                  $((PCT / 100)) $((PCT % 100)))" >/dev/null 2>&1 || true
+          '';
 
         in
         {
@@ -284,23 +347,24 @@
                 "XF86AudioNext" = "exec playerctl next";
                 "XF86AudioPlay" = "exec playerctl play-pause";
 
-                # SwayOSD does the change and draws it. No notify-send here:
-                # one keypress, one thing on screen.
-                "XF86AudioRaiseVolume" = "exec ${swayosdClient} --output-volume raise";
-                "XF86AudioLowerVolume" = "exec ${swayosdClient} --output-volume lower";
+                # SwayOSD does the change and draws it, with wpctl behind it
+                # for when the daemon is not there. No notify-send here: one
+                # keypress, one thing on screen.
+                "XF86AudioRaiseVolume" = "exec ${volumeKey} up";
+                "XF86AudioLowerVolume" = "exec ${volumeKey} down";
 
                 # Same keys with Shift, aimed at the phone over KDE Connect.
                 "Shift+XF86AudioRaiseVolume" = "exec ${kdeconnectVolume} 5";
                 "Shift+XF86AudioLowerVolume" = "exec ${kdeconnectVolume} -5";
 
-                "XF86AudioMute" = "exec ${swayosdClient} --output-volume mute-toggle";
-                "XF86AudioMicMute" = "exec ${swayosdClient} --input-volume mute-toggle";
+                "XF86AudioMute" = "exec ${volumeKey} mute";
+                "XF86AudioMicMute" = "exec ${volumeKey} mic";
 
                 # Brightness had no readout at all before. The volume keys got
                 # one because this laptop has no volume LED and these never
                 # did; it comes free now that something else draws it.
-                "XF86MonBrightnessUp" = "exec ${swayosdClient} --brightness raise";
-                "XF86MonBrightnessDown" = "exec ${swayosdClient} --brightness lower";
+                "XF86MonBrightnessUp" = "exec ${brightnessKey} +10%";
+                "XF86MonBrightnessDown" = "exec ${brightnessKey} 10%-";
 
                 "Print" = ''exec grim -g "$(slurp)" - | satty -f - --action-on-enter save-to-clipboard'';
               };

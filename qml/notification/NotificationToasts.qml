@@ -88,15 +88,18 @@ PanelWindow {
         return urgency !== NotificationUrgency.Critical;
     }
 
-    function alphaColor(c, a) {
-        const k = Qt.color(c);
-        return Qt.rgba(k.r, k.g, k.b, a);
-    }
-
+    // @accentLineColor@ and NOT @greenColor@.
+    //
+    // The two are the same colour in dark and deliberately are not in light.
+    // @greenColor@ is base0B, which light puts at #94E1B0 - a pale mint that
+    // is fine as a filled count badge with dark ink on it and measures
+    // 1.24:1 as a stroke on this plate. The wire and the life bar were being
+    // drawn correctly and could not be seen. @downColor@ and @mutedColor@
+    // were already polarity-correct; this was the one that was not.
     function wireColorFor(urgency) {
         if (urgency === NotificationUrgency.Critical) return "@downColor@";
         if (urgency === NotificationUrgency.Low) return "@mutedColor@";
-        return "@greenColor@";
+        return "@accentLineColor@";
     }
 
     // ---- EVERY per-toast fact lives in `live`, never in the delegate ----
@@ -120,10 +123,23 @@ PanelWindow {
     // one would dismiss both.
     property int nextId: 1
 
-    function entry(id, items, app, urgency, born, open, expiresAt) {
+    // `arrive` is "this entry has never been on screen". It is what drives
+    // the fly-in, and it is a flag in the model rather than a timestamp
+    // comparison in the delegate for the reason everything else here is:
+    // the delegate is not a reliable place to measure anything.
+    //
+    // It replaced `Date.now() - born < 150`, which was a wall-clock race in
+    // a render path - the window is open for 150ms and closes whether or
+    // not a delegate was built inside it, so one GC pause between `show()`
+    // and the Repeater meant the entrance silently never played and the
+    // toast popped in. The flag has no window: it is cleared by the first
+    // delegate built from the entry, in place, so a REBUILT delegate (which
+    // is already on screen and must not re-fly) sees it false.
+    function entry(id, items, app, urgency, born, open, expiresAt, arrive) {
         return {
             id: id, items: items, app: app, urgency: urgency,
             born: born, open: open, leaving: false,
+            arrive: arrive === true,
             // 0 means "never expires" - that is Critical.
             expiresAt: expiresAt,
             // True while you are holding or hovering it; see setHeld.
@@ -180,14 +196,28 @@ PanelWindow {
                 : strongest(prev.urgency, record.urgency);
             next[i] = entry(prev.id, merged, app, urgency, now,
                             record.transient ? false : prev.open,
-                            deadlineFor(urgency));
+                            deadlineFor(urgency), true);
             live = next;
             return;
         }
 
-        const next = live.filter(t => !t.leaving).slice(0, maxShown - 1);
+        // Over the ceiling, the oldest goes out through retire() so it
+        // slides and fades like every other dismissal. Slicing it out of
+        // the array instead made it disappear between two frames - and
+        // took any toast that happened to be mid-exit with it, cutting
+        // that animation off at whatever frame it had reached.
+        //
+        // Leaving toasts stay in the array until the reaper has them, and
+        // do not count against the ceiling: they are already on their way
+        // out, and holding a slot for them would mean a burst of three
+        // arrivals showed one toast.
+        const alive = live.filter(t => !t.leaving);
+        for (let i = maxShown - 1; i < alive.length; i++) retire(alive[i].id);
+
+        // Read back AFTER the loop: retire() reassigns `live`.
+        const next = live.slice();
         next.unshift(entry(nextId++, [record], app, record.urgency, now,
-                           false, deadlineFor(record.urgency)));
+                           false, deadlineFor(record.urgency), true));
         live = next;
     }
 
@@ -211,11 +241,11 @@ PanelWindow {
     // you go to the centre to find out what the count was hiding. Opening
     // also stops the clock: you are reading it.
     //
-    // `born` is carried over UNCHANGED. It used to be rewritten to now, back
-    // when the clock was `now - born`; with the clock in `expiresAt` that no
-    // longer pauses anything, and all it still did was make the rebuilt
-    // delegate look freshly arrived - so expanding a pack replayed the whole
-    // fly-in and redrew the wire from nothing while the plate was growing.
+    // Not an arrival: `entry` is called without the last argument, so
+    // `arrive` is false and the rebuilt delegate does not replay the fly-in
+    // or redraw the wire from nothing while the plate is growing. (`born`
+    // is carried over unchanged for the same reason, from back when
+    // freshness was measured off it.)
     function toggle(id) {
         live = live.map(t =>
             t.id !== id ? t
@@ -252,7 +282,20 @@ PanelWindow {
     // The extra width is empty and stays click-through because the mask
     // below covers the plates and not the window.
     implicitWidth: toastWidth * 2 * uiScale
-    implicitHeight: Math.max(1, column.implicitHeight)
+
+    // Quantised, for the same kind of reason the width is doubled: a layer
+    // surface is not free to resize.
+    //
+    // The plate animates its height over `expandMs` when a pack opens, the
+    // column's implicitHeight follows it, and this followed that - so
+    // opening a pack asked the compositor to resize and reconfigure the
+    // surface on every frame of the animation. Rounding up to a step makes
+    // that a handful of resizes instead of one per frame, and costs
+    // nothing: the slack is transparent and sits outside `mask`, exactly
+    // like the empty half of the width.
+    readonly property real heightStep: 48 * uiScale
+    implicitHeight: Math.max(
+        1, Math.ceil(column.implicitHeight / heightStep) * heightStep)
 
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
@@ -300,8 +343,21 @@ PanelWindow {
                 // replaying the arrival for every toast every time anything
                 // arrives would be a mess. Only something genuinely new
                 // flies in; a rebuilt one is simply already there.
-                readonly property bool fresh:
-                    Date.now() - modelData.born < 150
+                //
+                // Read off the model (see `entry`), and cleared on the
+                // model below. The binding has no change notification
+                // behind it, so it stays true for THIS delegate's whole
+                // life - which is what the arrival animations want - while
+                // the next delegate built from the same entry reads false.
+                readonly property bool fresh: modelData.arrive === true
+
+                // Children's Component.onCompleted run before this one, so
+                // the wire's own `if (!toast.fresh)` below still sees the
+                // flag set.
+                Component.onCompleted: {
+                    const e = root.live[index];
+                    if (e) e.arrive = false;
+                }
 
                 readonly property var head: modelData.items[0]
                 readonly property bool packed: modelData.items.length > 1
@@ -563,8 +619,15 @@ PanelWindow {
                             width: plate.width
                             height: plate.radius * 2
                             radius: plate.radius
-                            color: root.alphaColor(
-                                root.wireColorFor(toast.modelData.urgency), 0.55)
+                            // Full alpha, which is also what the comment
+                            // above always claimed: "the wire laid down".
+                            // It was 0.55, to sit under the wire rather
+                            // than beside it - but a 3px strip does not
+                            // compete with a full-height wave, and the
+                            // discount cost the light variant the floor the
+                            // colour had just been picked to clear (3.2:1
+                            // at full, 1.87:1 at 0.55).
+                            color: root.wireColorFor(toast.modelData.urgency)
                         }
                     }
 
@@ -752,6 +815,14 @@ PanelWindow {
             root.lastTick = now;
             root.tickNow = now;
 
+            // Collected first, retired after the walk. retire() reassigns
+            // `live`, so it cannot be called from inside the loop - which
+            // used to be handled with a `return`, and that quietly cost
+            // every entry AFTER the expired one its share of this tick: a
+            // held toast sitting below one that timed out stopped being
+            // held for 100ms, and only one toast could ever retire per
+            // tick however many had run out.
+            const done = [];
             for (const t of root.live) {
                 if (t.leaving || !t.expiresAt) continue;
                 // Hovering it or having it open means you are reading it, so
@@ -759,8 +830,9 @@ PanelWindow {
                 // any closer. That freezes the bar too, for free - it is
                 // drawn from the same number.
                 if (t.held || t.open) { t.expiresAt += elapsed; continue; }
-                if (now >= t.expiresAt) { root.retire(t.id); return; }
+                if (now >= t.expiresAt) done.push(t.id);
             }
+            for (const id of done) root.retire(id);
         }
     }
 

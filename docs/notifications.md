@@ -32,6 +32,14 @@ rule is one pure function, `shouldPost(transient, dnd)`: a transient goes
 through whatever DND says, anything else is suppressed while it is on.
 Asserted by `tests/laserbar/panel-notify-dnd.qml`.
 
+**The wire is `@accentLineColor@`, not `@greenColor@`.** They are the same
+colour in dark and deliberately are not in light. base0B there is a pale
+mint that measures **1.24:1** against the plate, so the wire and the life
+bar were being drawn correctly and could not be seen; the count badge, which
+is a *fill* with dark ink on it, stays `@greenColor@` and reads either way.
+Anything on this surface that paints the accent a few pixels wide takes the
+first token. See `docs/theming.md`.
+
 **Urgency is read off the hint.** `Critical` never auto-expires and takes
 `@downColor@`; `Low` gets a grey wire and a shorter life. A battery at 3%
 that cleared itself after six seconds is the failure this prevents. A pack
@@ -82,6 +90,32 @@ under the pointer. Read `root.live[toast.index]` instead; the binding already
 re-evaluates on every `tickNow`, so in-place changes land on the next tick
 without anything having to notify. These two rules are a pair: put state in
 the model, *and* read it back out of the model.
+
+**Nothing leaves this surface without `retire()`.** The ceiling used to be
+enforced by slicing the array, which made the fourth toast disappear between
+two frames — and took any toast already mid-exit with it, cutting that
+animation off wherever it had reached. `live` is therefore allowed to be
+longer than `maxShown`: what is capped is how many are *alive*, and the
+reaper clears the leaving ones when their exit is done. Asserted by
+`tests/laserbar/panel-toasts-ceiling.qml`.
+
+**"Is this toast new?" is a flag in the model, not a clock.** It was
+`Date.now() - born < 150` in the delegate, which is a wall-clock race in a
+render path: the window closes whether or not a delegate was built inside
+it, so one stall between `show()` and the Repeater meant the entrance
+silently never played. `entry()` takes an `arrive` argument that only
+`show()` passes, and the first delegate built from the entry clears it in
+place — so a *rebuilt* delegate, which is already on screen, does not
+re-fly. You cannot observe the flag from a caller: a Repeater builds its
+delegates synchronously on model reassignment, so it is already spent before
+`show()` returns.
+
+**A loop that reassigns `live` cannot also be iterating it.** The sweep
+collects the ids that have run out and retires them after the walk. It used
+to `return` on the first one, which quietly cost every entry *after* it that
+tick's `expiresAt += elapsed` — a held toast sitting below one that timed
+out stopped being held for 100ms — and meant only one toast could ever
+retire per tick however many had run out.
 
 **A Timer gated on something stops advancing its own bookkeeping.** The
 sweep's `lastTick` only moves inside `onTriggered`, and the sweep only runs
@@ -152,6 +186,25 @@ animation repaints the whole toast for as long as it runs, and width versus
 transform barely mattered. The life bar is derived from the 100ms sweep with
 a 100ms `Behavior` smoothing between steps.
 
+Two things that are not the renderer and still cost per frame:
+
+**The layer surface is quantised.** `implicitHeight` rounds the column up to
+a 48px step. Bound straight to `column.implicitHeight` it asked the
+compositor to resize *and reconfigure* the surface on every frame of a pack
+expand, because the plate animates its height. The slack is transparent and
+sits outside `mask`, exactly like the empty half of the width.
+
+**BeamWire's sample grid is not rebuilt by the phase.** `t` and the end
+taper depend only on height, reveal and `endRamp`; the phase moves `x` and
+nothing else. Recomputing the ramp nine times a tick (eight strands plus the
+core) was most of the arithmetic in the only thing on a toast that runs
+continuously.
+
+**And the state file coalesces.** `saveSoon` is 250ms, not 0. Every arrival
+and every dismissal lands there and each run flattens, serialises and writes
+all fifty records — clearing a group of twelve used to be twelve of those.
+`restart()` collapses a burst into one write of the final state.
+
 Measuring this needs care — the desktop's idle CPU swings by ten points or
 more on its own (the music card's spectrum), which is wider than the effect.
 Use **matched long windows** and hold a toast open with a `critical`
@@ -163,18 +216,39 @@ Volume, mute, mic and brightness are SwayOSD, not notifications.
 
 They used to be sent as transient notifications so the toasts would show
 them. SwayOSD is the surface a reading actually wants - one pill, no history,
-no actions - and `swayosd-client` performs the wpctl/brightnessctl call
+no actions - and for volume `swayosd-client` performs the wpctl call
 *itself*, so each key is one command rather than a script that made the
 change, read the level back and parsed `wpctl get-volume`.
+
+**But it performs it in the SERVER.** `swayosd-client --output-volume raise`
+is a DBus call, not a local one, so the daemon is in the critical path of
+*changing* the volume and not only of drawing it. If `swayosd.service` is
+down - and `Restart=always` with `StartLimitBurst=5` means five crashes in
+ten seconds leaves it `failed` - the key does nothing at all, where the old
+wpctl script at least changed the volume and only lost the readout. So
+`volume-key` asks SwayOSD and falls back to `wpctl` when the client exits
+non-zero. The fallback is silent: there is no volume LED on this laptop and
+nothing left to draw with, but silent and working beats silent.
+
+**Brightness is the opposite split: brightnessctl changes it, SwayOSD only
+draws it**, through `--custom-progress`, exactly as the phone volume does.
+`swayosd-client --brightness raise` is a *linear* 5% of the raw backlight
+range (`BRIGHTNESS_CHANGE_DELTA` in its source) with no knob for either
+half, and these keys were `brightnessctl --exponent=2 s +10%`. On an OLED
+panel the exponent is the whole point - it puts the small steps at the
+bottom of the range, where you want fine control and where a linear 5% of
+maximum is a huge relative jump. This way round is also fail-soft: the
+brightness has already changed by the time SwayOSD is asked for anything.
 
 - `modules/features/desktop/swayosd.nix` — `ogama.desktop.swayosd.enable`,
   defaulting to `sway.enable`. `topMargin = 0.78`: the toasts own the top
   right and the laser bar owns the bottom edge.
 - `lib/swayosd-style.nix` — the two stylesheets, rendered from
   `lib/palette.nix`, same shape as `alacritty-colors.nix`.
-- `modules/features/desktop/sway/default.nix` — the keybindings. **Nothing
-  here sends a notification for them.** Having both would put two things on
-  screen for one keypress.
+- `modules/features/desktop/sway/default.nix` — the keybindings and the two
+  wrapper scripts, `volume-key` and `brightness-key`. **Nothing here sends a
+  notification for them.** Having both would put two things on screen for
+  one keypress.
 
 `style.css` is rewritten by darkman and so must NOT be managed by
 `xdg.configFile` — see `docs/theming.md`. It is seeded only when missing and
@@ -198,17 +272,23 @@ simply not among the properties it will interpolate or switch.
 
 ```
 scripts/laserbar-preview.sh tests/laserbar/panel-toasts.qml /tmp/t.png
+scripts/laserbar-preview.sh tests/laserbar/panel-toasts-ceiling.qml /tmp/c.png
 scripts/qml-logic-test.sh tests/laserbar/panel-notify-dnd.qml 'DND_RULE ok'
 scripts/qml-logic-test.sh tests/laserbar/panel-notify-relay.qml GROUPS
 python3 scripts/laserbar-gating.py
 ```
 
-`panel-notify-urgency.qml` prints its assertions but instantiates a
-`PanelWindow`, so it needs the render harness rather than the offscreen one —
-read the sentinels out of the `.log` beside the png.
+`panel-notify-urgency.qml` and `panel-toasts-ceiling.qml` print their
+assertions but instantiate a `PanelWindow`, so they need the render harness
+rather than the offscreen one — read the sentinels out of the `.log` beside
+the png (`URGENCY ok`, `CEILING ok`).
 
-Run the render ones with `LASERBAR_VARIANT=light` too. The life bar's corner
-bug was only ever visible in light.
+**Run the render ones with `LASERBAR_VARIANT=light` too, and measure rather
+than look.** Every colour bug this surface has had was light-only and none
+of them was obvious in a screenshot: the life bar's corner, and then the
+wire and the life bar being drawn in a green that was 1.2:1 against their
+own plate. A render plus `magick ... txt:` on the pixels you care about is
+the only check there is — see the crop recipe below.
 
 To see a state the fixtures do not reach - a nearly-empty life bar, say -
 set `expiresAt` close to now and `held = true` so the sweep cannot retire it,

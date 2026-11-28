@@ -78,6 +78,15 @@
   # an icon painted in it would disappear into the fill. Same reason
   # capsuleFill/capsuleInk are passed per variant rather than computed here.
   onAccentInk ? "#FF${colors.base00}",
+  # The accent as a STROKE, where @greenColor@ is the accent as a fill. Not
+  # one base16 slot for the same reason onAccentInk is not: light's base0B is
+  # a pale mint that measures 1.24:1 against the sheet, so the notification
+  # wire and the toast's life bar were painted and invisible. The measured
+  # per-variant values live in lib/palette.nix under `<mode>.accentLine`.
+  #
+  # Defaulted to base0B so the greeter and the lock variants, which draw no
+  # wire, need no change.
+  accentLineColor ? "#FF${colors.base0B}",
   # geoclue's own CLI. PATH is not dependable inside the systemd user
   # service, which is why @systemctlBin@ exists too.
   whereAmIBin ? "where-am-i",
@@ -113,6 +122,7 @@ builtins.replaceStrings
     "@lockscreenImage@"
     "@laserColor@"
     "@greenColor@"
+    "@accentLineColor@"
     "@redColor@"
     "@glassBg@"
     "@glassBorder@"
@@ -163,6 +173,7 @@ builtins.replaceStrings
     lockscreenImage
     laserColor
     "#FF${colors.base0B}"
+    accentLineColor
     "#FF${colors.base08}"
     "#66${colors.base00}"
     "#59${colors.base05}"

@@ -38,12 +38,24 @@ let
 
       # Near-opaque, for the reason the control panel sheet is: at 80% a
       # bright window underneath reads straight through and sits behind the
-      # numerals.
-      plate = if variant == "light" then "rgba(253, 240, 237, 0.95)" else "rgba(0, 0, 0, 0.94)";
+      # numerals. Same alpha and same slot as the panel's @sheetBg@, so the
+      # pill and the notification plate are literally the same surface.
+      #
+      # Derived, not written out. Both values used to be hand-transcribed
+      # hex (`rgba(253, 240, 237, 0.95)` is base00 light in decimal), which
+      # is exactly the duplication the header above tells you not to make:
+      # a base00 edit would have moved the whole desktop and left the OSD
+      # behind. GTK's own alpha() does the compositing.
+      plate = "alpha(${ui.base00}, ${if variant == "light" then "0.95" else "0.94"})";
 
       ink = ui.base05;
-      # The same green as the toast wire and the count badge. One accent.
-      accent = ui.base0B;
+
+      # The same green as the toast wire - and for the same reason it is
+      # `accentLine` and not base0B. This is a 4px bar on the plate, not a
+      # filled badge: light's base0B against this ground measures 1.02:1
+      # with the trough below, which is to say the level was not readable at
+      # all. See lib/palette.nix.
+      accent = palette.${variant}.accentLine;
     in
     ''
       /* Generated from lib/palette.nix (${variant}) by lib/swayosd-style.nix.

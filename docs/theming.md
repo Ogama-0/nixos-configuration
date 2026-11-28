@@ -39,6 +39,20 @@ to surprise you:
 - **`status`** → the oserv status widget's up/degraded/down/muted semantics.
   Deliberately *not* base16 slots: the two palettes disagree about where each
   hue lives, and several light slots fail their contrast floors outright.
+- **`accentLine`** → the accent drawn as a **stroke** rather than a fill: the
+  notification wire, the toast's life bar, the centre's group edge, the
+  SwayOSD level. Reaches QML as `@accentLineColor@` and GTK via
+  `swayosd-style.nix`. It exists because thin-line contrast is a different
+  measurement from filled-badge contrast, and light fails the first: base0B
+  there is `#94E1B0`, which is fine behind dark ink on a badge and is
+  **1.24:1** as a 3px line on the sheet. The wire and the life bar were
+  painted correctly and could not be seen. `@greenColor@` (base0B) is still
+  the right token for a *fill* — use that for badges, this for strokes.
+
+  The light value is measured against `#F0E4E1`, the composited sheet. If you
+  change `base00` or the `@sheetBg@` alpha, this is one of the numbers that
+  has to be re-measured; `LASERBAR_VARIANT=light scripts/laserbar-preview.sh
+  tests/laserbar/panel-toasts.qml` is the render that shows it.
 - **helix** is the exception to "TUIs follow the terminal" — it gets real
   themes (`horizon-dark` / `onelight`), because `term16_*` only reaches the 16
   ANSI slots and loses all syntax nuance.

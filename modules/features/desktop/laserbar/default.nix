@@ -129,6 +129,12 @@ in
               msgAccentInk = if variant == "light" then "#FF" + c.base07 else "#FF" + c.base00;
             };
 
+          # The accent as a STROKE. @greenColor@ (base0B) stays the fill - a count
+          # badge is dark ink on green and reads in both variants - but a 3px line of
+          # light's base0B on the cream sheet measures 1.24:1 and is simply not there.
+          # The per-variant values are measured in lib/palette.nix.
+          accentLineFor = variant: "#FF" + builtins.substring 1 6 palette.${variant}.accentLine;
+
           # Ink on an accent (base0B) fill: base00 in dark, base07 in light. Light's
           # base00 is the cream ground, so an icon in it would vanish into the green.
           onAccentInkFor =
@@ -190,6 +196,7 @@ in
                 idleInhibitFlag = config.ogama.desktop.swayIdle.inhibitFlagName;
                 lockscreenImage = "${config.home.homeDirectory}/nixos-configuration/assets/lockscreen/nausicaa.png";
                 onAccentInk = onAccentInkFor variant;
+                accentLineColor = accentLineFor variant;
                 whereAmIBin = "${pkgs.geoclue2}/libexec/geoclue-2.0/demos/where-am-i";
                 # Both variants are nearly opaque, and dark learned this the same way
                 # @cardBg@'s consumers did. At 80% a bright window underneath - a

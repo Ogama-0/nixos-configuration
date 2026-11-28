@@ -23,8 +23,14 @@ Item {
     // to discover it. The toast flips this to "collapse" while open.
     property string hintText: ""
 
+    // Every one of them, not just the tallest two. The badge is the usual
+    // winner (its text plus padding clears the 10px label), but `stamp` and
+    // `hint` are also free-standing items in this row and a row shorter
+    // than its own contents overlaps whatever the layout puts below it.
     implicitHeight: Math.max(icon.visible ? icon.height : 0,
                              label.implicitHeight,
+                             stamp.implicitHeight,
+                             hint.visible ? hint.implicitHeight : 0,
                              badge.visible ? badge.height : 0)
 
     // Where the app name has to stop. Everything right of this is fixed
@@ -73,7 +79,11 @@ Item {
         color: "@mutedColor@"
         font.pixelSize: Math.round(9.5 * root.uiScale)
         font.family: "Orbitron"
-        elide: Text.ElideRight
+        // No elide: Text.elide does nothing without an explicit width, and
+        // this one is sized by its content on purpose - it is the anchor
+        // everything else in the row is laid out from, and `textLimit`
+        // reads its x. The elision in this row belongs to `label`, which
+        // is the only item here whose text is unbounded.
     }
 
     Text {

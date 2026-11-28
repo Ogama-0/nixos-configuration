@@ -63,7 +63,17 @@ Item {
     // wave at full amplitude in the corner paints outside the pill. Tapering
     // into the corners lets the wire run the plate's whole height instead of
     // being cut short of it - length that an inset would have cost.
-    property real endRamp: 14
+    //
+    // In FINAL PIXELS, the same space as `width` and `height` - not in
+    // design units like `scale` and the amplitudes below. The maths used to
+    // multiply this by uiScale as well, while its only caller passes
+    // `plate.radius`, which is already `12 * uiScale`: the taper was
+    // uiScale LONG at any scale but 1, which is the one the toasts happen
+    // to use. One unit, stated here, and the default scales itself.
+    property real endRamp: 14 * uiScale
+    // Never zero: `t / 0` at t = 0 is NaN, Math.min propagates it, and a
+    // single Qt.point(NaN, 0) takes the whole polyline with it.
+    readonly property real rampLen: Math.max(1, endRamp)
 
     // Advancing a phase and letting PathPolyline.path rebind is what
     // BeamSide does, and for the reason documented there: it keeps the
@@ -93,45 +103,72 @@ Item {
     // the same cache BeamSide keeps, for the same reason.
     property var strandCache: []
 
-    function strandPoints(s) {
+    // ---- the sample grid, which the phase does NOT move ----
+    //
+    // `t` and the end taper depend only on the height, the reveal and
+    // endRamp. The phase moves `x` and nothing else. Recomputing the ramp
+    // nine times per tick (eight strands and the core) was most of the
+    // arithmetic in the only thing on a toast that runs continuously, so it
+    // is hoisted into a grid rebuilt when the geometry changes - which,
+    // once a toast has landed, is never.
+    //
+    // 3.5px steps, not 2. Every point is still a Qt.point allocation per
+    // strand per tick, and nobody can see 2px sampling on a wave that is
+    // four pixels tall.
+    property var gridT: []
+    property var gridRamp: []
+
+    function rebuildGrid() {
         const grown = root.height * root.reveal;
-        if (grown <= 0) return [];
+        const ts = [];
+        const ramps = [];
+        if (grown > 0) {
+            const step = 3.5 * root.uiScale;
+            const len = root.rampLen;
+            for (let t = 0; t <= grown; t += step) {
+                ts.push(t);
+                // Both ends: the tip because it is still arriving, the root
+                // because that end sits in the plate's rounded corner. See
+                // `endRamp` for why this is the opposite of what BeamSide
+                // does.
+                ramps.push(Math.min(1, t / len, (grown - t) / len));
+            }
+        }
+        gridT = ts;
+        gridRamp = ramps;
+    }
+
+    function strandPoints(s) {
+        const ts = root.gridT;
+        if (ts.length === 0) return [];
+        const ramps = root.gridRamp;
         const mid = root.width / 2;
         const phaseOffset = s * 1.05;
         const speedFactor = 1 + s * 0.08;
         const amplitude = (8 + (s % 3) * 4) * root.scale * root.uiScale;
         const wavelength = (11 + s) * root.wavelengthScale * root.uiScale;
-        // 3.5px, not 2. Every point is a Qt.point allocation rebuilt on every
-        // tick for every strand of every toast on screen, and nobody can see
-        // 2px sampling on a wave that is four pixels tall.
-        const step = 3.5 * root.uiScale;
+        const phase = root.wavePhase * speedFactor + phaseOffset;
         const pts = [];
-        for (let t = 0; t <= grown; t += step) {
-            // Both ends: the tip because it is still arriving, the root
-            // because that end sits in the plate's rounded corner. See
-            // `endRamp` for why this is the opposite of what BeamSide does.
-            const ramp = Math.min(1,
-                                  t / (root.endRamp * root.uiScale),
-                                  (grown - t) / (root.endRamp * root.uiScale));
-            const x = mid + amplitude * ramp *
-                Math.sin(t / wavelength + root.wavePhase * speedFactor + phaseOffset);
+        for (let i = 0; i < ts.length; i++) {
+            const t = ts[i];
+            const x = mid + amplitude * ramps[i] * Math.sin(t / wavelength + phase);
             pts.push(Qt.point(x, t));
         }
         return pts;
     }
 
     function corePoints() {
-        const grown = root.height * root.reveal;
-        if (grown <= 0) return [];
+        const ts = root.gridT;
+        if (ts.length === 0) return [];
+        const ramps = root.gridRamp;
         const mid = root.width / 2;
+        const amplitude = 1.5 * root.scale * root.uiScale;
+        const wavelength = 12 * root.wavelengthScale * root.uiScale;
+        const phase = root.wavePhase * 1.2;
         const pts = [];
-        for (let t = 0; t <= grown; t += 3.5 * root.uiScale) {
-            const ramp = Math.min(1,
-                                  t / (root.endRamp * root.uiScale),
-                                  (grown - t) / (root.endRamp * root.uiScale));
-            const x = mid + 1.5 * root.scale * root.uiScale * ramp *
-                Math.sin(t / (12 * root.wavelengthScale * root.uiScale)
-                         + root.wavePhase * 1.2);
+        for (let i = 0; i < ts.length; i++) {
+            const t = ts[i];
+            const x = mid + amplitude * ramps[i] * Math.sin(t / wavelength + phase);
             pts.push(Qt.point(x, t));
         }
         return pts;
@@ -145,10 +182,14 @@ Item {
     }
     property var coreCache: []
 
+    // The phase only moves x, so it rebuilds the points and not the grid.
+    // Anything that changes the geometry has to do both, in that order.
     onWavePhaseChanged: rebuild()
-    onHeightChanged: rebuild()
-    onRevealChanged: rebuild()
-    Component.onCompleted: rebuild()
+    onHeightChanged: { rebuildGrid(); rebuild() }
+    onRevealChanged: { rebuildGrid(); rebuild() }
+    onRampLenChanged: { rebuildGrid(); rebuild() }
+    onUiScaleChanged: { rebuildGrid(); rebuild() }
+    Component.onCompleted: { rebuildGrid(); rebuild() }
 
     Shape {
         id: wireShape

@@ -10,6 +10,10 @@
 #               the terminal's own ANSI colours. helix is the exception: it
 #               uses real themes instead, see lib/helix-auto-theme.nix
 #   status   -> the oserv status widget, via the quickshell module
+#   accentLine -> the accent drawn as a STROKE rather than a fill: the
+#               notification wire, the toast's life bar, the SwayOSD level.
+#               A separate value because thin-line contrast is a different
+#               measurement from filled-badge contrast - see the blocks below
 #   both     -> zellij, via lib/zellij-theme.nix - it needs its own
 #               themes because it paints its chrome in true colour instead of
 #               the terminal's ANSI slots, and it takes the ground from `ui`
@@ -94,6 +98,16 @@
       down = "#FF273F"; # red,    4.7:1
       muted = "#B5B0AA"; # 8.1:1
     };
+
+    # The accent as a THIN LINE, which is not the same question as the accent
+    # as a fill. base0B (@greenColor@) is the desktop's "a thing is on"
+    # colour and is right for a filled badge - dark ink on green reads in
+    # both variants. Drawn as a 3px stroke on a plate it is a different
+    # measurement, and light fails it outright: see the light block.
+    #
+    # Read by the notification wire, the toast's life bar and the SwayOSD
+    # level - everything that paints the accent a few pixels wide.
+    accentLine = "#27D796"; # base0B; 9.2:1 on the dark sheet
   };
 
   light = {
@@ -164,5 +178,17 @@
       # base04 is 2.5:1 at 11px; this is base05, 4.9:1
       # at the 80% alpha the widget applies
     };
+
+    # Measured against the composited light sheet (#F0E4E1, which is base00
+    # at the 95% @sheetBg@ alpha) - the same ground the notification plate
+    # and the SwayOSD pill both are.
+    #
+    # base0B is #94E1B0, a pale mint, and it measures 1.24:1 there: the
+    # notification wire and the life bar were drawn and simply could not be
+    # seen. (Measured off a LASERBAR_VARIANT=light render of
+    # tests/laserbar/panel-toasts.qml, not estimated.) Darkened to clear the
+    # 3:1 floor a non-text affordance needs, the same way `degraded` above
+    # is a darkened base09.
+    accentLine = "#1B9160"; # base0B is 1.24:1 as a stroke; this is 3.2:1
   };
 }

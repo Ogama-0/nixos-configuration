@@ -535,8 +535,13 @@ Scope {
     // What clicking a notification does.
     //
     // A table, not a switch buried in a delegate: adding an app is adding a
-    // row. `match` is given the record and returns true; `run` does the
-    // thing. First match wins, and the last row matches everything.
+    // row. First match wins, and the last row matches everything.
+    //
+    // `match` is given the record and returns anything truthy to claim it;
+    // whatever it returns is handed to `run` as a second argument. That is
+    // not decoration - a row that has to resolve something in order to know
+    // whether it matches would otherwise resolve it twice, which is exactly
+    // what the default-action row below was doing.
     //
     // NOTE: the server already advertises `actionsSupported: true`, so some
     // senders attach their own actions that nothing has ever invoked. Those
@@ -556,6 +561,20 @@ Scope {
 
     readonly property var actionTable: [
         {
+            // A transient is a reading you asked for by pressing a key, not
+            // a message. It was never tracked, so there is no entry in the
+            // centre to open and no live notification to act on - and the
+            // catch-all row at the bottom would therefore summon the panel
+            // and then find nothing, leaving it open on whatever happened
+            // to be selected before. Claiming it here and doing nothing is
+            // the honest answer; the toast still retires on the click.
+            //
+            // `=== true` and not `!r.live`: a record restored from disk is
+            // not live either, and that one SHOULD still open the centre.
+            match: r => r.transient === true,
+            run: r => {}
+        },
+        {
             // SMS only, not everything the phone forwards. EVERYTHING from
             // the phone arrives relayed as "KDE Connect" - battery warnings,
             // media, BeReal - so matching on the courier alone opened the
@@ -568,8 +587,10 @@ Scope {
             run: r => root.openMessages("")
         },
         {
-            match: r => root.defaultAction(r) !== null,
-            run: r => root.defaultAction(r).invoke()
+            // Resolved once: `match` returns the action itself, and `run`
+            // is handed it rather than walking `ref.actions` a second time.
+            match: r => root.defaultAction(r),
+            run: (r, action) => action.invoke()
         },
         {
             match: r => true,
@@ -579,8 +600,10 @@ Scope {
 
     function runAction(record) {
         if (!record) return;
-        for (const rule of actionTable)
-            if (rule.match(record)) { rule.run(record); return; }
+        for (const rule of actionTable) {
+            const claim = rule.match(record);
+            if (claim) { rule.run(record, claim); return; }
+        }
     }
 
     // Open the centre with this notification's group already unfolded, so a

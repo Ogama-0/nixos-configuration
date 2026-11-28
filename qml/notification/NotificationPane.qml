@@ -174,11 +174,17 @@ Item {
 
                 // So the accent edge follows the rounded corners instead of
                 // leaving a wedge of ground at each end of it.
+                //
+                // @accentLineColor@, like the toast's wire: this is 2px of
+                // accent on a plate, which is the case light's base0B
+                // cannot carry (1.2:1 on this ground). The count badge
+                // inside the head below stays @greenColor@ - a fill with
+                // dark ink on it reads either way.
                 Rectangle {
                     width: 2 * root.uiScale
                     height: parent.height
                     radius: width
-                    color: "@greenColor@"
+                    color: "@accentLineColor@"
                 }
 
                 Column {
@@ -189,59 +195,42 @@ Item {
                     spacing: 6 * root.uiScale
 
                     // ---- the group's own line ----
-                    Item {
+                    //
+                    // The toast's header component, not a second copy of it.
+                    //
+                    // This was four absolutely-positioned Texts: the name at
+                    // x 0 with no width and no elide, the badge at
+                    // `appName.implicitWidth + 7`, and the hint and the
+                    // timestamp hung off the right edge. Nothing stopped the
+                    // first from running under the last, and a long label is
+                    // not exotic here - through a relay the group's name IS
+                    // `n.summary`, a contact or a track title. The timestamp
+                    // added a fourth thing to that row and made the collision
+                    // reachable with ordinary text.
+                    //
+                    // NotificationHead already solves exactly this (it was
+                    // written when the count and the clock collided on the
+                    // toast): everything right of the name is laid out right
+                    // to left, and the name takes what is left and elides.
+                    // Sharing it also means the centre and the toast cannot
+                    // drift apart, which is the rule the rest of this file
+                    // is built on.
+                    //
+                    // No icon at this level: the rows below each draw their
+                    // own, because there they are the only thing saying who
+                    // sent a given entry.
+                    NotificationHead {
                         width: parent.width
-                        height: appName.implicitHeight
-
-                        Text {
-                            id: appName
-                            text: group.modelData.app
-                            color: "@mutedColor@"
-                            font.pixelSize: Math.round(10 * root.uiScale)
-                            font.weight: Font.Medium
-                        }
-
-                        // The count, only when there is more than one - a
-                        // "1" badge on every single notification is noise.
-                        Rectangle {
-                            visible: group.stacked
-                            x: appName.implicitWidth + 7 * root.uiScale
-                            y: -1 * root.uiScale
-                            width: countText.implicitWidth + 10 * root.uiScale
-                            height: countText.implicitHeight + 2 * root.uiScale
-                            radius: height / 2
-                            color: "@greenColor@"
-
-                            Text {
-                                id: countText
-                                anchors.centerIn: parent
-                                text: group.modelData.count
-                                color: "@onAccentInk@"
-                                font.pixelSize: Math.round(9.5 * root.uiScale)
-                                font.weight: Font.DemiBold
-                            }
-                        }
-
+                        uiScale: root.uiScale
+                        appName: group.modelData.app
+                        count: group.modelData.count
+                        hintText: group.stacked
+                            ? (group.open ? "Collapse" : "Expand") : ""
                         // When the newest one in this group arrived. A
                         // backlog without times is a list of things that
                         // happened at no particular moment.
-                        Text {
-                            id: stamp
-                            x: parent.width - width
-                            text: root.clock
-                                ? root.clock.relative(group.modelData.items[0].ts) : ""
-                            color: "@mutedColor@"
-                            font.pixelSize: Math.round(9.5 * root.uiScale)
-                            font.family: "Orbitron"
-                        }
-
-                        Text {
-                            x: stamp.x - width - 8 * root.uiScale
-                            visible: group.stacked
-                            text: group.open ? "Collapse" : "Expand"
-                            color: "@mutedColor@"
-                            font.pixelSize: Math.round(10 * root.uiScale)
-                        }
+                        timeText: root.clock && group.modelData.items.length > 0
+                            ? root.clock.relative(group.modelData.items[0].ts) : ""
                     }
 
                     // ---- collapsed: the newest one only ----
